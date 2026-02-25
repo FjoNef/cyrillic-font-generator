@@ -5,7 +5,7 @@ import { FontLoader } from '../font/FontLoader';
 const ACCEPTED_TYPES = ['.otf', '.ttf', '.woff', '.woff2'];
 
 export default function FontUpload() {
-  const { setUploadedFont } = useAppStore();
+  const { setUploadedFont, setStyleGlyphs } = useAppStore();
   const inputRef = useRef<HTMLInputElement>(null);
   const loader = useRef(new FontLoader());
 
@@ -13,10 +13,15 @@ export default function FontUpload() {
     async (file: File) => {
       const buffer = await file.arrayBuffer();
       // Validate by parsing — throws if invalid
-      await loader.current.loadFont(buffer);
+      const font = await loader.current.loadFont(buffer);
+      
+      // Extract style glyphs for inference
+      const styleGlyphs = loader.current.extractStyleGlyphs(font);
+      
       setUploadedFont(buffer, file.name);
+      setStyleGlyphs(styleGlyphs);
     },
-    [setUploadedFont]
+    [setUploadedFont, setStyleGlyphs]
   );
 
   const handleDrop = useCallback(
