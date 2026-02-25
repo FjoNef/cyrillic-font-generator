@@ -9,6 +9,36 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25T160138: cGAN Training Pipeline Delivered (Issue #6, PR #8)
+
+**Status:** COMPLETE — Ready for QA review  
+**Deliverables:**
+- `models/train/model.py` — FontGeneratorGAN (StyleEncoder + UNetGenerator + PatchDiscriminator)
+- `models/train/train.py` — Training loop with adversarial + L1 loss
+- `models/train/dataset.py` — FontDataset with normalization, character indexing, style glyph extraction
+- `models/train/export.py` — ONNX export (opset 17, INT8 quantization, dynamic batch)
+- `models/train/requirements.txt` & README.md
+
+**Key decisions finalized:**
+1. StyleEncoder: shared-weight CNN + mean-pooling (permutation-invariant style representation)
+2. UNetGenerator: blank canvas input, character embedding + style vector at bottleneck, skip connections
+3. PatchDiscriminator: 70×70 receptive field for per-patch realism
+4. Loss: Adversarial (BCE) + L1 reconstruction (lambda=100)
+5. ONNX contract: opset 17, dynamic batch, INT8 weight quantization, float32 activations preserved
+
+**Tensor contract LOCKED:**
+- Input: `style_glyphs` [B,10,1,128,128] float32 + `char_index` [B] int64
+- Output: `generated_glyph` [B,1,128,128] float32 in [-1,1] range
+- Semantic convention: +1.0 = black ink (foreground), -1.0 = white (background)
+- Character mapping: 0-32 uppercase А–Я, 33-65 lowercase а–я (66 total Cyrillic chars)
+- No changes permitted — frontend (PR #4) already implemented against this contract
+
+**Next actions:**
+- Acquire Google Fonts training data (OFL-licensed, Latin+Cyrillic pairs)
+- Train for ~200 epochs on GPU (~4-8 hours)
+- Export to `models/v1/generator.onnx`
+- Batou's `/api/model` endpoint will serve it to Togusa's inference pipeline
+
 ### 2026-02-25: ML Engineering Specification
 
 **Model architecture decisions:**

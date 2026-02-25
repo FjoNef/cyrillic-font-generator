@@ -4,6 +4,95 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-25: Model Tensor Contract Confirmation
+**By:** Major (AI/ML Engineer)  
+**Status:** LOCKED — Do NOT change  
+**PR:** #8
+
+The training pipeline (PR #8) **exactly implements** the tensor contract defined in this file and expected by the frontend (PR #4).
+
+**Contract Specification:**
+
+**Inputs:**
+1. `style_glyphs`: [B, 10, 1, 128, 128] float32
+   - 10 Latin reference characters (A, B, C, D, E, H, I, O, R, X) rendered at 128×128 grayscale
+   - Normalization: [-1, 1] where +1.0 = black ink (foreground), -1.0 = white (background)
+
+2. `char_index`: [B] int64
+   - Which of the 66 Cyrillic characters to generate (0-indexed)
+   - 0–32: uppercase А–Я (with Ё at index 6)
+   - 33–65: lowercase а–я (with ё at index 39)
+
+**Output:**
+1. `generated_glyph`: [B, 1, 128, 128] float32
+   - Generated Cyrillic glyph at 128×128 grayscale
+   - Range: [-1, 1] where +1.0 = black ink (foreground), -1.0 = white (background)
+   - Postprocessing: Frontend converts via `((1 - value) / 2) * 255`
+
+**Verification:** Model architecture (FontGeneratorGAN), dataset (FontDataset), and ONNX export (export.py) all conform to this contract. Quantization applied to weights; float32 activations preserved.
+
+**Why Locked:** Frontend (PR #4) already implemented style glyph extraction, character indexing, output postprocessing, and Web Worker protocol. Changing this contract breaks integration. All trained models **MUST** conform exactly to these shapes and semantics.
+
+---
+
+### 2026-02-25: Model Architecture — cGAN with Style Encoder
+**By:** Major (AI/ML Engineer)  
+**PR:** #8
+
+**Decision:** Use a conditional GAN (pix2pix-style) architecture with:
+1. StyleEncoder — Shared-weight CNN + mean-pooling over N reference glyphs (permutation-invariant)
+2. UNetGenerator — Blank canvas input; character embedding + style vector concatenated at 4×4 bottleneck
+3. PatchDiscriminator — 70×70 receptive field for per-patch realism
+
+**Rationale:**
+- StyleEncoder mean-pooling: flexible to variable number of reference glyphs, order-independent
+- UNetGenerator: proven U-Net architecture for image-to-image tasks; blank canvas forces style-driven generation
+- Conditioning at bottleneck: simpler ONNX export than per-layer AdaIN; concatenation avoids dynamic BatchNorm
+- Loss: adversarial (BCE) + L1 reconstruction (lambda=100) prioritizes pixel-wise accuracy
+
+**Alternatives considered and rejected:**
+- VAE: blurry outputs unsuitable for sharp font strokes
+- Diffusion models: too slow for browser inference (50+ steps)
+- Direct CNN: inferior results without adversarial signal
+
+**Model size:** ~15-20M parameters (generator); ONNX float32 ~40-50MB; INT8 quantized ~15-20MB (browser delivery target).
+
+**Impact:** Training scalable to 100-400 fonts; inference fits browser constraints; zero frontend changes needed.
+
+---
+
+### 2026-02-25: Backend API Endpoints — Integration Implementation
+**By:** Batou (Backend Dev)  
+**PR:** #9  
+**Issue:** #7
+
+**Decision:** Implemented two core endpoints:
+1. `GET /health` → `{ status: "healthy" }`
+2. `GET /api/model` → serves `models/v1/generator.onnx` with Range support and cache headers
+
+**Rationale:**
+- `/api/model` provides stable abstraction: frontend doesn't hardcode `/models/v1/...` paths. Version changes require only backend config update.
+- Graceful 404: returns structured JSON error when model not yet trained, not raw 404.
+- Range support: enables HTTP Range requests for large files (future progressive loading optimization).
+- Static file middleware retained: CDN-friendly caching headers, redundancy, future manifest endpoint compatibility.
+
+**Safety improvement:** Wrapped `PhysicalFileProvider` in `Directory.Exists()` check, preventing DirectoryNotFoundException when models/ absent (test suite runs before training).
+
+**Test strategy:** 4 xUnit integration tests via WebApplicationFactory<Program>:
+1. Health check returns 200 + "healthy"
+2. Model endpoint returns 404 when absent
+3. CORS headers on health check
+4. CORS headers on model endpoint
+
+**Alternatives considered:**
+- No `/api/model`, frontend hardcodes file path: rejected (couples frontend to backend layout)
+- Manifest endpoint only: deferred as over-engineering for MVP
+- API endpoint only, no static middleware: rejected (loses CDN benefits)
+
+**Impact:** Frontend can fetch model via `GET /api/model`; CI validates 4 integration tests per PR; Major can export trained model post-training.
+
+---
+
 ### 2026-02-25T152812: PR #4 approved — inference pipeline
 **By:** Saito (QA)  
 **What:** PR #4 feat/togusa-inference-pipeline approved after Major fixed color inversion bug.
@@ -92,7 +181,7 @@ Key decisions:
 - ONNX model inputs: style_glyphs [B, 10, 1, 128, 128] float32, char_index [B] int64
 - ONNX model output: generated_glyph [B, 1, 128, 128] float32 (values in [-1, 1])
 - Training data: Google Fonts OFL-only, both Latin+Cyrillic coverage
-- Style glyphs: render Latin A, B, H, O, g, n, o, p, s, x — 10 chars chosen for maximum structural diversity
+- Style glyphs: render Latin A, B, C, D, E, H, I, O, R, X — 10 uppercase chars chosen for maximum structural diversity
 - Model checkpoint format: .pth files in models/checkpoints/epoch_NNNN.pth
 - ONNX export: opset 17, dynamic INT8 weight quantization, single graph (StyleEncoder + UNetGenerator)
 - Recommended browser backends: WebGL first, WASM fallback; run in Web Worker

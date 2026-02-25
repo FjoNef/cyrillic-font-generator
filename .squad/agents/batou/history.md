@@ -9,6 +9,35 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25T160138: Backend API Integration Delivered (Issue #7, PR #9)
+
+**Status:** COMPLETE — Ready for QA review  
+**Deliverables:**
+- `GET /health` endpoint → `{ status: "healthy" }` (200 OK)
+- `GET /api/model` endpoint → serves ONNX model from `models/v1/generator.onnx` with Range request support
+- 4 xUnit integration tests — all passing
+- Static file middleware safety wrap: `Directory.Exists()` check prevents DirectoryNotFoundException
+
+**Key decisions finalized:**
+1. Stable `/api/model` abstraction: decouples frontend from versioned file paths; allows graceful 404 when model absent
+2. Range request support: enables future optimizations for progressive large-file loading
+3. CORS headers on all endpoints: `localhost:5173` allowed (Vite dev server)
+4. WebApplicationFactory<Program> for in-memory test server: no external process dependencies
+
+**Test strategy:**
+- Health check returns 200 + "healthy"
+- Model endpoint returns 404 when absent (graceful error handling)
+- CORS headers present on health check (OPTIONS or direct request)
+- CORS headers present on model endpoint (OPTIONS or direct request)
+
+**Integration with Major:**
+- Endpoint waiting for `models/v1/generator.onnx` (post-training export)
+- Once available, endpoint will return 200 + ONNX model stream
+
+**Next actions:**
+- Major exports trained model to `models/v1/generator.onnx`
+- Togusa integrates model loading via `fetch('/api/model')` in Web Worker
+
 ### 2026-02-25: Backend scaffold
 
 **Project structure:**
