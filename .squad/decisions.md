@@ -4,6 +4,27 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-25T145755: CI/CD Automation Configuration
+**By:** Batou (Backend Dev)  
+**Branch:** chore/batou-ci-automation  
+**PR:** #5 to dev
+
+**What:**
+Configure GitHub Actions workflows for CI, release automation, preview validation, and PR auto-labeling.
+- **CI Pipeline (squad-ci.yml):** Triggers on PRs/pushes to dev/main/preview/insider. Builds + tests React/Vite frontend and .NET 8 backend in parallel. Node.js v20, npm cache.
+- **Release Automation (squad-release.yml):** Triggers on main push. Builds both stacks, extracts version from package.json, creates GitHub release with auto-generated notes.
+- **Preview Validation (squad-preview.yml):** Triggers on preview branch push. Full CI suite validation.
+- **PR Auto-Label (squad-pr-auto-label.yml):** Triggers on PR open/reopen to dev. Parses team.md, extracts author from branch name, applies `squad` + `squad:{author}` labels, posts review notification with Saito (QA) + Aramaki (Lead) pings.
+- **Label Sync:** Created squad:aramaki, squad:batou, squad:togusa, squad:major, squad:saito labels + go:/release:/type:/priority: categories (run 22402264965).
+
+**Why:** 
+- Automate testing on every PR and push, reducing manual QA burden.
+- Enable zero-touch release automation on main branch.
+- Route PRs to correct reviewers automatically via branch name → label → mention.
+- Align with team branching policy (dev as integration, main as releases-only).
+
+---
+
 ### 2026-02-25T140433: Branching policy overhaul
 **By:** FjoNef (via Copilot)
 **What:**

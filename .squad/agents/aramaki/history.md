@@ -9,6 +9,11 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25T145755: CI automation live, inference pipeline PR open
+- **CI/CD Automation:** Batou configured GitHub Actions workflows (squad-ci.yml, squad-release.yml, squad-preview.yml, squad-pr-auto-label.yml). PR #5 open to dev for review. Workflows automate frontend + backend builds, release creation with auto-generated notes, preview validation, and zero-touch PR labeling + reviewer notification. Labels synced successfully (squad:*, go:, release:, type:, priority:).
+- **Inference Pipeline:** Togusa wired end-to-end inference (inferenceWorker.ts, ModelLoader.ts, assembleCyrillicFont, GeneratorPanel.tsx, appStore.ts). PR #4 open to dev for QA review. Web Worker runs model inference off main thread; UI shows progress and glyph preview.
+- **Next phase:** Saito QA review → merge both PRs to dev → backend server + frontend dev server coordination.
+
 ### 2026-02-25: Architecture Kickoff
 - **AI Model:** Chose conditional GAN (pix2pix-style) over diffusion/VAE/transformer. Reasoning: font glyph generation is image-to-image style transfer; pix2pix is proven, compact (~20MB target), ONNX-exportable. Diffusion models are too large/slow for browser. VAEs produce blurry output. Transformers (e.g. SVG-generating) are interesting but less mature.
 - **Runtime:** ONNX Runtime Web over TensorFlow.js — smaller runtime, no framework translation from PyTorch.
