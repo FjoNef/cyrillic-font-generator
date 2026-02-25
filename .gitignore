@@ -19,3 +19,6 @@ Thumbs.db
 *.user
 .idea/
 .vscode/
+
+# Squad team tooling — not product code
+.squad/
