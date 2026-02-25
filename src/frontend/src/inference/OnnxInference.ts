@@ -87,7 +87,7 @@ export class OnnxInference {
     const size = 128;
     const pixels = new Uint8ClampedArray(size * size * 4);
     for (let i = 0; i < size * size; i++) {
-      const val = Math.round(((outputData[i] + 1) / 2) * 255); // [-1,1] → [0,255]
+      const val = Math.round(((1 - outputData[i]) / 2) * 255); // [-1,1] → [0,255], +1=black, -1=white
       pixels[i * 4 + 0] = val; // R
       pixels[i * 4 + 1] = val; // G
       pixels[i * 4 + 2] = val; // B
