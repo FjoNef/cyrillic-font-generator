@@ -46,3 +46,24 @@ src/backend/
 - **Decision:** Main branch is releases-only; dev is integration branch. All feature work via feature branches from dev.
 - **Implementation:** Removed .squad/ from main via .gitignore. PR #2 targets dev with branching policy changes.
 - **Backend impact:** All backend development occurs on feature branches from dev, never directly on main. Clear separation between release and development code.
+
+### 2026-02-25: CI/CD workflow automation
+- **Branch:** `chore/batou-ci-automation` from dev
+- **PR:** #5 to dev
+- **Changes:**
+  - **squad-ci.yml:** Configured Node 20 + npm ci/build/tsc + .NET 8 restore/build/test steps. Runs on PRs to dev/main and pushes to dev/insider.
+  - **squad-release.yml:** Build both stacks + create GitHub Release with auto-generated notes from package.json version. Runs on push to main.
+  - **squad-preview.yml:** Build validation (same as CI) on preview branch pushes.
+  - **squad-pr-auto-label.yml (new):** Auto-labels PRs to dev with `squad` + `squad:{author}` based on branch name prefix (e.g., `chore/batou-ci-automation` → `squad:batou`). Posts review notification comment pinging Saito (QA) and Aramaki (Lead).
+- **Tech stack:** Node 20, .NET 8.0.x, npm ci (not install), separate jobs for frontend/backend validation.
+- **Why:** Squad triage/heartbeat/main-guard workflows were live but CI was a no-op placeholder. This activates build gates on PRs to dev/main and release automation on main.
+
+### 2026-02-25: CI test fix (Aramaki review finding)
+- **Commit:** c6390f5
+- **Issue:** Aramaki review of PR #5 found blocking issue: workflows were building but not running tests.
+- **Fix:** Added `npx vitest run` step to both squad-ci.yml and squad-preview.yml after frontend build/type-check. Backend already had `dotnet test` step.
+- **Learnings:**
+  - **Test command:** `npx vitest run` (not `npm test`) for Vitest in CI — ensures non-watch mode.
+  - **CI must run tests, not just build.** Build success ≠ code correctness.
+  - **Workflows fixed:** squad-ci.yml, squad-preview.yml (both now test frontend + backend).
+- **Approval:** PR #5 approved by Aramaki after test step fix.
