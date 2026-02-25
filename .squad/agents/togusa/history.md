@@ -9,6 +9,14 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25T152319: PR #4 color inversion bug fixed by Major
+- **Branch:** feat/togusa-inference-pipeline
+- **Issue:** Inverted color output in App.tsx line 67 (formula mapped -1→black, 1→white; should be opposite)
+- **Fix by:** Major (AI/ML Engineer) — formula corrected to `((1 - output[px]) / 2) * 255`
+- **Files modified:** App.tsx, OnnxInference.ts
+- **Status:** Committed to feat/togusa-inference-pipeline; PR #4 unblocked and ready for re-review by Saito
+- **Context:** Demonstrates importance of explicit model output convention documentation and integration testing with real ONNX output
+
 ### 2026-02-25T143900: Issue #3 — Inference pipeline fully wired
 - **Branch:** `feat/togusa-inference-pipeline`
 - **PR:** #4 → dev

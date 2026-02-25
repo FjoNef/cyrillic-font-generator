@@ -4,6 +4,22 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-25T152134: Model output tensor convention
+**By:** Major  
+**What:** Model output range [-1, 1] where +1.0 = black ink (foreground), -1.0 = white background.  
+Frontend pixel mapping: value → grayscale = ((1 - value) / 2) * 255  
+**Why:** Confirmed by Saito QA rejection of PR #4; fixing inverted color output. The model uses tanh activation, standard for GANs, which outputs [-1, 1]. The semantic convention that +1 = foreground (ink) and -1 = background (paper) must be respected in all downstream processing.
+
+### 2026-02-25T143900: Inference Pipeline Implementation
+**By:** Togusa (Frontend Dev)  
+**What:** Implemented end-to-end browser-based inference pipeline: Web Worker wrapping ONNX Runtime Web, scanline-based glyph vectorization (raster-to-path), fixed font metrics (1000 UPM, ascender 800, descender -200, advance width 600), model loader singleton with progress tracking, style glyph extraction on font upload.  
+Key decisions:
+- Web Worker message protocol with per-request IDs for concurrent safety
+- Scanline rectangles for vectorization (not potrace — no maintained browser port; acceptable for MVP, future enhancement possible)
+- Progress reporting: model load %, generation counter (N/66)
+  
+**Why:** Decouples frontend UI from inference via dedicated worker thread. Scanline approach is simple, deterministic, and works in browser. Fixed metrics simplify MVP; future iteration can derive from user's font.
+
 ### 2026-02-25T140433: Branching policy overhaul
 **By:** FjoNef (via Copilot)
 **What:**

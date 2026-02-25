@@ -8,3 +8,12 @@
 
 ## Learnings
 <!-- Append new entries below -->
+
+### 2026-02-25T152319: PR #4 blocking bug resolved — color inversion fix
+- **Issue:** PR #4 (feat/togusa-inference-pipeline → dev) had inverted color output mapping in App.tsx line 67-70
+- **Root cause:** Formula `((output[px] + 1) / 2) * 255` mapped model output incorrectly: -1 (background) → 0 (black), 1 (ink) → 255 (white) — inverted
+- **Fix applied by:** Major (AI/ML Engineer)
+- **Correction:** Formula changed to `((1 - output[px]) / 2) * 255`: 1 → 0 (black ink), -1 → 255 (white background) — correct
+- **Files fixed:** `src/frontend/src/App.tsx`, `src/frontend/src/inference/OnnxInference.ts`
+- **Status:** Pushed to feat/togusa-inference-pipeline; PR #4 unblocked, ready for re-review
+- **Learning:** Model convention (+1 = foreground, -1 = background per tanh GAN standard) must be documented and enforced at integration boundaries

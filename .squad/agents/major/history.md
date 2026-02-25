@@ -43,3 +43,21 @@
 - Recommended ONNX Runtime Web backends: WebGL first, WASM fallback.
 - Expected per-glyph time: ~15–30ms WebGL, ~80–150ms WASM 4-thread.
 - Inference should run in a Web Worker to avoid UI blocking.
+
+### 2026-02-25: Model output color convention (PR #4 bug fix)
+
+**Model output tensor convention:**
+- Output range: [-1, 1] where **+1.0 = black ink (foreground), -1.0 = white background**.
+- This is the tanh activation output from the generator; typical for GANs.
+
+**Frontend color mapping bug:**
+- **Incorrect formula:** `((output[px] + 1) / 2) * 255`  
+  This mapped +1 → 255 (white) and -1 → 0 (black) — **inverted colors**.
+- **Correct formula:** `((1 - output[px]) / 2) * 255`  
+  This maps +1 → 0 (black ink) and -1 → 255 (white background).
+
+**Affected files (fixed in commit c2adee9):**
+- `src/frontend/src/App.tsx` line 67
+- `src/frontend/src/inference/OnnxInference.ts` line 90
+
+**Context:** Saito (QA) caught this in PR #4 review as a blocking bug. The issue was visible as inverted glyph rendering — black became white, white became black.
