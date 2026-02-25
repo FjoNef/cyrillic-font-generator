@@ -66,3 +66,4 @@ src/backend/
   - **Test command:** `npx vitest run` (not `npm test`) for Vitest in CI — ensures non-watch mode.
   - **CI must run tests, not just build.** Build success ≠ code correctness.
   - **Workflows fixed:** squad-ci.yml, squad-preview.yml (both now test frontend + backend).
+- **Approval:** PR #5 approved by Aramaki after test step fix.

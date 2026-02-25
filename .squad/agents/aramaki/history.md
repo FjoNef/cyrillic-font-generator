@@ -27,3 +27,4 @@
 - **Decision:** Main branch is releases-only; dev is integration branch. All feature work via feature branches from dev.
 - **Implementation:** Removed .squad/ from main via .gitignore. PR #2 targets dev with branching policy changes.
 - **Workflow impact:** All squad tooling lives on dev/feature branches, not main. Preserves clean release history on main.
+PR #5 approved after Batou added missing test steps.

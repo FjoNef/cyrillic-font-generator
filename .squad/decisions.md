@@ -4,6 +4,16 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-25T153728: CI must run tests, not just build
+**By:** Batou (fix per Aramaki review)  
+**What:** squad-ci.yml and squad-preview.yml now include `npx vitest run` after frontend build. Backend uses `dotnet test`.  
+**Why:** Aramaki flagged missing test step as blocking in PR #5 review. CI workflows were building successfully but not validating correctness via test execution.
+
+### 2026-02-25 15:39:40: PR #5 CI automation — APPROVED
+**By:** Aramaki (Lead)
+**What:** PR #5 approved after Batou added vitest test step. CI now runs: frontend build + vitest run + dotnet build + dotnet test.
+**Why:** All blocking issues resolved. Ready to merge to dev.
+
 ### 2026-02-25T145755: CI/CD Automation Configuration
 **By:** Batou (Backend Dev)  
 **Branch:** chore/batou-ci-automation  
