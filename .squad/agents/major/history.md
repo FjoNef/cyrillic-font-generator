@@ -8,3 +8,38 @@
 
 ## Learnings
 <!-- Append new entries below -->
+
+### 2026-02-25: ML Engineering Specification
+
+**Model architecture decisions:**
+- StyleEncoder uses shared-weight CNN + mean-pool over N reference glyphs.
+  Mean-pooling makes the style representation permutation-invariant (order of reference glyphs doesn't matter) and allows variable N at runtime without model changes.
+- UNetGenerator injects conditioning at the bottleneck (1×1 spatial) via concatenation, not AdaIN.
+  This is simpler to export to ONNX and avoids dynamic shape issues with batch normalisation variants.
+- Generator uses a blank canvas input (all zeros) rather than a skeleton template.
+  The model must learn to generate from scratch; a skeleton approach would require a separate glyph rendering step in the browser.
+- PatchGAN discriminator (70×70 patches) with conditioning on one style glyph.
+  Standard pix2pix choice; penalises per-patch realism rather than global image statistics.
+
+**Data pipeline decisions:**
+- 10 Latin reference characters chosen for maximum structural diversity: A, B, H, O, g, n, o, p, s, x.
+  These cover: enclosed counters (O, o, B), diagonals (A, x), ascenders (H, B), descenders (g, p, y).
+- Character index scheme: 0–32 = uppercase А–Я, 33–65 = lowercase а–я. Total 66 chars.
+  Ё/ё included (indices 6 and 39).
+- Google Fonts GitHub archive fallback for users without an API key. API path is faster.
+
+**ONNX export decisions:**
+- Combined StyleEncoder + UNetGenerator into single ONNX graph (FontGeneratorONNX wrapper).
+  Single graph simplifies browser loading — one `InferenceSession.create()` call.
+- Opset 17 — latest stable at time of writing, well-supported by ONNX Runtime Web.
+- Dynamic INT8 weight quantization via `onnxruntime.quantization.quantize_dynamic`.
+  Reduces model size by ~50–60% vs fp32. Inference activations remain float32.
+- Float16 weight quantization considered but INT8 dynamic has better ONNX Runtime Web support.
+
+**Inference contract decisions:**
+- `style_glyphs` shape: `[B, 10, 1, 128, 128]` float32. Fixed N=10 for export simplicity.
+- `char_index` shape: `[B]` int64. Simple integer, not one-hot, to avoid large sparse tensors.
+- Output: `[B, 1, 128, 128]` float32 in [-1, 1]. Postprocessing is trivial: (x+1)/2*255.
+- Recommended ONNX Runtime Web backends: WebGL first, WASM fallback.
+- Expected per-glyph time: ~15–30ms WebGL, ~80–150ms WASM 4-thread.
+- Inference should run in a Web Worker to avoid UI blocking.

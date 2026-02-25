@@ -1,0 +1,27 @@
+# Cyrillic Font Generator — ML Training Dependencies
+# Install with: pip install -r requirements.txt
+
+# Deep learning
+torch>=2.2.0
+torchvision>=0.17.0
+
+# ONNX export and validation
+onnx>=1.16.0
+onnxruntime>=1.18.0
+
+# Image processing
+Pillow>=10.3.0
+
+# Font rendering and glyph extraction
+fonttools>=4.51.0
+
+# Numeric / scientific
+numpy>=1.26.0
+matplotlib>=3.8.0
+
+# Training utilities
+tqdm>=4.66.0
+PyYAML>=6.0.1
+
+# Testing
+pytest>=8.1.0

@@ -4,6 +4,51 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-25T112635: User directives — scope answers
+**By:** FjoNef (via Copilot)
+**What:**
+- Cyrillic scope: Russian only (66 glyphs: А–Я + а–я with Ё/ё) for v1. Extended Cyrillic deferred.
+- Quality bar: MVP pipeline first — get end-to-end working, iterate quality later.
+- Hosting: Self-hosted (not Azure-managed services).
+- Generated font licensing: All generated fonts must be OFL (Open Font License) licensed.
+**Why:** User request — establishes project constraints and licensing commitments.
+
+### 2026-02-25: ML engineering decisions
+**By:** Major (AI/ML Engineer)
+**What:**
+- ONNX model inputs: style_glyphs [B, 10, 1, 128, 128] float32, char_index [B] int64
+- ONNX model output: generated_glyph [B, 1, 128, 128] float32 (values in [-1, 1])
+- Training data: Google Fonts OFL-only, both Latin+Cyrillic coverage
+- Style glyphs: render Latin A, B, H, O, g, n, o, p, s, x — 10 chars chosen for maximum structural diversity
+- Model checkpoint format: .pth files in models/checkpoints/epoch_NNNN.pth
+- ONNX export: opset 17, dynamic INT8 weight quantization, single graph (StyleEncoder + UNetGenerator)
+- Recommended browser backends: WebGL first, WASM fallback; run in Web Worker
+- Expected inference: ~15–30ms/glyph WebGL, ~80–150ms/glyph WASM (4-thread)
+**Why:** Establishes the contract between ML training (Major) and browser inference (Togusa). Full integration details in src/model/export/inference_contract.md.
+
+### 2026-02-25: Frontend scaffold decisions
+**By:** Togusa (Frontend Dev)
+**What:**
+- React 18 + TypeScript + Vite frontend in src/frontend/
+- onnxruntime-web integrated with WASM asset handling
+- Style glyphs: Latin A,B,C,D,E,H,I,O,R,X rendered at 128x128 grayscale
+- Russian charset: 66 chars (33 upper + 33 lower), indices 0-65
+- Model loaded via fetch with progress, stored in InferenceSession
+- Vite dev server proxies /api to backend :5000
+**Why:** Establishes frontend project structure and integration contracts with ML and backend.
+
+### 2026-02-25: Backend scaffold decisions
+**By:** Batou (Backend Dev)
+**What:**
+- .NET 8 ASP.NET Core Minimal API in src/backend/
+- Self-hosted on port 5000 (HTTP), no Azure dependencies
+- Model served from models/v1/ with immutable cache headers + Range request support
+- Font validation via magic byte detection (no heavy font parsing library)
+- CORS allows localhost:5173 (Vite dev server); origins are config-driven
+- SPA fallback: all unmatched routes → wwwroot/index.html
+- ModelManifestCache singleton computes SHA-256 at startup; returns 404 if model not yet present
+**Why:** Minimal, self-hostable backend focused on model delivery and font validation. No server-side inference required — all AI runs in the browser via ONNX Runtime Web.
+
 ### 2026-02-25: Architecture kickoff decisions
 **By:** Aramaki (Lead)
 

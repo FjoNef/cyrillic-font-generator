@@ -1,0 +1,21 @@
+# .gitignore — Cyrillic Font Generator
+
+# .NET build outputs
+src/backend/**/bin/
+src/backend/**/obj/
+
+# Frontend
+src/frontend/node_modules/
+src/frontend/dist/
+
+# Training data and model artefacts
+data/fonts/
+models/*.onnx
+models/checkpoints/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.user
+.idea/
+.vscode/
