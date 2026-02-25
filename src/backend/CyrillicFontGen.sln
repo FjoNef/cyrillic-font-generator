@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyrillicFontGen.Api", "CyrillicFontGen.Api\CyrillicFontGen.Api.csproj", "{750A6FA3-3584-4820-B125-06613A040511}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyrillicFontGen.Api.Tests", "CyrillicFontGen.Api.Tests\CyrillicFontGen.Api.Tests.csproj", "{CBA59ED3-0C4E-41FF-8F23-BEF9B5EF024E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{750A6FA3-3584-4820-B125-06613A040511}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{750A6FA3-3584-4820-B125-06613A040511}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{750A6FA3-3584-4820-B125-06613A040511}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBA59ED3-0C4E-41FF-8F23-BEF9B5EF024E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBA59ED3-0C4E-41FF-8F23-BEF9B5EF024E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBA59ED3-0C4E-41FF-8F23-BEF9B5EF024E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBA59ED3-0C4E-41FF-8F23-BEF9B5EF024E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -26,20 +26,24 @@ app.UseCors();
 var modelPath = builder.Configuration["ModelPath"] ?? "models";
 var modelPhysicalPath = Path.GetFullPath(modelPath, AppContext.BaseDirectory);
 
-app.UseStaticFiles(new StaticFileOptions
+if (Directory.Exists(modelPhysicalPath))
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(modelPhysicalPath),
-    RequestPath = "/models",
-    OnPrepareResponse = ctx =>
+    app.UseStaticFiles(new StaticFileOptions
     {
-        ctx.Context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
-    }
-});
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(modelPhysicalPath),
+        RequestPath = "/models",
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+        }
+    });
+}
 
 // Enable HTTP Range requests for model streaming
 app.UseStaticFiles(); // wwwroot (React SPA)
 
 // -- API routes --
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 app.MapFontEndpoints();
 app.MapModelEndpoints();
 
@@ -47,3 +51,6 @@ app.MapModelEndpoints();
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+// Expose for integration tests
+public partial class Program { }
