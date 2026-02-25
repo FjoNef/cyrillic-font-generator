@@ -38,6 +38,10 @@ jobs:
         working-directory: src/frontend
         run: npx tsc --noEmit
 
+      - name: Run frontend tests
+        working-directory: src/frontend
+        run: npx vitest run
+
       - name: Restore .NET dependencies
         working-directory: src/backend
         run: dotnet restore
