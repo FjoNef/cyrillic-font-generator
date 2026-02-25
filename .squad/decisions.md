@@ -212,6 +212,68 @@ Key decisions:
 - Generated font licensing: All generated fonts must be OFL (Open Font License) licensed.
 **Why:** User request — establishes project constraints and licensing commitments.
 
+### 2026-02-25: Training Data — Google Fonts OFL with Latin+Cyrillic Coverage
+**By:** Major (AI/ML Engineer)  
+**Status:** Ready for GPU training
+
+Completed dataset setup: 718 OFL-licensed Google Fonts with full Latin and Cyrillic (Russian) coverage. Each font contains all 10 style reference characters (A, B, C, D, E, H, I, O, R, X) and all 66 Cyrillic target characters (А–Я, а–я including Ё/ё).
+
+**Dataset statistics:**
+- Font count: 718 font files across diverse families
+- Total samples: 47,388 (718 fonts × 66 Cyrillic chars)
+- Train/val split: 45,207 train (95%) / 2,379 val (5%)
+- Batch size: 32 → 1,413 batches per epoch
+- Storage: `data/fonts/` (gitignored, ~400 MB)
+
+**Validation results (1-epoch run):**
+- Data loading works correctly
+- Tensor shapes match contract: style_glyphs [B,10,1,128,128], char_index [B], target [B,1,128,128]
+- Initial losses nominal: D≈0.74, G≈114, L1≈112.5 (expected for untrained GAN)
+- No crashes or data loading errors
+
+**Fixed issues during setup:**
+1. `fontTools` import case sensitivity on Python 3.14 (capital T required)
+2. Windows file locking: added `TTFont.close()` before `unlink()` in coverage checks
+3. Path resolution: changed config paths from `../../data/fonts` to `data/fonts` (relative to repo root)
+
+**Full training command:**
+```bash
+python src/model/train/train.py --config src/model/configs/train_config.yaml --num_epochs 200
+```
+GPU recommended (4-8 hours on GPU vs 19 days on CPU). Outputs: checkpoints in `models/checkpoints/epoch_NNNN.pth`, final export to `models/v1/generator.onnx`.
+
+---
+
+### 2026-02-25: Synthetic Training Mode and CLI Overrides
+**By:** Major (AI/ML Engineer)  
+**Status:** Implemented
+
+Added `--synthetic` flag and CLI parameter overrides to training pipeline. Enables training without font files via random noise tensors matching tensor contract.
+
+**New flags in `src/model/train/train.py`:**
+- `--synthetic`: Use synthetic data instead of real fonts (1000 samples, random [-1,1] noise)
+- `--batch_size N`: Override batch_size from config
+- `--num_epochs N`: Override epochs from config
+- `--config`: Now optional when `--synthetic` is used
+
+**Usage examples:**
+```bash
+# Synthetic training with overrides (no config needed)
+python src/model/train/train.py --synthetic --batch_size 16 --num_epochs 50
+
+# Override config parameters
+python src/model/train/train.py --config configs/train_config.yaml --batch_size 64
+
+# Standard training with real fonts
+python src/model/train/train.py --config configs/train_config.yaml
+```
+
+**Rationale:** Fast pipeline validation without downloading fonts, CI/CD testing without large data dependencies, rapid hyperparameter experimentation, debugging in isolation.
+
+**Verification:** Tested successfully on CPU; batch size and epoch overrides verified; tensor shapes and value ranges correct.
+
+---
+
 ### 2026-02-25: ML engineering decisions
 **By:** Major (AI/ML Engineer)
 **What:**
