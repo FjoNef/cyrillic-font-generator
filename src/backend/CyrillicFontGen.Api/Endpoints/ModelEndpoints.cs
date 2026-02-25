@@ -49,6 +49,7 @@ public static class ModelEndpoints
     public static void MapModelEndpoints(this WebApplication app)
     {
         app.MapGet("/api/model/manifest", HandleManifest);
+        app.MapGet("/api/model", HandleModelDownload);
     }
 
     private static IResult HandleManifest(ModelManifestCache cache, HttpRequest request)
@@ -65,5 +66,21 @@ public static class ModelEndpoints
             sha256      = cache.Sha256,
             downloadUrl = $"{baseUrl}/models/{cache.Version}/{cache.Filename}"
         });
+    }
+
+    private static IResult HandleModelDownload(ModelManifestCache cache, IConfiguration config)
+    {
+        if (!cache.Available)
+            return Results.NotFound(new { error = "Model not yet trained. Please train the model first." });
+
+        var modelRoot = config["ModelPath"] ?? "models";
+        var modelFile = Path.GetFullPath(
+            Path.Combine(modelRoot, cache.Version, cache.Filename),
+            AppContext.BaseDirectory);
+
+        if (!File.Exists(modelFile))
+            return Results.NotFound(new { error = "Model file not found at expected path." });
+
+        return Results.File(modelFile, "application/octet-stream", cache.Filename, enableRangeProcessing: true);
     }
 }

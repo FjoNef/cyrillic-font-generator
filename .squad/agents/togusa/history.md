@@ -9,6 +9,19 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25T17XXXX: Fixed PR #8 doc conflict (Reviewer Lockout Protocol)
+- **Timestamp:** 2026-02-25T17XXXX
+- **Branch:** feat/major-model-training (PR #8)
+- **Issue:** Saito review identified incorrect Latin style reference chars in `.squad/decisions.md` (listed as `A, B, H, O, g, n, o, p, s, x` — wrong mixed-case set)
+- **Correct chars:** A, B, C, D, E, H, I, O, R, X (10 uppercase Latin chars)
+- **Fixes made:**
+  - Corrected entry in `.squad/decisions.md` line 184
+  - Added clarifying comment in `models/train/model.py` docstring (line 202-204)
+  - `models/train/dataset.py` already had correct list with comment (line 17-18)
+  - `models/train/README.md` already documented correct chars (lines 120, 154)
+- **Why I did this:** Major is under Reviewer Rejection Lockout Protocol; I fixed on their behalf per Saito's request
+- **Outcome:** Committed fix and commented on PR #8
+
 ### 2026-02-25T153114: PR #4 merged to dev
 - **Timestamp:** 2026-02-25T153114
 - **Branch:** feat/togusa-inference-pipeline (deleted)

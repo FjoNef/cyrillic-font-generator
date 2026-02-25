@@ -96,3 +96,17 @@ src/backend/
   - **CI must run tests, not just build.** Build success ≠ code correctness.
   - **Workflows fixed:** squad-ci.yml, squad-preview.yml (both now test frontend + backend).
 - **Approval:** PR #5 approved by Aramaki after test step fix.
+
+### 2026-02-25: Backend integration — health check, model delivery endpoint, integration tests
+- **Branch:** feat/batou-backend-integration
+- **PR:** #9 to dev
+- **Issue:** #7 — feat: backend integration — end-to-end API test with frontend
+- **Changes:**
+  - **Health check endpoint:** `GET /health` → 200 OK with `{ status: "healthy" }`
+  - **Model delivery endpoint:** `GET /api/model` → serves `models/v1/generator.onnx` or 404 with clear error message
+  - **CORS:** Already configured for localhost:5173, verified in tests
+  - **Integration tests (xUnit):** 4 tests covering health check (200), model delivery (404 when model absent), and CORS headers on both endpoints
+  - **Static file middleware fix:** Wrapped PhysicalFileProvider in `Directory.Exists()` check to prevent tests failing when models directory doesn't exist
+  - **Program class exposure:** Added `public partial class Program { }` to enable WebApplicationFactory<Program> in tests
+- **Testing:** `cd src/backend && dotnet test` — all 4 tests pass
+- **Why:** Establishes minimum viable backend API surface for frontend integration. Model endpoint returns 404 until Major trains and exports the ONNX model to `models/v1/generator.onnx`.
