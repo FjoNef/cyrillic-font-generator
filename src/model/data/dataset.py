@@ -37,8 +37,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 
 try:
-    from fonttools.ttLib import TTFont
-    from fonttools.pens.t2Pen import T2Pen  # noqa: F401 – presence check
+    from fontTools.ttLib import TTFont
 except ImportError as e:
     raise ImportError("fonttools is required. Run: pip install fonttools") from e
 
@@ -55,7 +54,8 @@ CYRILLIC_CHARS: List[str] = CYRILLIC_UPPERCASE + CYRILLIC_LOWERCASE
 CHAR_TO_INDEX = {ch: idx for idx, ch in enumerate(CYRILLIC_CHARS)}
 
 # Default Latin reference characters (10 chosen for structural diversity).
-DEFAULT_STYLE_CHARS: List[str] = ["A", "B", "H", "O", "g", "n", "o", "p", "s", "x"]
+# These MUST match the tensor contract: A, B, C, D, E, H, I, O, R, X (uppercase only).
+DEFAULT_STYLE_CHARS: List[str] = ["A", "B", "C", "D", "E", "H", "I", "O", "R", "X"]
 
 IMAGE_SIZE = 128
 NORMALIZE = transforms.Normalize(mean=[0.5], std=[0.5])  # maps [0,1] → [-1,1]
