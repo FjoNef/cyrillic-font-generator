@@ -9,6 +9,27 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25T160138: Major & Batou Sessions — Ready for QA Review
+
+**PR #8 — cGAN Training Pipeline (Major):**
+- Deliverables: models/train/{model.py, train.py, dataset.py, export.py, requirements.txt, README.md}
+- Architecture: StyleEncoder (mean-pooling) + UNetGenerator (blank canvas, bottleneck conditioning) + PatchDiscriminator
+- Loss: Adversarial (BCE) + L1 reconstruction (lambda=100)
+- ONNX: opset 17, INT8 weight quantization, dynamic batch, float32 activations
+- Tensor contract LOCKED: style_glyphs [B,10,1,128,128] → generated_glyph [B,1,128,128], [-1,1] range
+- Character mapping: 0-32 uppercase (А–Я with Ё), 33-65 lowercase (а–я with ё), 66 total Russian Cyrillic chars
+- **Action:** Validate ONNX export (opset 17, input/output names, shape matching), verify dataset normalization, check training loop convergence metrics
+
+**PR #9 — Backend Integration (Batou):**
+- Deliverables: GET /health, GET /api/model endpoints, 4 xUnit integration tests
+- Integration tests all passing: health check 200, model endpoint 404 (absent), CORS headers validated
+- Safety wrap: Directory.Exists() check prevents test failures when models/ missing
+- **Action:** Validate integration tests run successfully, check CORS headers on actual OPTIONS requests, verify /api/model serves ONNX correctly once Major exports it
+
+**QA focus areas:**
+1. **PR #8:** ONNX model structure (input/output validation), dataset normalization (-1→1 range correct), training stability
+2. **PR #9:** Integration test coverage, CORS behavior, graceful 404 handling for missing model
+
 ### 2026-02-25T145755: PR #4 & #5 ready for QA review
 - **PR #4 — Inference Pipeline (Togusa):** Web Worker integration complete. Model loading, glyph inference, and UI feedback wired end-to-end. Ready for QA functional testing and performance validation (target: ~15–30ms/glyph WebGL, ~80–150ms/glyph WASM).
 - **PR #5 — CI Automation (Batou):** GitHub Actions workflows configured (CI, release, preview, PR auto-label). Ready for QA validation that pipelines run correctly on PRs to dev and pushes to main. Check label creation, reviewer notifications, and release artifact generation.
