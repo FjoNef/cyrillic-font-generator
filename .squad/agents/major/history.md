@@ -9,6 +9,27 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25T180000: Retroactive branch creation — branching policy correction
+
+**Task:** Fix branching policy violation where 3 commits (8f83be0, da3d162, 102db9b) were incorrectly landed on dev directly.
+
+**Approach:**
+1. Created `feat/major-training-pipeline-fixes` from current HEAD (captured all 3 commits + unstaged changes)
+2. Staged all remaining working-tree changes: models/logs/ (TensorBoard events), config/code fixes
+3. Committed cleanup changeset (728d4e1) to capture TensorBoard logs
+4. Switched back to dev, hard-reset to origin/dev (f07d86a) — removed 3 misplaced commits
+5. Pushed feature branch to origin
+6. Opened PR #10 for Saito (QA) review
+
+**Result:** 
+- Feature branch: `feat/major-training-pipeline-fixes` with 4 commits (728d4e1 + 3 originals)
+- Dev status: clean, aligned with origin/dev
+- PR #10: open, awaiting review
+- All ML pipeline work now lives on feature branch per team branching policy
+
+**Key learning:** Retroactive branching requires careful sequencing: branch first (to capture all work), then reset the main branch. Order matters — resetting first would lose commits.
+
+
 ### 2026-02-25T160138: cGAN Training Pipeline Delivered (Issue #6, PR #8)
 
 **Status:** COMPLETE — Ready for QA review  
