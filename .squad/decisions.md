@@ -4,6 +4,17 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-25T122459: Git branching policy
+**By:** FjoNef
+**What:**
+- **Never push directly to `main`.**
+- Every iteration of work must be committed on a feature branch (e.g. `feat/togusa-inference`, `feat/major-training`, `fix/batou-cors`).
+- Each iteration ends with a **Pull Request to `main`**.
+- Branch naming convention: `<type>/<agent>-<short-description>` (e.g. `feat/togusa-inference-pipeline`, `chore/scribe-session-close`).
+- Scribe commits (session logs, decision merges) use `chore/scribe-*` branches.
+- PRs require at least a description of what changed; Saito reviews for quality before merge where feasible.
+**Why:** User directive — protect main branch integrity, enable code review per iteration.
+
 ### 2026-02-25T112635: User directives — scope answers
 **By:** FjoNef (via Copilot)
 **What:**
