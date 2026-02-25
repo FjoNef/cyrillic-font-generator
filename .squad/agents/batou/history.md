@@ -57,3 +57,12 @@ src/backend/
   - **squad-pr-auto-label.yml (new):** Auto-labels PRs to dev with `squad` + `squad:{author}` based on branch name prefix (e.g., `chore/batou-ci-automation` → `squad:batou`). Posts review notification comment pinging Saito (QA) and Aramaki (Lead).
 - **Tech stack:** Node 20, .NET 8.0.x, npm ci (not install), separate jobs for frontend/backend validation.
 - **Why:** Squad triage/heartbeat/main-guard workflows were live but CI was a no-op placeholder. This activates build gates on PRs to dev/main and release automation on main.
+
+### 2026-02-25: CI test fix (Aramaki review finding)
+- **Commit:** c6390f5
+- **Issue:** Aramaki review of PR #5 found blocking issue: workflows were building but not running tests.
+- **Fix:** Added `npx vitest run` step to both squad-ci.yml and squad-preview.yml after frontend build/type-check. Backend already had `dotnet test` step.
+- **Learnings:**
+  - **Test command:** `npx vitest run` (not `npm test`) for Vitest in CI — ensures non-watch mode.
+  - **CI must run tests, not just build.** Build success ≠ code correctness.
+  - **Workflows fixed:** squad-ci.yml, squad-preview.yml (both now test frontend + backend).
