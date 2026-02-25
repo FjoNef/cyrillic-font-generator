@@ -120,6 +120,16 @@ The training pipeline (PR #8) **exactly implements** the tensor contract defined
 
 ---
 
+### 2026-02-25T214539: Style Character Contract Violation Fix
+**By:** Major (AI/ML Engineer)  
+**Status:** Fixed  
+
+Training script failure on synthetic data: style character list in `dataset.py` and `train_config.yaml` did not match LOCKED tensor contract. Both files used old mixed-case list `["A", "B", "H", "O", "g", "n", "o", "p", "s", "x"]` instead of required uppercase-only `["A", "B", "C", "D", "E", "H", "I", "O", "R", "X"]`. Surgical fix applied (2 lines):
+1. `src/model/data/dataset.py` line 59: Updated DEFAULT_STYLE_CHARS
+2. `src/model/configs/train_config.yaml` line 13: Updated style_latin_chars
+
+Impact: Any model trained with incorrect character set would violate LOCKED tensor contract and cause inference failures. Frontend (PR #4) explicitly extracts uppercase A,B,C,D,E,H,I,O,R,X. Contract comments added to prevent future regressions.
+
 ### 2026-02-25T152812: PR #4 approved — inference pipeline
 **By:** Saito (QA)  
 **What:** PR #4 feat/togusa-inference-pipeline approved after Major fixed color inversion bug.

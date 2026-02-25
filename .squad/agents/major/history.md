@@ -9,6 +9,34 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25: Style Character Contract Bug Fix — Training Pipeline
+
+**Issue:** train.py script failed on synthetic data due to style character mismatch.
+
+**Root cause:**
+- `src/model/data/dataset.py` line 58: `DEFAULT_STYLE_CHARS` was set to `["A", "B", "H", "O", "g", "n", "o", "p", "s", "x"]` (old list with lowercase)
+- `src/model/configs/train_config.yaml` line 12: `style_latin_chars` had the same incorrect list
+- **Locked tensor contract** (decisions.md lines 211-212): Requires uppercase-only `["A", "B", "C", "D", "E", "H", "I", "O", "R", "X"]`
+
+**Impact:**
+- Training would use wrong Latin reference glyphs
+- Generated models would be incompatible with frontend (PR #4)
+- Frontend expects the exact 10 uppercase chars: A, B, C, D, E, H, I, O, R, X
+- Violation of LOCKED tensor contract established in PR #8 and confirmed by Togusa in PR #4
+
+**Fix:**
+- Updated `dataset.py` line 59 to correct uppercase-only list
+- Updated `train_config.yaml` line 13 to match
+- Added explicit contract comments to both files
+- Changes: 2 files, 2 lines, surgical fix
+
+**Verification:**
+- Reviewed tensor contract in decisions.md (multiple entries confirm uppercase-only)
+- Confirmed frontend implementation in PR #4 uses uppercase Latin extraction
+- Model contract explicitly locked — no changes permitted
+
+**Key learning:** When a tensor contract is explicitly LOCKED in team decisions, any deviation in training data breaks the integration. Style character selection must be validated against the contract before training begins.
+
 ### 2026-02-25T160138: cGAN Training Pipeline Delivered (Issue #6, PR #8)
 
 **Status:** COMPLETE — Ready for QA review  
