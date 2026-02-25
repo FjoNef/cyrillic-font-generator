@@ -6,10 +6,20 @@
 - **Description:** Web app that generates Cyrillic font symbols for non-Cyrillic fonts using AI. Pre-trained model ships to client; all generative work runs in browser. .NET backend.
 - **My focus:** AI model design, training, ONNX export, client-side inference strategy.
 
-## Learnings
-<!-- Append new entries below -->
+### 2026-02-25T180000: PR #10 — QA approved and merged to dev
 
-### 2026-02-25T180000: Retroactive branch creation — branching policy correction
+**Status:** MERGED — Saito QA sign-off complete
+
+Saito reviewed PR #10 (feat/major-training-pipeline-fixes → dev). All tensor contract checks passed:
+- model.py: UNet architecture corrected (skip connections, forward pass fixed)
+- dataset.py: style chars confirmed uppercase-only, Windows file locking fixed
+- train_config.yaml: paths corrected to repo root
+- download_fonts.py: fontTools casing + file locking fix
+- train.py: CLI flags and 1-epoch validation passed (47,388 samples)
+
+Minor non-blocking note: synthetic mode default path still references `../../models/checkpoints/` vs `models/checkpoints/`. Scheduled for follow-up.
+
+PR squash-merged to dev. Feature branch deleted. Ready for training pipeline execution.
 
 **Task:** Fix branching policy violation where 3 commits (8f83be0, da3d162, 102db9b) were incorrectly landed on dev directly.
 

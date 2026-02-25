@@ -293,3 +293,21 @@ Key decisions:
 - Quality bar: is "good enough for prototyping" acceptable initially, or must the first release be production-quality?
 - Hosting plan: Azure App Service, static site + API, or self-hosted?
 - License preference for the AI model and training data?
+
+---
+
+### 2026-02-25T180000: Saito QA verdict — PR #10 (APPROVED)
+**By:** Saito (QA)
+**Verdict:** APPROVED  
+**PR:** #10 (feat/major-training-pipeline-fixes → dev)
+
+**What passed:**
+- model.py: UNet dec5/dec6/dec7 skip-connection channel counts corrected (asymmetric sums matching encoder output dims), duplicate self.final removed, forward pass fixed — output [B,1,128,128] float32 [-1,1] ✅
+- dataset.py: DEFAULT_STYLE_CHARS = ["A","B","C","D","E","H","I","O","R","X"] uppercase-only 10 chars matches contract; fontTools casing + Windows TTFont.close() fix; SyntheticFontDataset produces correct tensor shapes and dtypes ✅
+- train_config.yaml: style_latin_chars = ["A","B","C","D","E","H","I","O","R","X"], paths relative to repo root ✅
+- download_fonts.py: fontTools import casing + TTFont.close() Windows file locking fix ✅
+- train.py: --synthetic, --batch_size, --num_epochs CLI flags correct; 1-epoch real-data validation passed (47,388 samples) ✅
+
+**Minor non-blocking:** Synthetic mode default config in train.py still has `../../models/checkpoints/` (old relative path) instead of `models/checkpoints/`. Does not affect real training. Can be addressed in follow-up.
+
+**Action:** PR squash-merged to dev; feature branch deleted.
