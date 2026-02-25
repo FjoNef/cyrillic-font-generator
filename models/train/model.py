@@ -200,6 +200,7 @@ class FontGeneratorGAN(nn.Module):
         """
         Args:
             style_glyphs: [B, N, 1, 128, 128] float32 in [-1, 1]
+                N=10 Latin reference chars: A, B, C, D, E, H, I, O, R, X
             char_index: [B] int64
         Returns:
             generated_glyph: [B, 1, 128, 128] float32 in [-1, 1]

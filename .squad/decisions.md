@@ -181,7 +181,7 @@ Key decisions:
 - ONNX model inputs: style_glyphs [B, 10, 1, 128, 128] float32, char_index [B] int64
 - ONNX model output: generated_glyph [B, 1, 128, 128] float32 (values in [-1, 1])
 - Training data: Google Fonts OFL-only, both Latin+Cyrillic coverage
-- Style glyphs: render Latin A, B, H, O, g, n, o, p, s, x — 10 chars chosen for maximum structural diversity
+- Style glyphs: render Latin A, B, C, D, E, H, I, O, R, X — 10 uppercase chars chosen for maximum structural diversity
 - Model checkpoint format: .pth files in models/checkpoints/epoch_NNNN.pth
 - ONNX export: opset 17, dynamic INT8 weight quantization, single graph (StyleEncoder + UNetGenerator)
 - Recommended browser backends: WebGL first, WASM fallback; run in Web Worker
