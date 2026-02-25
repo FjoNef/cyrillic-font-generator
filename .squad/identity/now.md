@@ -1,6 +1,6 @@
 ---
-updated_at: 2026-02-25T12:05:33Z
-focus_area: MVP scaffold complete — ready for implementation
+updated_at: 2026-02-25T22:57:21Z
+focus_area: Training data ready — full training run pending
 active_issues: []
 ---
 

@@ -9,6 +9,106 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25: Training Data Setup — Google Fonts OFL Download
+
+**Task:** Set up real font training data and verify pipeline readiness for full training run.
+
+**Implementation:**
+- Fixed `src/model/data/download_fonts.py` fontTools import case sensitivity (fontTools vs fonttools on Python 3.14)
+- Added TTFont.close() call in coverage check to prevent Windows file locking issues during unlink()
+- Downloaded 718 OFL-licensed Google Fonts with full Latin+Cyrillic (Russian) coverage
+- Source: GitHub archive google/fonts (1.6 GB download, 3750 OFL fonts extracted, 718 passed coverage validation)
+- Coverage validation: Each font must contain all 10 style chars (A,B,C,D,E,H,I,O,R,X) + 66 Cyrillic chars (А-Я, а-я with Ё/ё)
+- Fixed `train_config.yaml` path resolution: changed `fonts_dir: "../../data/fonts"` to `data/fonts` (must be relative to repo root, not config file)
+- Fixed output paths: `models/` instead of `../../models/` for same reason
+
+**Dataset statistics:**
+- 718 font files across diverse families (Roboto, Alegreya, AdventPro, etc.)
+- 718 fonts × 66 Cyrillic chars = 47,388 total samples
+- Train/val split: 45,207 train (95%) / 2,379 val (5%)
+- Batch size 32 → 1,413 batches per epoch
+
+**Validation results:**
+- 1-epoch validation run confirmed pipeline works end-to-end with real data
+- Training on CPU: ~6 seconds per batch
+- Losses initialized correctly: D≈0.74, G≈114, L1≈112.5 (typical for untrained GAN)
+- No crashes, no data loading errors, tensor shapes correct
+
+**GPU training recommendation:**
+- Command: `python src/model/train/train.py --config src/model/configs/train_config.yaml --num_epochs 200`
+- Expected duration on GPU: ~4-8 hours for 200 epochs (depends on GPU)
+- Expected duration on CPU: ~460 hours (19 days) — GPU required for practical training
+- Checkpoint interval: every 10 epochs → 20 checkpoints
+- Final model: `models/v1/generator.onnx` (export via `src/model/train/export.py`)
+
+**Key learnings:**
+1. **Windows file locking:** TTFont must be explicitly closed before unlinking files, even with lazy=True
+2. **Python 3.14 fontTools:** Package installed as `fontTools` (capital T), not `fonttools` lowercase
+3. **Path resolution in configs:** When running training from repo root, all config paths must be relative to repo root, not config file location
+4. **Dataset scale:** 718 fonts provide good diversity; more is better but not strictly required
+5. **Training scale:** Real cGAN training requires GPU for practical timescales; CPU validation sufficient to confirm pipeline correctness
+
+### 2026-02-25: Synthetic Training Mode and CLI Overrides
+
+**Feature:** Added synthetic training mode and CLI parameter overrides to training pipeline.
+
+**Implementation:**
+- Created `SyntheticFontDataset` class in `dataset.py` that generates random noise tensors without requiring any font files
+- Added three new CLI flags to `train.py`:
+  - `--synthetic`: Boolean flag to use synthetic data instead of real fonts
+  - `--batch_size N`: Override batch_size from config
+  - `--num_epochs N`: Override epochs from config
+- Made `--config` optional when `--synthetic` is used (sensible defaults provided)
+- CLI overrides applied AFTER config loading, allowing config as base with CLI as final override
+
+**Technical details:**
+- `SyntheticFontDataset` generates tensors matching exact contract: `style_glyphs [N, 1, 128, 128]`, `target_glyph [1, 128, 128]`, `char_index` scalar int64
+- Random tensors use `torch.randn().clamp(-1, 1)` to match normalized training data range
+- Default synthetic dataset size: 1000 samples
+- Synthetic mode uses sensible config defaults (batch_size=32, epochs=50, lr=0.0002, etc.)
+
+**Use cases:**
+- Quick pipeline validation without downloading font files
+- CI/CD testing without large data dependencies
+- Development iteration on model architecture
+- Debugging training loop issues
+
+**Verification:**
+- Tested: `python src/model/train/train.py --synthetic --batch_size 16 --num_epochs 50`
+- Confirmed batch size override: 950 samples / 16 = 60 batches (vs default 32 = 30 batches)
+- Confirmed synthetic data generates correct tensor shapes and value ranges
+- Imports validated, argparse tested, training loop runs successfully
+
+**Key learning:** Synthetic datasets are valuable for rapid iteration and testing without data dependencies. By matching the exact tensor contract (shapes, dtypes, value ranges), synthetic data can validate the entire training pipeline end-to-end even though it won't produce useful models.
+
+### 2026-02-25: Style Character Contract Bug Fix — Training Pipeline
+
+**Issue:** train.py script failed on synthetic data due to style character mismatch.
+
+**Root cause:**
+- `src/model/data/dataset.py` line 58: `DEFAULT_STYLE_CHARS` was set to `["A", "B", "H", "O", "g", "n", "o", "p", "s", "x"]` (old list with lowercase)
+- `src/model/configs/train_config.yaml` line 12: `style_latin_chars` had the same incorrect list
+- **Locked tensor contract** (decisions.md lines 211-212): Requires uppercase-only `["A", "B", "C", "D", "E", "H", "I", "O", "R", "X"]`
+
+**Impact:**
+- Training would use wrong Latin reference glyphs
+- Generated models would be incompatible with frontend (PR #4)
+- Frontend expects the exact 10 uppercase chars: A, B, C, D, E, H, I, O, R, X
+- Violation of LOCKED tensor contract established in PR #8 and confirmed by Togusa in PR #4
+
+**Fix:**
+- Updated `dataset.py` line 59 to correct uppercase-only list
+- Updated `train_config.yaml` line 13 to match
+- Added explicit contract comments to both files
+- Changes: 2 files, 2 lines, surgical fix
+
+**Verification:**
+- Reviewed tensor contract in decisions.md (multiple entries confirm uppercase-only)
+- Confirmed frontend implementation in PR #4 uses uppercase Latin extraction
+- Model contract explicitly locked — no changes permitted
+
+**Key learning:** When a tensor contract is explicitly LOCKED in team decisions, any deviation in training data breaks the integration. Style character selection must be validated against the contract before training begins.
+
 ### 2026-02-25T160138: cGAN Training Pipeline Delivered (Issue #6, PR #8)
 
 **Status:** COMPLETE — Ready for QA review  

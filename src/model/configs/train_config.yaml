@@ -2,14 +2,15 @@
 
 # --- Data ---
 data:
-  fonts_dir: "../../data/fonts"
+  fonts_dir: "data/fonts"
   image_size: 128                  # Glyph render resolution (pixels, square)
   num_style_glyphs: 10             # Number of Latin reference glyphs fed to StyleEncoder
 
   # Latin glyphs used as style reference (rendered from the input font).
   # These 10 were chosen for maximum structural diversity (ascenders, descenders,
   # curves, diagonals, enclosed counters).
-  style_latin_chars: ["A", "B", "H", "O", "g", "n", "o", "p", "s", "x"]
+  # MUST match tensor contract: uppercase only A, B, C, D, E, H, I, O, R, X
+  style_latin_chars: ["A", "B", "C", "D", "E", "H", "I", "O", "R", "X"]
 
   # Russian Cyrillic target charset — 33 characters, indices 0–65.
   # Uppercase: index 0–32, Lowercase: index 33–65
@@ -38,6 +39,6 @@ training:
 
 # --- Output ---
 output:
-  model_output_dir: "../../models/"
-  checkpoint_dir: "../../models/checkpoints/"
-  sample_dir: "../../models/samples/"    # Generated sample images during training
+  model_output_dir: "models/"
+  checkpoint_dir: "models/checkpoints/"
+  sample_dir: "models/samples/"    # Generated sample images during training
