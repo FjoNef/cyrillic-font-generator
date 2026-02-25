@@ -1,9 +1,0 @@
-feat: MVP project scaffold — model, frontend, backend
-
-ML (Major): PyTorch training pipeline, ONNX export, inference contract
-Frontend (Togusa): React+Vite+TypeScript, ONNX Runtime Web integration
-Backend (Batou): ASP.NET Core Minimal API, model delivery, font validation
-
-Scope: Russian Cyrillic (66 chars), self-hosted, OFL output licensing
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

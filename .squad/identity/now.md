@@ -1,9 +1,9 @@
 ---
-updated_at: 2026-02-25T10:33:38Z
-focus_area: Team setup — Cyrillic Font Generator initial architecture
+updated_at: 2026-02-25T12:05:33Z
+focus_area: MVP scaffold complete — ready for implementation
 active_issues: []
 ---
 
 # What We're Focused On
 
-Team hired. Starting architecture decisions: frontend framework, AI model approach, .NET backend structure.
+MVP scaffold complete. Next: wire up inference pipeline (Togusa), download training data + begin training (Major), run backend (Batou).
