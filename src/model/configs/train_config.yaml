@@ -2,7 +2,7 @@
 
 # --- Data ---
 data:
-  fonts_dir: "../../data/fonts"
+  fonts_dir: "data/fonts"
   image_size: 128                  # Glyph render resolution (pixels, square)
   num_style_glyphs: 10             # Number of Latin reference glyphs fed to StyleEncoder
 
@@ -39,6 +39,6 @@ training:
 
 # --- Output ---
 output:
-  model_output_dir: "../../models/"
-  checkpoint_dir: "../../models/checkpoints/"
-  sample_dir: "../../models/samples/"    # Generated sample images during training
+  model_output_dir: "models/"
+  checkpoint_dir: "models/checkpoints/"
+  sample_dir: "models/samples/"    # Generated sample images during training

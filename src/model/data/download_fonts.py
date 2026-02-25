@@ -41,7 +41,7 @@ except ImportError as e:
     raise ImportError("requests is required. Run: pip install requests") from e
 
 try:
-    from fonttools.ttLib import TTFont
+    from fontTools.ttLib import TTFont
 except ImportError as e:
     raise ImportError("fonttools is required. Run: pip install fonttools") from e
 
@@ -70,10 +70,13 @@ def _font_has_required_coverage(font_path: Path) -> bool:
     """Return True if the font file contains every required glyph."""
     try:
         tt = TTFont(str(font_path), lazy=True)
-        cmap = tt.getBestCmap()
-        if cmap is None:
-            return False
-        return all(ord(ch) in cmap for ch in REQUIRED_CHARS)
+        try:
+            cmap = tt.getBestCmap()
+            if cmap is None:
+                return False
+            return all(ord(ch) in cmap for ch in REQUIRED_CHARS)
+        finally:
+            tt.close()
     except Exception:
         return False
 
