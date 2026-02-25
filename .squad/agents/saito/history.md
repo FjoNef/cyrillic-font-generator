@@ -53,3 +53,14 @@
 - **Files fixed:** `src/frontend/src/App.tsx`, `src/frontend/src/inference/OnnxInference.ts`
 - **Status:** Pushed to feat/togusa-inference-pipeline; PR #4 unblocked, ready for re-review
 - **Learning:** Model convention (+1 = foreground, -1 = background per tanh GAN standard) must be documented and enforced at integration boundaries
+
+### 2026-02-25T162500: PR #8 RE-REVIEW — APPROVED after Togusa fix
+- **Initial review:** Requested changes — `.squad/decisions.md` had wrong Latin reference chars (`A, B, H, O, g, n, o, p, s, x` mixed case)
+- **Blocking issue:** Contract violation — frontend expects 10 uppercase chars (A,B,C,D,E,H,I,O,R,X) per tensor spec
+- **Fix applied by:** Togusa (Major was locked out after submitting PR)
+- **Changes verified:**
+  1. `.squad/decisions.md` line 18: Latin reference chars **CORRECTED** to `A, B, C, D, E, H, I, O, R, X` (10 uppercase)
+  2. `models/train/model.py` line 203: Clarifying comment **ADDED** documenting correct char set
+- **Re-review outcome:** ✅ APPROVED — all acceptance criteria met
+- **Status:** Posted QA approval comment (cannot formally approve as repo owner); PR #8 ready to merge → dev
+- **Learning:** Cross-reference contract specs across all affected files during review — decisions.md, model code, and frontend must align exactly
