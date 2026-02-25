@@ -64,7 +64,7 @@ export default function App() {
         // Convert Float32Array [-1,1] → ImageData [0,255]
         const pixels = new Uint8ClampedArray(128 * 128 * 4);
         for (let px = 0; px < 128 * 128; px++) {
-          const val = Math.round(((output[px] + 1) / 2) * 255);
+          const val = Math.round(((1 - output[px]) / 2) * 255);
           pixels[px * 4 + 0] = val; // R
           pixels[px * 4 + 1] = val; // G
           pixels[px * 4 + 2] = val; // B
