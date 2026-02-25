@@ -4,6 +4,13 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-25T152812: PR #4 approved — inference pipeline
+**By:** Saito (QA)  
+**What:** PR #4 feat/togusa-inference-pipeline approved after Major fixed color inversion bug.
+  Fix confirmed: ((1 - output[px]) / 2) * 255 correctly maps +1→black, -1→white.
+  All acceptance criteria met. Ready to merge → dev.  
+**Why:** QA sign-off on blocking issue resolution. Added colorMapping.test.ts to prevent regression.
+
 ### 2026-02-25T152134: Model output tensor convention
 **By:** Major  
 **What:** Model output range [-1, 1] where +1.0 = black ink (foreground), -1.0 = white background.  

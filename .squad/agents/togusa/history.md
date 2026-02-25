@@ -9,6 +9,13 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25T153114: PR #4 merged to dev
+- **Timestamp:** 2026-02-25T153114
+- **Branch:** feat/togusa-inference-pipeline (deleted)
+- **Target:** dev
+- **Issue closed:** #3 (Inference pipeline fully wired)
+- **Status:** All acceptance criteria met; inference pipeline now live on integration branch
+
 ### 2026-02-25T152319: PR #4 color inversion bug fixed by Major
 - **Branch:** feat/togusa-inference-pipeline
 - **Issue:** Inverted color output in App.tsx line 67 (formula mapped -1→black, 1→white; should be opposite)
