@@ -4,16 +4,25 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
-### 2026-02-25T122459: Git branching policy
-**By:** FjoNef
+### 2026-02-25T140433: Branching policy overhaul
+**By:** FjoNef (via Copilot)
 **What:**
-- **Never push directly to `main`.**
-- Every iteration of work must be committed on a feature branch (e.g. `feat/togusa-inference`, `feat/major-training`, `fix/batou-cors`).
-- Each iteration ends with a **Pull Request to `main`**.
-- Branch naming convention: `<type>/<agent>-<short-description>` (e.g. `feat/togusa-inference-pipeline`, `chore/scribe-session-close`).
-- Scribe commits (session logs, decision merges) use `chore/scribe-*` branches.
+- **Main branch is releases-only.** No .squad/ files on main. No direct feature work on main.
+- **Dev is the integration branch.** All feature branches created from and merged to dev.
+- **.squad/ is excluded from main via .gitignore.** Squad state lives on dev and feature branches.
+- Branch naming: `<type>/<agent>-<short-description>` branching from dev.
+- Scribe branches: `chore/scribe-*` branching from dev.
 - PRs require at least a description of what changed; Saito reviews for quality before merge where feasible.
-**Why:** User directive — protect main branch integrity, enable code review per iteration.
+**Why:** User directive — clean main for releases, dev as integration branch, squad tooling off main.
+
+### 2026-02-25T140433: PR #1 review — branching policy overhaul approved
+**By:** Aramaki (Lead)
+**What:**
+- Approved PR #1 "chore: establish branching policy and conclude session 2026-02-25"
+- Branching policy changes align with team architecture and workflow
+- Ceremony definition properly structured; session log comprehensive
+- PR serves as checkpoint before implementation phase
+**Why:** Architectural review confirms alignment with team strategy.
 
 ### 2026-02-25T112635: User directives — scope answers
 **By:** FjoNef (via Copilot)

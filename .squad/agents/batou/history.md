@@ -41,3 +41,8 @@ src/backend/
 **CORS:** `localhost:5173` allowed; origins are config-driven (`Cors:AllowedOrigins`).
 
 **SPA fallback:** `MapFallbackToFile("index.html")` — all unmatched routes return `wwwroot/index.html`.
+
+### 2026-02-25: Branching policy overhaul
+- **Decision:** Main branch is releases-only; dev is integration branch. All feature work via feature branches from dev.
+- **Implementation:** Removed .squad/ from main via .gitignore. PR #2 targets dev with branching policy changes.
+- **Backend impact:** All backend development occurs on feature branches from dev, never directly on main. Clear separation between release and development code.
