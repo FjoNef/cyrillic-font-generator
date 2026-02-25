@@ -4,6 +4,33 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-25: Major Model Architecture — cGAN with Style Encoder
+**By:** Major (AI/ML Engineer)  
+**Status:** Implemented  
+**PR:** #8
+
+Use a **conditional GAN (pix2pix-style)** architecture with StyleEncoder (shared CNN + mean-pooling), UNetGenerator (blank canvas + bottleneck conditioning), and PatchDiscriminator (70×70). StyleEncoder mean-pooling provides permutation invariance; conditioning at bottleneck simplifies ONNX export vs. per-layer AdaIN. Loss: adversarial (BCE) + L1 reconstruction (lambda=100). Alternatives (VAE, diffusion, direct CNN) rejected: VAE too blurry, diffusion too slow for browser, direct CNN lacks adversarial signal. Model size: ~15-20M parameters; ONNX float32 ~40-50MB; INT8 quantized ~15-20MB (browser target). Training scalable to 100-400 fonts; zero frontend changes needed.
+
+### 2026-02-25: Major Model Tensor Contract Confirmation — LOCKED
+**By:** Major (AI/ML Engineer)  
+**Status:** LOCKED — Do NOT change  
+**PR:** #8
+
+Training pipeline (PR #8) **exactly implements** the tensor contract expected by frontend (PR #4). **Inputs:** style_glyphs [B, 10, 1, 128, 128] float32 (10 Latin reference chars A,B,C,D,E,H,I,O,R,X at 128×128 grayscale, normalized [-1,1] where +1=black ink, -1=white), char_index [B] int64 (which of 66 Cyrillic chars: 0–32 uppercase А–Я with Ё at 6, 33–65 lowercase а–я with ё at 39). **Output:** generated_glyph [B, 1, 128, 128] float32 (range [-1,1] where +1=black, -1=white). Frontend implements style glyph extraction, character indexing, output postprocessing ((1-value)/2)*255, and Web Worker protocol. Changing contract breaks frontend. All models MUST conform exactly to these shapes and semantics.
+
+### 2026-02-25: Batou Backend API Endpoints — Integration Implementation
+**By:** Batou (Backend Dev)  
+**PR:** #9  
+**Issue:** #7
+
+Implemented two core endpoints: (1) GET /health → { status: "healthy" }; (2) GET /api/model → serves models/v1/generator.onnx with Range support and cache headers. /api/model provides stable abstraction: frontend doesn't hardcode paths (version changes require only backend config update), graceful 404 returns JSON error when model absent, Range support enables HTTP Range requests (future progressive loading). Static file middleware retained for CDN caching benefits. PhysicalFileProvider wrapped in Directory.Exists() check preventing DirectoryNotFoundException when models/ absent (test suite runs before training). Test strategy: 4 xUnit integration tests via WebApplicationFactory<Program> validate health check (200 + "healthy"), model endpoint 404 (absent), CORS headers on health, CORS headers on model. Alternatives rejected: hardcoding frontend paths (couples frontend to backend layout), manifest endpoint only (over-engineering for MVP). Impact: Frontend fetches model via GET /api/model; CI validates 4 integration tests per PR; Major exports model post-training.
+
+### 2026-02-25: Togusa PR #8 Documentation Fix — Lockout Protocol
+**By:** Togusa (Frontend Dev)  
+**Branch:** feat/major-model-training (PR #8)
+
+Saito review blocked PR #8: decisions.md line 184 listed Latin style chars incorrectly as "A, B, H, O, g, n, o, p, s, x" (mixed case); actual code uses "A, B, C, D, E, H, I, O, R, X" (uppercase only). Major under Reviewer Rejection Lockout — unable to make changes to PR #8 after Saito requested changes. Togusa fixed on Major's behalf: (1) Corrected decisions.md line 184 to "A, B, C, D, E, H, I, O, R, X"; (2) Added clarifying comment to models/train/model.py lines 202-204. Verified dataset.py and README.md already correct. Committed to feat/major-model-training commit bdf2321. Blocking issue resolved; PR #8 ready for Saito re-review and approval.
+
 ### 2026-02-25: Model Tensor Contract Confirmation
 **By:** Major (AI/ML Engineer)  
 **Status:** LOCKED — Do NOT change  

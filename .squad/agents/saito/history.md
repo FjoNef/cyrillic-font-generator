@@ -54,13 +54,25 @@
 - **Status:** Pushed to feat/togusa-inference-pipeline; PR #4 unblocked, ready for re-review
 - **Learning:** Model convention (+1 = foreground, -1 = background per tanh GAN standard) must be documented and enforced at integration boundaries
 
-### 2026-02-25T162500: PR #8 RE-REVIEW — APPROVED after Togusa fix
-- **Initial review:** Requested changes — `.squad/decisions.md` had wrong Latin reference chars (`A, B, H, O, g, n, o, p, s, x` mixed case)
-- **Blocking issue:** Contract violation — frontend expects 10 uppercase chars (A,B,C,D,E,H,I,O,R,X) per tensor spec
-- **Fix applied by:** Togusa (Major was locked out after submitting PR)
-- **Changes verified:**
-  1. `.squad/decisions.md` line 18: Latin reference chars **CORRECTED** to `A, B, C, D, E, H, I, O, R, X` (10 uppercase)
-  2. `models/train/model.py` line 203: Clarifying comment **ADDED** documenting correct char set
-- **Re-review outcome:** ✅ APPROVED — all acceptance criteria met
-- **Status:** Posted QA approval comment (cannot formally approve as repo owner); PR #8 ready to merge → dev
-- **Learning:** Cross-reference contract specs across all affected files during review — decisions.md, model code, and frontend must align exactly
+### 2026-02-25T165444: PR #8 & PR #9 merged to dev — training + backend ready
+- **Session:** Final PR review and merge by Saito and Aramaki
+- **PR #8 (Major — cGAN Training Pipeline):**
+  - **Final status:** ✅ APPROVED & MERGED after Togusa fixed doc conflict
+  - **Key fix:** Togusa corrected `.squad/decisions.md` line 184 (Latin chars were wrong: `A,B,H,O,g,n,o,p,s,x` → fixed to `A,B,C,D,E,H,I,O,R,X`)
+  - **Also:** Added clarifying comment to `models/train/model.py` explaining 10 uppercase Latin chars
+  - **Deliverables:** models/train/{model.py, train.py, dataset.py, export.py, requirements.txt, README.md}
+  - **Tensor contract LOCKED:** input [B,10,1,128,128] float32 (style glyphs) + [B] int64 (char index) → output [B,1,128,128] float32 in [-1,1] range
+  - **ONNX:** opset 17, INT8 quantization, ready for export post-training
+  - **Issue #6 closed:** "Merged in PR #8"
+  - **Next phase:** Major trains on Google Fonts, exports model to models/v1/generator.onnx
+- **PR #9 (Batou — Backend Integration):**
+  - **Final status:** ✅ APPROVED & MERGED by Aramaki
+  - **Deliverables:** GET /health, GET /api/model endpoints with 4 xUnit integration tests
+  - **Architecture:** Stable /api/model abstraction decouples frontend from versioned file paths
+  - **Safety:** Directory.Exists() wraps PhysicalFileProvider, allows tests to run before models/ exists
+  - **Range support:** Enables future HTTP Range requests for progressive loading
+  - **Tests:** All 4 passing (health 200, model 404 when absent, CORS headers on both endpoints)
+  - **Issue #7 closed:** "Merged in PR #9"
+  - **Next phase:** Awaits Major's trained ONNX model at models/v1/generator.onnx
+- **Decisions inbox merged:** All 5 inbox files consolidated into decisions.md and deleted
+- **Session log created:** 20260225T165444-pr8-pr9-merged.md documents handoff to training phase

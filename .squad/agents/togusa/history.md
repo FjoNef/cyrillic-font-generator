@@ -9,25 +9,38 @@
 ## Learnings
 <!-- Append new entries below -->
 
-### 2026-02-25T17XXXX: Fixed PR #8 doc conflict (Reviewer Lockout Protocol)
-- **Timestamp:** 2026-02-25T17XXXX
+### 2026-02-25T162500: Fixed PR #8 doc conflict (Reviewer Rejection Lockout Protocol)
+- **Timestamp:** 2026-02-25T162500
 - **Branch:** feat/major-model-training (PR #8)
-- **Issue:** Saito review identified incorrect Latin style reference chars in `.squad/decisions.md` (listed as `A, B, H, O, g, n, o, p, s, x` — wrong mixed-case set)
-- **Correct chars:** A, B, C, D, E, H, I, O, R, X (10 uppercase Latin chars)
-- **Fixes made:**
-  - Corrected entry in `.squad/decisions.md` line 184
-  - Added clarifying comment in `models/train/model.py` docstring (line 202-204)
-  - `models/train/dataset.py` already had correct list with comment (line 17-18)
-  - `models/train/README.md` already documented correct chars (lines 120, 154)
-- **Why I did this:** Major is under Reviewer Rejection Lockout Protocol; I fixed on their behalf per Saito's request
-- **Outcome:** Committed fix and commented on PR #8
+- **Trigger:** Saito review flagged `.squad/decisions.md` line 184 had wrong Latin style reference chars
+- **Error:** Listed as `A, B, H, O, g, n, o, p, s, x` (mixed-case, wrong set)
+- **Correct chars:** A, B, C, D, E, H, I, O, R, X (10 uppercase Latin)
+- **Fixes applied:**
+  1. Corrected `.squad/decisions.md` line 184 to match actual code
+  2. Added clarifying comment to `models/train/model.py` docstring (line 202-204) documenting char set
+  3. Verified `models/train/dataset.py` already correct (line 17-18)
+  4. Verified `models/train/README.md` already correct (lines 120, 154)
+- **Protocol:** Major was locked out after submitting PR (Reviewer Rejection Lockout); I applied fix per Saito's request
+- **Outcome:** Committed fix to feat/major-model-training; posted comment on PR #8
+- **Result:** Saito re-reviewed, approved PR; ready for merge
 
-### 2026-02-25T153114: PR #4 merged to dev
-- **Timestamp:** 2026-02-25T153114
-- **Branch:** feat/togusa-inference-pipeline (deleted)
-- **Target:** dev
-- **Issue closed:** #3 (Inference pipeline fully wired)
-- **Status:** All acceptance criteria met; inference pipeline now live on integration branch
+### 2026-02-25T165444: PR #8 & PR #9 merged — awaiting Major's model export
+- **Status:** Both PRs approved and merged to dev. Frontend (PR #4) is live but non-functional until model available.
+- **PR #8 Merge (Major — cGAN Training):**
+  - Fixed by Togusa: Doc conflict (decisions.md wrong Latin chars) resolved under Reviewer Lockout Protocol
+  - Approved by Saito; merged with both original code and doc fix
+  - **Next:** Major trains on Google Fonts, exports ONNX to models/v1/generator.onnx
+- **PR #9 Merge (Batou — Backend Integration):**
+  - Approved by Aramaki; all 4 integration tests passing
+  - /api/model endpoint ready to serve trained model
+- **Inference Pipeline Status:**
+  - PR #4 already merged to dev (feat/togusa-inference-pipeline)
+  - Web Worker protocol complete; model loader singleton implemented
+  - Vectorization (scanline raster-to-path) complete
+  - Font assembly (1000 UPM fixed metrics, 66 Cyrillic glyphs) complete
+  - **Waiting:** ONNX model from Major at models/v1/generator.onnx
+  - Once model available, frontend inference end-to-end functional without code changes
+- **Cross-agent:** Frontend is dependency; unblocked once Major exports model
 
 ### 2026-02-25T152319: PR #4 color inversion bug fixed by Major
 - **Branch:** feat/togusa-inference-pipeline
