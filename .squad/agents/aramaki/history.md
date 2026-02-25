@@ -17,3 +17,8 @@
 - **Training data:** Google Fonts corpus (~400 fonts with paired Latin+Cyrillic). PyTorch for training.
 - **Output pipeline:** Model → raster glyph → vectorize (potrace) → OpenType font assembly (opentype.js) → downloadable OTF.
 - **Open questions identified:** Cyrillic scope (Russian-only vs Extended), quality bar for v1, hosting target, model/data licensing.
+
+### 2026-02-25: Branching policy overhaul
+- **Decision:** Main branch is releases-only; dev is integration branch. All feature work via feature branches from dev.
+- **Implementation:** Removed .squad/ from main via .gitignore. PR #2 targets dev with branching policy changes.
+- **Workflow impact:** All squad tooling lives on dev/feature branches, not main. Preserves clean release history on main.

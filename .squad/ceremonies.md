@@ -35,9 +35,9 @@
 | **Enabled** | ✅ yes |
 
 **Rules:**
-1. Work is committed on a feature branch — **never directly on `main`**.
+1. Work is committed on a feature branch — **never directly on `main` or `dev`**.
 2. Branch naming: `<type>/<agent>-<short-description>` (e.g. `feat/togusa-inference-pipeline`).
-3. Open a PR to `main` at the end of every iteration.
+3. Open a PR to `dev` at the end of every iteration. `main` is releases-only.
 4. PR description must include: what changed, why, any open issues.
 5. Saito reviews for quality before merge where the change touches testable logic.
 
