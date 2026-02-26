@@ -311,3 +311,28 @@ Key decisions:
 **Minor non-blocking:** Synthetic mode default config in train.py still has `../../models/checkpoints/` (old relative path) instead of `models/checkpoints/`. Does not affect real training. Can be addressed in follow-up.
 
 **Action:** PR squash-merged to dev; feature branch deleted.
+
+---
+
+### 2026-02-26T122537: QA protocol update — stale-branch verification
+**By:** Saito (QA)  
+**Decision:** Stale-branch PRs must be verified against merge-base before review
+
+**What:** PR #11 proposed fixing `../../models/` output paths in `train_config.yaml`. Investigation revealed the fix was already in dev via PR #10's squash-merge (commit 3e54f39). The feature branch diverged from `f07d86a` (pre-PR-#10), making it a stale duplicate.
+
+**Risk identified:** Stale branch also carried regressions — `fonts_dir` and `style_latin_chars` had wrong values that would have overwritten correct post-PR-#10 values. Merging would have broken the tensor contract.
+
+**QA protocol:**
+1. Before reviewing fix PRs, run `git merge-base <feature> <dev>` and inspect branch divergence point
+2. If divergence pre-dates a recent squash-merge, check whether the squash-merge already includes the proposed fix
+3. PRs in dirty merge state must be inspected for regressions, not just conflicts
+
+**Action:** Posted REQUEST CHANGES on PR #11 recommending closure as duplicate. No changes to dev required.
+
+---
+
+### 2026-02-26T122537: User directive — branching policy reinforcement
+**By:** FjoNef (via Copilot)  
+**What:** Always create a separate feature branch before doing any work. Never commit directly to dev. Applies to ALL agents on ALL tasks — no exceptions.  
+**Branch naming:** `<type>/<agent>-<short-description>` branching from dev.  
+**Why:** User re-issued branching reminder after checkpoint-path fix was initially committed directly to dev (later corrected). Reinforces existing branching policy from 2026-02-25T140433.

@@ -9,6 +9,29 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-26: PR #11 — REQUEST CHANGES (stale duplicate)
+
+**PR #11 — feat/fix-checkpoint-paths → dev:**
+- **Verdict:** REQUEST CHANGES / CLOSE AS DUPLICATE
+- **GitHub self-review restriction → posted as comment**
+
+**What was found:**
+
+1. **Duplicate fix:** The three output path changes (`model_output_dir`, `checkpoint_dir`, `sample_dir`) in `train_config.yaml` were already applied to dev by the PR #10 squash-merge (commit 3e54f39). The feature branch was branched from `f07d86a` (pre-PR-#10), so PR #10 landed the fix first.
+
+2. **Regression risk:** Because the feature branch pre-dates PR #10, it carries stale values for `fonts_dir` (`../../data/fonts` instead of `data/fonts`) and `style_latin_chars` (old incorrect mixed-case list instead of `["A","B","C","D","E","H","I","O","R","X"]`). Merging would cause merge conflicts, and resolving them in favour of the feature branch would break the tensor contract and font loading.
+
+3. **PR dirty state confirmed:** `mergeable_state: "dirty"` — conflicts exist for the stale fields.
+
+4. **No other missed references:** Scanned all of `src/` for `../../models` and `../../data` patterns — only `train_config.yaml` had them, and they are already correct on dev.
+
+5. **train.py synthetic defaults:** Feature branch's `train.py` has no hardcoded `../../` paths. The flagged issue from PR #10 review appears already resolved.
+
+**Patterns learned:**
+- Always verify the merge-base of a PR branch, especially after squash-merges to dev. A fix PR created before a squash-merge can duplicate or regress work.
+- `git show <merge-base>:file` and `git merge-base` are essential to diagnose stale-branch PRs.
+- PRs in `dirty` merge state against a recently-updated dev deserve extra scrutiny for regressions.
+
 ### 2026-02-25T180000: PR #10 APPROVED & MERGED — training pipeline fixes
 
 **PR #10 — feat/major-training-pipeline-fixes → dev:**
