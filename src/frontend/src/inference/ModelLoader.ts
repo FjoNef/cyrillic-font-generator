@@ -16,7 +16,7 @@ interface PendingRequest {
   reject: (error: Error) => void;
 }
 
-class ModelLoader {
+export class ModelLoader {
   private worker: Worker | null = null;
   private loadPromise: Promise<void> | null = null;
   private onProgress: ((pct: number) => void) | null = null;
@@ -28,7 +28,7 @@ class ModelLoader {
    * Progress updates are reported via onProgress callback.
    * Safe to call multiple times — returns same promise if already loading.
    */
-  async load(modelUrl: string, onProgress?: (pct: number) => void): Promise<void> {
+  load(modelUrl: string, onProgress?: (pct: number) => void): Promise<void> {
     if (this.loadPromise) {
       return this.loadPromise;
     }

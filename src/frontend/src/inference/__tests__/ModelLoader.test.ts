@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { modelLoader } from '../ModelLoader';
+import { ModelLoader } from '../ModelLoader';
 
 /**
  * Tests for ModelLoader singleton.
@@ -13,7 +13,7 @@ import { modelLoader } from '../ModelLoader';
 
 describe('ModelLoader', () => {
   let mockWorker: any;
-  let workerMessageHandler: ((event: MessageEvent) => void) | null = null;
+  let modelLoader: ModelLoader;
 
   beforeEach(() => {
     // Mock Worker constructor
@@ -28,6 +28,9 @@ describe('ModelLoader', () => {
     global.Worker = vi.fn().mockImplementation(() => {
       return mockWorker;
     }) as any;
+
+    // Fresh singleton per test to avoid stale loadPromise/worker state
+    modelLoader = new ModelLoader();
   });
 
   afterEach(() => {
@@ -108,6 +111,9 @@ describe('ModelLoader', () => {
 
     const inferPromise = modelLoader.infer(styleGlyphs, charIndex);
 
+    // Flush microtasks so the await inside infer() completes and postMessage is called
+    await Promise.resolve();
+
     // Worker should receive infer message with request ID
     expect(mockWorker.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -141,6 +147,9 @@ describe('ModelLoader', () => {
     const styleGlyphs = new Float32Array(163840);
     const infer1 = modelLoader.infer(styleGlyphs, 0);
     const infer2 = modelLoader.infer(styleGlyphs, 1);
+
+    // Flush microtasks so postMessage calls are made
+    await Promise.resolve();
 
     // Extract request IDs
     const calls = mockWorker.postMessage.mock.calls.filter(
@@ -176,6 +185,9 @@ describe('ModelLoader', () => {
 
     const styleGlyphs = new Float32Array(163840);
     const inferPromise = modelLoader.infer(styleGlyphs, 0);
+
+    // Flush microtasks so postMessage is called before we read mock.calls
+    await Promise.resolve();
 
     // Get request ID
     const inferCall = mockWorker.postMessage.mock.calls.find(
