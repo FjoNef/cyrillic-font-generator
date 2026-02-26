@@ -4,6 +4,58 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-26: Aramaki PR #12 Revision — Font Assembly Fix Summary
+**By:** Aramaki (Lead)  
+**Context:** Togusa under Reviewer Rejection Lockout. Aramaki applied 3 critical fixes on behalf of team.
+
+**Fixes applied (commit 6681fcd):**
+1. **cyrillicCharset.ts:** Ё at index 6, ё at index 39 (LOCKED tensor contract alignment)
+   - Rebuilt uppercase/lowercase arrays with correct alphabetical ordering
+   - А(0)–Е(5), Ё(6), Ж(7)–Я(32); а(33)–е(38), ё(39), ж(40)–я(65)
+2. **fontPipeline.test.ts:** Class API → function API
+   - Tests now use `vectorizeGlyph()` and `assembleFontFromGlyphs()` directly (no class instantiation)
+   - Implementation exports plain functions; align tests to this API
+3. **fontPipeline.test.ts:** makeGlyphImages() Map key type
+   - Changed from `Map<string, Float32Array>` to `Map<number, Float32Array>`
+   - Keys are numeric indices 0–65 (matches `assembleFontFromGlyphs` signature)
+
+**Rationale:** Fix blocking issues identified by Saito QA. Togusa locked out per protocol, so Aramaki applied fixes. All 3 changes required for tensor contract compliance and test API alignment.
+
+**Result:** Saito re-approved PR #12. Ready to merge to dev.
+
+---
+
+### 2026-02-26: Saito QA Verdict — PR #12 Re-review (APPROVED)
+**By:** Saito (QA)  
+**PR:** #12 (feat/togusa-font-assembly → dev)  
+**Revision commit:** 6681fcd (Aramaki)  
+**Verdict:** ✅ APPROVED
+
+**Verification:**
+- cyrillicCharset.ts: Ё/ё indices correct (6/39, matches LOCKED tensor contract) ✅
+- fontPipeline.test.ts: Function API alignment verified ✅
+- makeGlyphImages(): Map<number, Float32Array> type correct ✅
+- Implementation files untouched (GlyphVectorizer, FontAssembler, FontDownloader, App.tsx) ✅
+
+**Status:** Ready to merge to dev. No further changes needed.
+
+---
+
+### 2026-02-26: Saito QA Verdict — PR #12 Initial Review (REQUEST CHANGES)
+**By:** Saito (QA)  
+**PR:** #12 — feat: font assembly pipeline  
+**Date:** 2026-02-26  
+**Verdict:** REQUEST CHANGES (3 blocking issues identified)
+
+**Blocking issues:**
+1. **API surface mismatch:** Tests expect classes; implementation exports functions. Tests fail with "not a constructor."
+2. **cyrillicCharset.ts Ё/ё indices conflict:** Ё at index 32 (should be 6), ё at index 65 (should be 39). Violates LOCKED tensor contract.
+3. **makeGlyphImages() Map key type:** Helper returns `Map<string, Float32Array>`; `assembleFontFromGlyphs` expects `Map<number, Float32Array>`. Glyphs silently become blank paths.
+
+**What passed:** Coordinate math (600/128 X scale, 800→-200 Y flip), threshold logic, metrics, .notdef, OFL license, download button gating, progress counter, single inference pass, FontDownloader lifecycle.
+
+---
+
 ### 2026-02-25T180000: Retroactive branch created for ML pipeline fixes
 **By:** Major (AI/ML Engineer) — requested by FjoNef
 
