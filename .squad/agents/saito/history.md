@@ -43,6 +43,7 @@
 - Tests 4/5 rely on Y mapping formula: `y_top = ascender − row × (1000/128)`, `y_bottom = ascender − (row+1) × (1000/128)`; matches LOCKED font metrics (ascender=800, descender=-200, advanceWidth=600)
 - Font Ё ordering: alphabetical position 6 in Cyrillic set (А=0…Е=5, Ё=6) — per decisions.md LOCKED tensor contract; differs from cyrillicCharset.ts which puts Ё at index 32 (model ordering). Togusa's FontAssembler is expected to use alphabetical order for the font glyph array.
 - Tests are spec-first: two expected TS2305 errors (GlyphVectorizer, FontAssembler modules not yet created by Togusa). All other TS errors resolved. Vitest runs tests regardless of tsc errors.
+- **Cross-team notes:** Togusa implemented all three modules; coordinate mapping bugs found and fixed (X scale 600/128, Y baseline 800-row*scale). Single inference pass eliminates redundancy. Ready for code review and merge.
 
 ### 2026-02-26: PR #11 — REQUEST CHANGES (stale duplicate)
 

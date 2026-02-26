@@ -21,6 +21,7 @@
 - **Architecture:** FontAssembler takes `Map<number, Float32Array>` (model index → raw output); App.tsx collects this during the generation loop and passes it post-loop. No re-inference for assembly.
 - **OFL:** License text (name ID 13) and URL (name ID 14) written into opentype.js name table via `font.names.license` / `font.names.licenseURL`.
 - **Build status:** My new files introduce 0 TypeScript errors. 7 pre-existing errors in test files (unused `vi` import, unused params) remain; they predate this branch.
+- **Cross-team notes:** Saito wrote fontPipeline.test.ts (15 test cases) to spec first; tests validate coordinate math, glyph assembly, and download lifecycle. Ready for code review and merge.
 
 ### 2026-02-25T162500: Fixed PR #8 doc conflict (Reviewer Rejection Lockout Protocol)
 - **Timestamp:** 2026-02-25T162500
