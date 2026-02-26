@@ -103,7 +103,7 @@ def save_checkpoint(
         },
         path,
     )
-    print(f"  💾 Checkpoint saved → {path}")
+    print(f"  [SAVED] Checkpoint saved -> {path}")
 
 
 def load_checkpoint(
@@ -121,7 +121,7 @@ def load_checkpoint(
     discriminator.load_state_dict(ckpt["discriminator_state"])
     opt_g.load_state_dict(ckpt["opt_g_state"])
     opt_d.load_state_dict(ckpt["opt_d_state"])
-    print(f"  ✅ Resumed from {path} (epoch {ckpt['epoch']})")
+    print(f"  [OK] Resumed from {path} (epoch {ckpt['epoch']})")
     return ckpt["epoch"]
 
 
@@ -183,7 +183,11 @@ def train(
     out_cfg = cfg["output"]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Training on: {device}")
+    print(f"[*] Training device: {device}")
+    if torch.cuda.is_available():
+        print(f"    GPU: {torch.cuda.get_device_name(0)}")
+        print(f"    CUDA version: {torch.version.cuda}")
+        print(f"    cuDNN version: {torch.backends.cudnn.version()}")
 
     # --- Dataset ---
     if use_synthetic:
@@ -224,6 +228,8 @@ def train(
     discriminator = PatchDiscriminator(
         ndf=model_cfg["patch_discriminator_ndf"]
     ).to(device)
+    
+    print(f"[+] Models loaded on {device}")
 
     # --- Optimisers ---
     opt_g = torch.optim.Adam(
@@ -262,6 +268,13 @@ def train(
         epoch_loss_g = 0.0
         epoch_loss_d = 0.0
         epoch_loss_l1 = 0.0
+        
+        # Log GPU memory at start of epoch
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+            mem_allocated = torch.cuda.memory_allocated(0) / (1024**3)
+            mem_reserved = torch.cuda.memory_reserved(0) / (1024**3)
+            print(f"   GPU memory: {mem_allocated:.2f}GB allocated / {mem_reserved:.2f}GB reserved")
 
         pbar = tqdm(train_loader, desc=f"Epoch {epoch:04d}/{total_epochs}", leave=False)
         for batch_idx, (style_glyphs, target_glyph, char_index) in enumerate(pbar):
@@ -332,7 +345,7 @@ def train(
         total_epochs, style_encoder, generator, discriminator,
         opt_g, opt_d, checkpoint_dir
     )
-    print(f"\n✅ Training complete. Final checkpoint in {checkpoint_dir}/")
+    print(f"\n[DONE] Training complete. Final checkpoint in {checkpoint_dir}/")
 
 
 # ---------------------------------------------------------------------------

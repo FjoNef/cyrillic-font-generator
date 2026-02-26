@@ -8,6 +8,54 @@
 
 ## Learnings
 
+### 2026-02-26T19:58:10: GPU Training Issue — False Alarm, Enhanced Logging
+
+**Status:** RESOLVED — Training was using GPU correctly all along
+
+**Root cause:** User misperception. Training WAS using GPU (CUDA), but logging was minimal. The original log only showed "Training on: cuda" which may not have been convincing enough.
+
+**Evidence that GPU was working correctly:**
+1. `torch.cuda.is_available()` returned True
+2. PyTorch built with CUDA 12.8 support (`torch.version.cuda`)
+3. Training log confirmed "Training on: cuda"
+4. Device selection code at line 185 correctly checks `torch.cuda.is_available()`
+5. All models moved to device with `.to(device)` 
+6. Test run shows ~17 it/s (typical GPU speed; CPU would be <1 it/s)
+
+**Enhancement made:**
+- Added detailed GPU device logging at training start:
+  - GPU name (NVIDIA GeForce RTX 3070 Laptop GPU)
+  - CUDA version (12.8)
+  - cuDNN version (91002)
+- Added GPU memory usage logging at start of each epoch:
+  - Shows allocated and reserved memory in GB
+  - Confirms tensors are actually on GPU
+- Replaced emoji characters with ASCII markers for Windows console compatibility
+
+**Code changes:**
+- `src/model/train/train.py` lines 185-190: Enhanced device logging
+- `src/model/train/train.py` line 229: Added "Models loaded on {device}" confirmation
+- `src/model/train/train.py` lines 265-270: Added GPU memory logging per epoch
+
+**Verification:**
+```bash
+python src/model/train/train.py --synthetic --batch_size 4 --num_epochs 1
+```
+Output now shows:
+```
+[*] Training device: cuda
+    GPU: NVIDIA GeForce RTX 3070 Laptop GPU
+    CUDA version: 12.8
+    cuDNN version: 91002
+[+] Models loaded on cuda
+   GPU memory: 0.23GB allocated / 0.24GB reserved
+```
+
+**Key learning:** Clear, verbose device logging is essential for ML training. Users need to see GPU name, CUDA version, and memory usage to trust that GPU training is active. "Training on: cuda" alone is insufficient — it could be misread as a device name string rather than confirmation of actual GPU usage.
+
+**Next steps for user:**
+Restart training with the enhanced logging. You'll see explicit GPU confirmation and memory usage at startup and every epoch.
+
 ### 2026-02-26T19:42:13: Full Training Run Started — 200 Epochs
 
 **Status:** TRAINING IN PROGRESS — Process ID 13612
