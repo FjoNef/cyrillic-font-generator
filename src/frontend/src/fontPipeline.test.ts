@@ -20,8 +20,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as opentype from 'opentype.js';
-import { GlyphVectorizer } from './GlyphVectorizer';
-import { FontAssembler } from './FontAssembler';
+import { vectorizeGlyph } from './GlyphVectorizer';
+import { assembleFontFromGlyphs } from './FontAssembler';
 import { downloadFont } from './FontDownloader';
 
 /** PathCommand subtypes that carry X/Y coordinates (M and L). */
@@ -71,44 +71,27 @@ function rowRun(row: number, colStart: number, colEnd: number): Float32Array {
 }
 
 /** Build a Map of 66 Cyrillic glyph images (all white) for FontAssembler tests. */
-function makeGlyphImages(fillValue = -1.0): Map<string, Float32Array> {
-  const map = new Map<string, Float32Array>();
-  // Uppercase А–Я (U+0410–U+042F, 32 chars)
-  for (let i = 0; i < 32; i++) {
-    map.set(String.fromCodePoint(0x0410 + i), new Float32Array(16384).fill(fillValue));
+function makeGlyphImages(fillValue = -1.0): Map<number, Float32Array> {
+  const map = new Map<number, Float32Array>();
+  for (let i = 0; i < 66; i++) {
+    map.set(i, new Float32Array(16384).fill(fillValue));
   }
-  // Ё (U+0401)
-  map.set('Ё', new Float32Array(16384).fill(fillValue));
-  // Lowercase а–я (U+0430–U+044F, 32 chars)
-  for (let i = 0; i < 32; i++) {
-    map.set(String.fromCodePoint(0x0430 + i), new Float32Array(16384).fill(fillValue));
-  }
-  // ё (U+0451)
-  map.set('ё', new Float32Array(16384).fill(fillValue));
   return map;
 }
 
 // ─── GlyphVectorizer ──────────────────────────────────────────────────────
 
 describe('GlyphVectorizer', () => {
-  let vectorizer: GlyphVectorizer;
-
-  beforeEach(() => {
-    // GlyphVectorizer must use fixed font metrics from decisions.md by default:
-    // ascender=800, descender=-200, advanceWidth=600
-    vectorizer = new GlyphVectorizer();
-  });
-
   // ── test 1 ────────────────────────────────────────────────────────────────
   it('1. all-white input (all -1.0) → empty path with zero path commands', () => {
-    const path = vectorizer.vectorize(whiteImage());
+    const path = vectorizeGlyph(whiteImage());
     // No ink pixels → no rectangles → no moveTo/lineTo/close commands
     expect(path.commands.length).toBe(0);
   });
 
   // ── test 2 ────────────────────────────────────────────────────────────────
   it('2. all-black input (all +1.0) → non-empty path (full-coverage rectangles)', () => {
-    const path = vectorizer.vectorize(blackImage());
+    const path = vectorizeGlyph(blackImage());
     // Every row has a full-width run → 128 rectangles × 5 commands = 640 commands
     // At minimum there must be more than zero commands
     expect(path.commands.length).toBeGreaterThan(0);
@@ -117,7 +100,7 @@ describe('GlyphVectorizer', () => {
   // ── test 3 ────────────────────────────────────────────────────────────────
   it('3. single horizontal run → exactly one rectangle at correct X range', () => {
     // Row 64, columns 10–19 (10-pixel wide run)
-    const path = vectorizer.vectorize(rowRun(64, 10, 20));
+    const path = vectorizeGlyph(rowRun(64, 10, 20));
 
     // One rectangle = moveTo + 3×lineTo + close = 5 commands
     expect(path.commands.length).toBe(5);
@@ -138,14 +121,14 @@ describe('GlyphVectorizer', () => {
     //   where yScale = (ascender − descender) / 128 = 1000/128
 
     // Row 0 — the top edge of the first-row rectangle should equal the ascender
-    const topPath = vectorizer.vectorize(pixelAt(0, 0));
+    const topPath = vectorizeGlyph(pixelAt(0, 0));
     const topYValues = (topPath.commands as opentype.PathCommand[])
       .filter((c): c is XYCommand => c.type === 'M' || c.type === 'L')
       .map((c: XYCommand) => c.y);
     expect(Math.max(...topYValues)).toBeCloseTo(ASCENDER, 0);
 
     // Row 127 — the bottom edge of the last-row rectangle should equal the descender
-    const bottomPath = vectorizer.vectorize(pixelAt(127, 0));
+    const bottomPath = vectorizeGlyph(pixelAt(127, 0));
     const bottomYValues = (bottomPath.commands as opentype.PathCommand[])
       .filter((c): c is XYCommand => c.type === 'M' || c.type === 'L')
       .map((c: XYCommand) => c.y);
@@ -154,7 +137,7 @@ describe('GlyphVectorizer', () => {
 
   // ── test 5 ────────────────────────────────────────────────────────────────
   it('5. X scaling: full 128-column row maps to x range [0, 600]', () => {
-    const path = vectorizer.vectorize(filledRow(64));
+    const path = vectorizeGlyph(filledRow(64));
     const xValues = (path.commands as opentype.PathCommand[])
       .filter((c): c is XYCommand => c.type === 'M' || c.type === 'L')
       .map((c: XYCommand) => c.x);
@@ -165,10 +148,10 @@ describe('GlyphVectorizer', () => {
   // ── test 6 ────────────────────────────────────────────────────────────────
   it('6. threshold: pixel at exactly 0.0 → white (no ink); pixel at +0.001 → ink', () => {
     // Threshold rule: value > 0 → ink, value ≤ 0 → white background
-    const atThreshold = vectorizer.vectorize(pixelAt(64, 64, 0.0));
+    const atThreshold = vectorizeGlyph(pixelAt(64, 64, 0.0));
     expect(atThreshold.commands.length).toBe(0);
 
-    const justAboveThreshold = vectorizer.vectorize(pixelAt(64, 64, 0.001));
+    const justAboveThreshold = vectorizeGlyph(pixelAt(64, 64, 0.001));
     expect(justAboveThreshold.commands.length).toBeGreaterThan(0);
   });
 });
@@ -176,22 +159,16 @@ describe('GlyphVectorizer', () => {
 // ─── FontAssembler ───────────────────────────────────────────────────────
 
 describe('FontAssembler', () => {
-  let assembler: FontAssembler;
-
-  beforeEach(() => {
-    assembler = new FontAssembler();
-  });
-
   // ── test 7 ────────────────────────────────────────────────────────────────
   it('7. returns an ArrayBuffer with non-zero byte length', () => {
-    const buffer = assembler.assemble(makeGlyphImages(), 'TestFont');
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), 'TestFont');
     expect(buffer).toBeInstanceOf(ArrayBuffer);
     expect(buffer.byteLength).toBeGreaterThan(0);
   });
 
   // ── test 8 ────────────────────────────────────────────────────────────────
   it('8. font contains exactly 66 Cyrillic glyphs + .notdef (67 total)', () => {
-    const buffer = assembler.assemble(makeGlyphImages(), 'TestFont');
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), 'TestFont');
     const font = opentype.parse(buffer);
 
     // 66 Cyrillic + 1 .notdef = 67 glyphs
@@ -202,7 +179,7 @@ describe('FontAssembler', () => {
 
   // ── test 9 ────────────────────────────────────────────────────────────────
   it('9. first Cyrillic glyph (index 0) maps to Unicode А (U+0410)', () => {
-    const buffer = assembler.assemble(makeGlyphImages(), 'TestFont');
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), 'TestFont');
     const font = opentype.parse(buffer);
 
     // The cmap must resolve А to a glyph slot other than .notdef (slot 0)
@@ -218,7 +195,7 @@ describe('FontAssembler', () => {
   it('10. Cyrillic glyph at index 6 maps to Ё (U+0401)', () => {
     // Per decisions.md: uppercase ordering is А(0), Б(1), В(2), Г(3), Д(4), Е(5), Ё(6), Ж(7)…
     // Ё is inserted at alphabetical position 6 within the 66-glyph set.
-    const buffer = assembler.assemble(makeGlyphImages(), 'TestFont');
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), 'TestFont');
     const font = opentype.parse(buffer);
 
     // cmap must include Ё
@@ -235,7 +212,7 @@ describe('FontAssembler', () => {
 
   // ── test 11 ───────────────────────────────────────────────────────────────
   it('11. familyName is stored in the font name table', () => {
-    const buffer = assembler.assemble(makeGlyphImages(), 'MyGeneratedCyrillicFont');
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), 'MyGeneratedCyrillicFont');
     const font = opentype.parse(buffer);
 
     expect(font.names.fontFamily.en).toBe('MyGeneratedCyrillicFont');
@@ -245,7 +222,7 @@ describe('FontAssembler', () => {
   it('12. empty glyphImages map → .notdef-only font still returns valid ArrayBuffer', () => {
     // If no Cyrillic images are provided the assembler must still produce a
     // syntactically valid OTF with at least the .notdef glyph.
-    const buffer = assembler.assemble(new Map(), 'EmptyFont');
+    const buffer = assembleFontFromGlyphs(new Map(), 'EmptyFont');
     expect(buffer).toBeInstanceOf(ArrayBuffer);
     expect(buffer.byteLength).toBeGreaterThan(0);
 
