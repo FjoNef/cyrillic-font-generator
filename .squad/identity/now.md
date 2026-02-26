@@ -1,13 +1,13 @@
 ---
-updated_at: 2026-02-26T14:55:39Z
-focus_area: CI now fully green — all 11 steps passing. Next: full training run on GPU
+updated_at: 2026-02-26T15:23:02Z
+focus_area: CUDA PyTorch installed, smoke-tested, training command staged. Ready to launch on user signal.
 active_issues: []
 ---
 
 # Now
 
 **Last updated:** 2026-02-26  
-**Focus:** CI fully green — ready for training phase
+**Focus:** GPU environment production-ready. Full training staged, awaiting launch signal.
 
 ## Current state
 - Branch: dev (aligned with origin/dev)
@@ -17,11 +17,21 @@ active_issues: []
 - **CI Pipeline:** ✅ All 11 steps pass (build frontend, type check, vitest, dotnet restore/build/test)
 - **Frontend Tests:** 41/41 passing across 5 suites
 - **Backend Tests:** ✅ All passing
+- **PyTorch:** ✅ torch 2.10.0+cu128 — CUDA: True — Device: NVIDIA GeForce RTX 3070 Laptop GPU
+- **Smoke test:** ✅ 2 epochs ran clean on CUDA (~3.3 it/s on synthetic data)
+- **Training command:** ✅ Staged and ready (see below)
 
 ## Next up
-1. **Major** — Full training run: `python src/model/train/train.py --config src/model/configs/train_config.yaml --num_epochs 200` (~4–8h on GPU)
+1. **User/Major** — Launch full training run (ready to execute):
+   ```powershell
+   cd C:/Users/fjodo/RiderProjects/cyrillic-font-generator/src/model
+   Start-Process python -ArgumentList "train/train.py --config configs/train_config.yaml --num_epochs 200" -RedirectStandardOutput "..\..\models\training.log" -RedirectStandardError "..\..\models\training_err.log" -NoNewWindow -PassThru | Select-Object Id
+   ```
+   **Est. runtime:** 4–8 hours on RTX 3070 Ti  
+   **Log files:** `models/training.log`, `models/training_err.log`
+
 2. **Major** — ONNX export to `models/v1/generator.onnx` after training completes
 3. **Saito** — End-to-end smoke test: upload font → generate Cyrillic → download OTF
 
 ## Blocker
-None. CI is green. Waiting on compute time for full training run.
+None. GPU environment fully ready. Training launch deferred (decision in decisions.md).

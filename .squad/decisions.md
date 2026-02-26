@@ -4,6 +4,32 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-26: Aramaki Training Launch — GPU Ready, Full Run Staged
+
+**By:** Aramaki (Lead)  
+**Date:** 2026-02-26  
+**Status:** Partial — GPU environment ready, full training deferred
+
+**Decision:** GPU environment fully prepared for 200-epoch training. PyTorch CUDA installation, verification, and smoke test all passed. Full training launch command staged and ready. Deferred pending user decision to launch.
+
+**GPU Environment:**
+- torch 2.10.0+cu128 installed ✅
+- CUDA available, device: NVIDIA GeForce RTX 3070 Laptop GPU ✅
+- Smoke test: 2 epochs on synthetic data passed (~3.3 it/s) ✅
+
+**Full Training Command (Ready to Run):**
+```powershell
+cd C:/Users/fjodo/RiderProjects/cyrillic-font-generator/src/model
+Start-Process python -ArgumentList "train/train.py --config configs/train_config.yaml --num_epochs 200" `
+  -RedirectStandardOutput "..\..\models\training.log" `
+  -RedirectStandardError "..\..\models\training_err.log" `
+  -NoNewWindow -PassThru | Select-Object Id
+```
+
+**Next Action:** Next session — user or Major to launch training. Runtime estimated at 4–8 hours on RTX 3070 Ti.
+
+---
+
 ### 2026-02-26: Togusa CI Frontend Build TS6133 Fix — Exclude Test Files from tsconfig
 **By:** Togusa (Frontend Dev)  
 **Status:** Accepted (merged to dev in PR #13)
