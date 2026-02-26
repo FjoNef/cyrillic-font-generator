@@ -9,6 +9,15 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-26T: PR #12 lockout revision — Aramaki stepping in for Togusa
+- **Context:** Saito issued REQUEST CHANGES on PR #12 (feat/togusa-font-assembly); Togusa locked out under Reviewer Rejection Lockout Protocol. Aramaki stepped in to apply targeted fixes.
+- **Fix 1 — cyrillicCharset.ts indices:** Ё was at index 32 (end of uppercase block), ё at 65 (end of lowercase). LOCKED tensor contract requires Ё=6, ё=39. Rebuilt both arrays to interleave Ё/ё at correct alphabetical positions within each block.
+- **Fix 2 — Test API surface:** Tests used class instantiation style (`new GlyphVectorizer()`, `vectorizer.vectorize()`); implementations export plain functions. Per team decision: aligned tests to the function API (`vectorizeGlyph()`, `assembleFontFromGlyphs()`). Did NOT touch implementation files.
+- **Fix 3 — Map key type:** `makeGlyphImages()` test helper built `Map<string, Float32Array>` with char-string keys; `assembleFontFromGlyphs` expects `Map<number, Float32Array>`. Changed helper to emit numeric model indices 0-65 as keys.
+- **Commit:** 6681fcd — all 3 fixes in one commit
+- **Lesson:** When a charset file defines model indices, always cross-check against decisions.md tensor contract immediately — index positioning bugs are silent until inference produces wrong glyphs.
+
+
 ### 2026-02-25T165444: PR #8 & PR #9 merged to dev — critical foundation complete
 - **Status:** Two foundational layers merged. Training and backend integration live; frontend (PR #4) awaiting model.
 - **PR #8 Merge (Major — cGAN Training):**

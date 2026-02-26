@@ -9,6 +9,26 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-26: PR #12 — REQUEST CHANGES (font assembly pipeline)
+
+**PR #12 — feat/togusa-font-assembly → dev:**
+- **Verdict:** REQUEST CHANGES (GitHub self-review restriction → posted as comment)
+
+**What was found:**
+
+1. **API surface mismatch (Blocking):** Tests import `GlyphVectorizer` and `FontAssembler` as classes (`new GlyphVectorizer()`, `.vectorize()`, `new FontAssembler()`, `.assemble()`). Implementation exports plain functions `vectorizeGlyph` and `assembleFontFromGlyphs`. 12 of 15 tests fail at import. Fix: add class wrappers.
+
+2. **cyrillicCharset.ts Yo/yo indices violate LOCKED tensor contract (Blocking):** decisions.md LOCKED specifies Yo (U+0401) at model index 6 and yo (U+0451) at index 39. cyrillicCharset.ts places Yo at index 32 (end of uppercase block) and yo at index 65 (end of lowercase block). App.tsx passes this index directly to model inference → model generates wrong characters. Fix: alphabetical ordering in cyrillicCharset.ts.
+
+3. **makeGlyphImages() key type mismatch (Blocking):** Test helper returns `Map<string, Float32Array>` (char string keys), but `assembleFontFromGlyphs` expects `Map<number, Float32Array>` (model index keys). At runtime all `glyphImages.get(index)` calls return undefined → every glyph is blank path. FontAssembler tests 7-11 silently validate an empty font. Fix: return `Map<number, Float32Array>` keyed 0-65.
+
+**What passed:** Coordinate math (X=600/128, Y flip row0→800, row127→-200), threshold `> 0`, opentype.js metrics (UPM=1000, asc=800, desc=-200, adv=600), .notdef slot 0, OFL license in name table, download button gating, progress counter, single inference pass, opentype.js in package.json, FontDownloader lifecycle.
+
+**Patterns learned:**
+- Spec-first tests must explicitly document expected API surface (class vs function) to prevent this mismatch.
+- cyrillicCharset.ts model index ordering must be validated against decisions.md LOCKED contract at review time — silent ordering bugs produce no TypeScript errors but break inference output.
+- Test helper types must match the implementation signatures exactly; `Map<string,…>` vs `Map<number,…>` is a silent bug that produces no assertion failures, just blank output.
+
 ### 2026-02-26: Font pipeline spec tests written — feat/togusa-font-assembly
 
 **Task:** Write spec-first tests for three modules Togusa is building on `feat/togusa-font-assembly`.
