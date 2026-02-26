@@ -37,8 +37,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 
 try:
-    from fonttools.ttLib import TTFont
-    from fonttools.pens.t2Pen import T2Pen  # noqa: F401 – presence check
+    from fontTools.ttLib import TTFont
 except ImportError as e:
     raise ImportError("fonttools is required. Run: pip install fonttools") from e
 
@@ -55,7 +54,8 @@ CYRILLIC_CHARS: List[str] = CYRILLIC_UPPERCASE + CYRILLIC_LOWERCASE
 CHAR_TO_INDEX = {ch: idx for idx, ch in enumerate(CYRILLIC_CHARS)}
 
 # Default Latin reference characters (10 chosen for structural diversity).
-DEFAULT_STYLE_CHARS: List[str] = ["A", "B", "H", "O", "g", "n", "o", "p", "s", "x"]
+# These MUST match the tensor contract: A, B, C, D, E, H, I, O, R, X (uppercase only).
+DEFAULT_STYLE_CHARS: List[str] = ["A", "B", "C", "D", "E", "H", "I", "O", "R", "X"]
 
 IMAGE_SIZE = 128
 NORMALIZE = transforms.Normalize(mean=[0.5], std=[0.5])  # maps [0,1] → [-1,1]
@@ -69,10 +69,13 @@ def _font_has_coverage(font_path: str, chars: List[str]) -> bool:
     """Return True if the font contains glyphs for every character in *chars*."""
     try:
         tt = TTFont(font_path, lazy=True)
-        cmap = tt.getBestCmap()
-        if cmap is None:
-            return False
-        return all(ord(ch) in cmap for ch in chars)
+        try:
+            cmap = tt.getBestCmap()
+            if cmap is None:
+                return False
+            return all(ord(ch) in cmap for ch in chars)
+        finally:
+            tt.close()
     except Exception:
         return False
 
@@ -188,4 +191,65 @@ class CyrillicFontDataset(Dataset):
 
         char_index = torch.tensor(CHAR_TO_INDEX[cyrillic_char], dtype=torch.int64)
 
+        return style_glyphs, target_glyph, char_index
+
+
+# ---------------------------------------------------------------------------
+# Synthetic Dataset (for testing without real fonts)
+# ---------------------------------------------------------------------------
+
+class SyntheticFontDataset(Dataset):
+    """
+    Synthetic dataset that generates random tensors without requiring any fonts.
+    
+    Used for quick training tests, pipeline validation, and CI environments
+    where font files are not available.
+    
+    Parameters
+    ----------
+    num_samples : int
+        Total number of synthetic samples.
+    num_style_glyphs : int
+        Number of Latin reference glyphs (N). Default: 10.
+    image_size : int
+        Glyph render resolution in pixels (square). Default: 128.
+    num_chars : int
+        Number of target characters. Default: 66 (Russian Cyrillic).
+    """
+
+    def __init__(
+        self,
+        num_samples: int = 1000,
+        num_style_glyphs: int = 10,
+        image_size: int = IMAGE_SIZE,
+        num_chars: int = 66,
+    ) -> None:
+        self.num_samples = num_samples
+        self.num_style_glyphs = num_style_glyphs
+        self.image_size = image_size
+        self.num_chars = num_chars
+
+    def __len__(self) -> int:
+        return self.num_samples
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Returns
+        -------
+        style_glyphs : torch.Tensor  [N, 1, H, W]  float32  values in [-1, 1]
+            Random noise tensors simulating N Latin reference glyphs.
+        target_glyph : torch.Tensor  [1, H, W]     float32  values in [-1, 1]
+            Random noise tensor simulating a Cyrillic glyph.
+        char_index   : torch.Tensor  scalar         int64
+            Random character index (0 to num_chars-1).
+        """
+        # Generate random noise in [-1, 1] to match training data normalization.
+        style_glyphs = torch.randn(
+            self.num_style_glyphs, 1, self.image_size, self.image_size
+        ).clamp(-1, 1)
+        
+        target_glyph = torch.randn(1, self.image_size, self.image_size).clamp(-1, 1)
+        
+        char_index = torch.tensor(idx % self.num_chars, dtype=torch.int64)
+        
         return style_glyphs, target_glyph, char_index
