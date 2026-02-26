@@ -9,6 +9,41 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-26: Font pipeline spec tests written — feat/togusa-font-assembly
+
+**Task:** Write spec-first tests for three modules Togusa is building on `feat/togusa-font-assembly`.
+
+**Test file created:** `src/frontend/src/fontPipeline.test.ts` (15 test cases)
+
+**GlyphVectorizer (6 tests):**
+- Test 1: all-white (-1.0) input → `path.commands.length === 0`
+- Test 2: all-black (+1.0) input → `path.commands.length > 0`
+- Test 3: single horizontal run (row 64, cols 10-19) → exactly 5 commands (M,L,L,L,Z); X start ≈ 10 × (600/128)
+- Test 4: Y-axis flip — row 0 max Y = 800 (ascender), row 127 min Y = -200 (descender)
+- Test 5: X scaling — full row spans x [0, 600] (advanceWidth)
+- Test 6: threshold — pixel at 0.0 → no ink; pixel at 0.001 → ink (rule: > 0 = ink)
+
+**FontAssembler (6 tests):**
+- Test 7: returns `ArrayBuffer` with `byteLength > 0`
+- Test 8: parsed font has exactly 67 glyphs (66 Cyrillic + .notdef); slot 0 = `.notdef`
+- Test 9: cmap maps А → glyph with unicode 0x0410
+- Test 10: Ё sits at glyph slot 7 (Cyrillic index 6, alphabetical position after А,Б,В,Г,Д,Е); unicode 0x0401
+- Test 11: `font.names.fontFamily.en` matches passed `familyName` string
+- Test 12: empty glyphImages map → valid ArrayBuffer with .notdef
+
+**FontDownloader (3 tests):**
+- Test 13: `URL.createObjectURL` called once; `URL.revokeObjectURL` called with the returned URL
+- Test 14: intercepted anchor's `.click()` is called; `.download === filename`, `.href === blob URL`
+- Test 15: Blob passed to createObjectURL has `type === 'font/otf'`
+
+**Design decisions:**
+- Used `// @vitest-environment jsdom` directive for FontDownloader DOM/URL tests
+- Defined local `XYCommand` type alias (`PathCommand & { x; y }`) to work with opentype.js union type
+- Explicit `as opentype.PathCommand[]` casts on `path.commands` to avoid implicit-any cascade from missing modules
+- Tests 4/5 rely on Y mapping formula: `y_top = ascender − row × (1000/128)`, `y_bottom = ascender − (row+1) × (1000/128)`; matches LOCKED font metrics (ascender=800, descender=-200, advanceWidth=600)
+- Font Ё ordering: alphabetical position 6 in Cyrillic set (А=0…Е=5, Ё=6) — per decisions.md LOCKED tensor contract; differs from cyrillicCharset.ts which puts Ё at index 32 (model ordering). Togusa's FontAssembler is expected to use alphabetical order for the font glyph array.
+- Tests are spec-first: two expected TS2305 errors (GlyphVectorizer, FontAssembler modules not yet created by Togusa). All other TS errors resolved. Vitest runs tests regardless of tsc errors.
+
 ### 2026-02-26: PR #11 — REQUEST CHANGES (stale duplicate)
 
 **PR #11 — feat/fix-checkpoint-paths → dev:**
