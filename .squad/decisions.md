@@ -4,6 +4,25 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-26: Training output paths use repo-root-relative notation
+**By:** Major (AI/ML Engineer)
+**Date:** Follow-up to PR #10
+**File changed:** `src/model/configs/train_config.yaml`
+
+Fixed three output paths in `train_config.yaml` from `../../`-relative to repo-root-relative:
+
+| Key | Before | After |
+|---|---|---|
+| `output.model_output_dir` | `../../models/` | `models/` |
+| `output.checkpoint_dir` | `../../models/checkpoints/` | `models/checkpoints/` |
+| `output.sample_dir` | `../../models/samples/` | `models/samples/` |
+
+**Why:** `train.py` is invoked from the repo root (`python src/model/train/train.py`). The `../../` prefix was relative to `src/model/configs/`, which resolves to `../..` = repo root — but only if the working directory is `src/model/configs/`, which is never the case in practice. Paths in this YAML should be repo-root-relative to match the `configs/train_config.yaml` default in the CLI parser.
+
+**Impact:** No change to tensor contract or model architecture. Affects only where checkpoints and sample images are written during training. Consistent with `train_config.yaml`'s existing convention for `data.fonts_dir`.
+
+---
+
 ### 2026-02-25T180000: Retroactive branch created for ML pipeline fixes
 **By:** Major (AI/ML Engineer) — requested by FjoNef
 

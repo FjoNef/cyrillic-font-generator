@@ -1,5 +1,9 @@
 # Major — History
 
+## Learnings
+
+- **Checkpoint path fix (2026-02-25 follow-up):** The `../../models/checkpoints/` paths in `src/model/configs/train_config.yaml` (and `model_output_dir`, `sample_dir`) were relative to the config file location, not the repo root. All three output paths corrected to `models/checkpoints/`, `models/`, `models/samples/` so they resolve correctly when `train.py` is invoked from the repo root as `python src/model/train/train.py`. `train.py` itself had no such hardcoded paths — the bug was entirely in the YAML config.
+
 ## Project Context
 - **Project:** Cyrillic Font Generator
 - **User:** FjoNef
