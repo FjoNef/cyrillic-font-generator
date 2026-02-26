@@ -4,6 +4,21 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-25T180000: Retroactive branch created for ML pipeline fixes
+**By:** Major (AI/ML Engineer) — requested by FjoNef
+
+**What:** Created `feat/major-training-pipeline-fixes` retroactively to fix branching policy violation. Reset dev back to f07d86a (origin/dev). All ML training pipeline work now lives on the feature branch with PR #10 open for Saito review.
+
+**Why:** Branching policy violation — Major's fixes (3 commits: 8f83be0, da3d162, 102db9b) landed directly on dev instead of a feature branch per .squad/decisions.md branching policy. Corrected via retroactive branching approach:
+1. Branch creation from current HEAD captured all work
+2. Stage cleanup committed remaining changes (models/logs/ TensorBoard events)
+3. Dev reset to origin/dev removed misplaced commits
+4. Feature branch pushed to origin with PR opened
+
+**Status:** PR #10 awaiting Saito review before merge to dev.
+
+---
+
 ### 2026-02-25: Major Model Architecture — cGAN with Style Encoder
 **By:** Major (AI/ML Engineer)  
 **Status:** Implemented  
@@ -350,3 +365,102 @@ python src/model/train/train.py --config configs/train_config.yaml
 - Quality bar: is "good enough for prototyping" acceptable initially, or must the first release be production-quality?
 - Hosting plan: Azure App Service, static site + API, or self-hosted?
 - License preference for the AI model and training data?
+
+---
+
+### 2026-02-25T180000: Saito QA verdict — PR #10 (APPROVED)
+**By:** Saito (QA)
+**Verdict:** APPROVED  
+**PR:** #10 (feat/major-training-pipeline-fixes → dev)
+
+**What passed:**
+- model.py: UNet dec5/dec6/dec7 skip-connection channel counts corrected (asymmetric sums matching encoder output dims), duplicate self.final removed, forward pass fixed — output [B,1,128,128] float32 [-1,1] ✅
+- dataset.py: DEFAULT_STYLE_CHARS = ["A","B","C","D","E","H","I","O","R","X"] uppercase-only 10 chars matches contract; fontTools casing + Windows TTFont.close() fix; SyntheticFontDataset produces correct tensor shapes and dtypes ✅
+- train_config.yaml: style_latin_chars = ["A","B","C","D","E","H","I","O","R","X"], paths relative to repo root ✅
+- download_fonts.py: fontTools import casing + TTFont.close() Windows file locking fix ✅
+- train.py: --synthetic, --batch_size, --num_epochs CLI flags correct; 1-epoch real-data validation passed (47,388 samples) ✅
+
+**Minor non-blocking:** Synthetic mode default config in train.py still has `../../models/checkpoints/` (old relative path) instead of `models/checkpoints/`. Does not affect real training. Can be addressed in follow-up.
+
+**Action:** PR squash-merged to dev; feature branch deleted.
+
+---
+
+### 2026-02-26T122537: QA protocol update — stale-branch verification
+**By:** Saito (QA)  
+**Decision:** Stale-branch PRs must be verified against merge-base before review
+
+**What:** PR #11 proposed fixing `../../models/` output paths in `train_config.yaml`. Investigation revealed the fix was already in dev via PR #10's squash-merge (commit 3e54f39). The feature branch diverged from `f07d86a` (pre-PR-#10), making it a stale duplicate.
+
+**Risk identified:** Stale branch also carried regressions — `fonts_dir` and `style_latin_chars` had wrong values that would have overwritten correct post-PR-#10 values. Merging would have broken the tensor contract.
+
+**QA protocol:**
+1. Before reviewing fix PRs, run `git merge-base <feature> <dev>` and inspect branch divergence point
+2. If divergence pre-dates a recent squash-merge, check whether the squash-merge already includes the proposed fix
+3. PRs in dirty merge state must be inspected for regressions, not just conflicts
+
+**Action:** Posted REQUEST CHANGES on PR #11 recommending closure as duplicate. No changes to dev required.
+
+---
+
+### 2026-02-26T122537: User directive — branching policy reinforcement
+**By:** FjoNef (via Copilot)  
+**What:** Always create a separate feature branch before doing any work. Never commit directly to dev. Applies to ALL agents on ALL tasks — no exceptions.  
+**Branch naming:** `<type>/<agent>-<short-description>` branching from dev.  
+**Why:** User re-issued branching reminder after checkpoint-path fix was initially committed directly to dev (later corrected). Reinforces existing branching policy from 2026-02-25T140433.
+
+---
+
+### 2026-02-26: Font Assembly Pipeline — Module Architecture & Coordinate Mapping
+**By:** Togusa (Frontend Dev)  
+**Branch:** feat/togusa-font-assembly  
+**Status:** Implemented (commit 5710067)
+
+**Decisions:**
+
+#### 1. Separate GlyphVectorizer, FontAssembler, FontDownloader modules
+Refactored font assembly into three focused modules instead of keeping vectorization/assembly inside FontLoader. FontLoader continues to exist for style glyph extraction only.
+
+**Why:** Single Responsibility Principle. Each module has one reason to change: GlyphVectorizer owns raster-to-path logic, FontAssembler owns font structure + metadata, FontDownloader owns browser download mechanics.
+
+#### 2. Correct font coordinate mapping in GlyphVectorizer
+FontLoader.vectorizeGlyph had two critical bugs:
+- **X scale bug:** used `1000/128` (UPM/pixels), mapping columns 0–128 → 0–1000. Correct: `600/128` (advance width / pixels), mapping 0–600.
+- **Y offset bug:** used `(size - row) * scale`, giving range 0–1000 (outside ascender/descender bounds). Correct: `800 - row * (1000/128)`, placing row 0 at ascender y=800 and row 128 at descender y=-200.
+
+GlyphVectorizer uses corrected formulas:
+- `X_SCALE = 600/128 ≈ 4.6875`
+- `Y_SCALE = 1000/128 ≈ 7.8125`
+- `yTop = 800 - row * Y_SCALE`, `yBottom = 800 - (row+1) * Y_SCALE`
+
+**Why:** Glyphs must fit within font metrics (ascender=800, descender=-200, advance=600) per LOCKED tensor contract in decisions.md. Incorrect mapping distorted glyph placement.
+
+#### 3. Single inference pass — eliminate double inference
+App.tsx old flow: ran inference twice (once for ImageData preview, again inside `assembleCyrillicFont`). New flow: single inference loop collects both Float32Array (for FontAssembler) and ImageData (for preview). FontAssembler receives `Map<number, Float32Array>` keyed by model index.
+
+**Why:** Performance and correctness. Double inference wasted CPU; single pass is deterministic and fast.
+
+#### 4. OFL license metadata in font name table
+FontAssembler writes SIL OFL 1.1 license text and URL into opentype.js `font.names.license` / `font.names.licenseURL` (name IDs 13/14).
+
+**Why:** Legal requirement from user directive (2026-02-25T112635): "Generated font licensing: All generated fonts must be OFL (Open Font License) licensed."
+
+#### 5. Download button gating
+Download button disabled until `generationStatus === 'done' && fontBuffer !== null`. Progress indicator "Generating glyphs… N/66" shown during generation.
+
+**Why:** Prevents user from downloading incomplete font files.
+
+#### 6. FontAssembler API design
+```typescript
+assembleFontFromGlyphs(glyphImages: Map<number, Float32Array>, familyName: string): ArrayBuffer
+```
+- Synchronous (vectorization is CPU-only, no async needed)
+- Blank `.notdef` glyph always at index 0
+- Falls back to blank path for any missing glyph index
+
+**Why:** Simplicity. No async overhead for deterministic CPU work. Graceful degradation for sparse glyphImages.
+
+#### 7. Safe Blob URL lifecycle in FontDownloader
+`URL.revokeObjectURL` called immediately after anchor click event dispatches. Safe because browser queues download before DOM cleanup.
+
+**Why:** Prevents memory leaks from long-lived blob URLs. Trust browser queueing semantics.

@@ -6,8 +6,39 @@
 - **Description:** Web app that generates Cyrillic font symbols for non-Cyrillic fonts using AI. Pre-trained model ships to client; all generative work runs in browser. .NET backend.
 - **My focus:** AI model design, training, ONNX export, client-side inference strategy.
 
-## Learnings
-<!-- Append new entries below -->
+### 2026-02-25T180000: PR #10 — QA approved and merged to dev
+
+**Status:** MERGED — Saito QA sign-off complete
+
+Saito reviewed PR #10 (feat/major-training-pipeline-fixes → dev). All tensor contract checks passed:
+- model.py: UNet architecture corrected (skip connections, forward pass fixed)
+- dataset.py: style chars confirmed uppercase-only, Windows file locking fixed
+- train_config.yaml: paths corrected to repo root
+- download_fonts.py: fontTools casing + file locking fix
+- train.py: CLI flags and 1-epoch validation passed (47,388 samples)
+
+Minor non-blocking note: synthetic mode default path still references `../../models/checkpoints/` vs `models/checkpoints/`. Scheduled for follow-up.
+
+PR squash-merged to dev. Feature branch deleted. Ready for training pipeline execution.
+
+**Task:** Fix branching policy violation where 3 commits (8f83be0, da3d162, 102db9b) were incorrectly landed on dev directly.
+
+**Approach:**
+1. Created `feat/major-training-pipeline-fixes` from current HEAD (captured all 3 commits + unstaged changes)
+2. Staged all remaining working-tree changes: models/logs/ (TensorBoard events), config/code fixes
+3. Committed cleanup changeset (728d4e1) to capture TensorBoard logs
+4. Switched back to dev, hard-reset to origin/dev (f07d86a) — removed 3 misplaced commits
+5. Pushed feature branch to origin
+6. Opened PR #10 for Saito (QA) review
+
+**Result:** 
+- Feature branch: `feat/major-training-pipeline-fixes` with 4 commits (728d4e1 + 3 originals)
+- Dev status: clean, aligned with origin/dev
+- PR #10: open, awaiting review
+- All ML pipeline work now lives on feature branch per team branching policy
+
+**Key learning:** Retroactive branching requires careful sequencing: branch first (to capture all work), then reset the main branch. Order matters — resetting first would lose commits.
+
 
 ### 2026-02-25: Training Data Setup — Google Fonts OFL Download
 

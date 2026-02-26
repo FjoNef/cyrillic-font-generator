@@ -15,35 +15,37 @@ export interface CyrillicChar {
   isUppercase: boolean;
 }
 
-// Build uppercase А-Я (U+0410–U+042F), then Ё (U+0401)
-const upperBase: CyrillicChar[] = Array.from({ length: 32 }, (_, i) => ({
-  char: String.fromCodePoint(0x0410 + i),
-  unicode: 0x0410 + i,
-  index: i,
-  isUppercase: true,
-}));
-// Ё is U+0401 — insert at alphabetic position (after Е = index 5)
-// For model indexing we keep it last in uppercase block (index 32)
-upperBase.push({
-  char: 'Ё',
-  unicode: 0x0401,
-  index: 32,
-  isUppercase: true,
-});
+// Build uppercase block (indices 0-32, 33 chars):
+//   А-Е (U+0410–U+0415) at indices 0-5
+//   Ё   (U+0401)        at index 6  ← LOCKED tensor contract
+//   Ж-Я (U+0416–U+042F) at indices 7-32
+const upperBase: CyrillicChar[] = [];
+// А(0)–Е(5): U+0410–U+0415
+for (let i = 0; i < 6; i++) {
+  upperBase.push({ char: String.fromCodePoint(0x0410 + i), unicode: 0x0410 + i, index: i, isUppercase: true });
+}
+// Ё at index 6
+upperBase.push({ char: 'Ё', unicode: 0x0401, index: 6, isUppercase: true });
+// Ж(7)–Я(32): U+0416–U+042F
+for (let i = 0; i < 26; i++) {
+  upperBase.push({ char: String.fromCodePoint(0x0416 + i), unicode: 0x0416 + i, index: 7 + i, isUppercase: true });
+}
 
-// Build lowercase а-я (U+0430–U+044F), then ё (U+0451)
-const lowerBase: CyrillicChar[] = Array.from({ length: 32 }, (_, i) => ({
-  char: String.fromCodePoint(0x0430 + i),
-  unicode: 0x0430 + i,
-  index: 33 + i,
-  isUppercase: false,
-}));
-lowerBase.push({
-  char: 'ё',
-  unicode: 0x0451,
-  index: 65,
-  isUppercase: false,
-});
+// Build lowercase block (indices 33-65, 33 chars):
+//   а-е (U+0430–U+0435) at indices 33-38
+//   ё   (U+0451)        at index 39  ← LOCKED tensor contract
+//   ж-я (U+0436–U+044F) at indices 40-65
+const lowerBase: CyrillicChar[] = [];
+// а(33)–е(38): U+0430–U+0435
+for (let i = 0; i < 6; i++) {
+  lowerBase.push({ char: String.fromCodePoint(0x0430 + i), unicode: 0x0430 + i, index: 33 + i, isUppercase: false });
+}
+// ё at index 39
+lowerBase.push({ char: 'ё', unicode: 0x0451, index: 39, isUppercase: false });
+// ж(40)–я(65): U+0436–U+044F
+for (let i = 0; i < 26; i++) {
+  lowerBase.push({ char: String.fromCodePoint(0x0436 + i), unicode: 0x0436 + i, index: 40 + i, isUppercase: false });
+}
 
 /** All 66 Russian Cyrillic characters, indices 0-65. */
 export const CYRILLIC_CHARS: CyrillicChar[] = [...upperBase, ...lowerBase];

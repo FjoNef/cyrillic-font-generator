@@ -9,6 +9,105 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-26: PR #12 — REQUEST CHANGES (font assembly pipeline)
+
+**PR #12 — feat/togusa-font-assembly → dev:**
+- **Verdict:** REQUEST CHANGES (GitHub self-review restriction → posted as comment)
+
+**What was found:**
+
+1. **API surface mismatch (Blocking):** Tests import `GlyphVectorizer` and `FontAssembler` as classes (`new GlyphVectorizer()`, `.vectorize()`, `new FontAssembler()`, `.assemble()`). Implementation exports plain functions `vectorizeGlyph` and `assembleFontFromGlyphs`. 12 of 15 tests fail at import. Fix: add class wrappers.
+
+2. **cyrillicCharset.ts Yo/yo indices violate LOCKED tensor contract (Blocking):** decisions.md LOCKED specifies Yo (U+0401) at model index 6 and yo (U+0451) at index 39. cyrillicCharset.ts places Yo at index 32 (end of uppercase block) and yo at index 65 (end of lowercase block). App.tsx passes this index directly to model inference → model generates wrong characters. Fix: alphabetical ordering in cyrillicCharset.ts.
+
+3. **makeGlyphImages() key type mismatch (Blocking):** Test helper returns `Map<string, Float32Array>` (char string keys), but `assembleFontFromGlyphs` expects `Map<number, Float32Array>` (model index keys). At runtime all `glyphImages.get(index)` calls return undefined → every glyph is blank path. FontAssembler tests 7-11 silently validate an empty font. Fix: return `Map<number, Float32Array>` keyed 0-65.
+
+**What passed:** Coordinate math (X=600/128, Y flip row0→800, row127→-200), threshold `> 0`, opentype.js metrics (UPM=1000, asc=800, desc=-200, adv=600), .notdef slot 0, OFL license in name table, download button gating, progress counter, single inference pass, opentype.js in package.json, FontDownloader lifecycle.
+
+**Patterns learned:**
+- Spec-first tests must explicitly document expected API surface (class vs function) to prevent this mismatch.
+- cyrillicCharset.ts model index ordering must be validated against decisions.md LOCKED contract at review time — silent ordering bugs produce no TypeScript errors but break inference output.
+- Test helper types must match the implementation signatures exactly; `Map<string,…>` vs `Map<number,…>` is a silent bug that produces no assertion failures, just blank output.
+
+### 2026-02-26: Font pipeline spec tests written — feat/togusa-font-assembly
+
+**Task:** Write spec-first tests for three modules Togusa is building on `feat/togusa-font-assembly`.
+
+**Test file created:** `src/frontend/src/fontPipeline.test.ts` (15 test cases)
+
+**GlyphVectorizer (6 tests):**
+- Test 1: all-white (-1.0) input → `path.commands.length === 0`
+- Test 2: all-black (+1.0) input → `path.commands.length > 0`
+- Test 3: single horizontal run (row 64, cols 10-19) → exactly 5 commands (M,L,L,L,Z); X start ≈ 10 × (600/128)
+- Test 4: Y-axis flip — row 0 max Y = 800 (ascender), row 127 min Y = -200 (descender)
+- Test 5: X scaling — full row spans x [0, 600] (advanceWidth)
+- Test 6: threshold — pixel at 0.0 → no ink; pixel at 0.001 → ink (rule: > 0 = ink)
+
+**FontAssembler (6 tests):**
+- Test 7: returns `ArrayBuffer` with `byteLength > 0`
+- Test 8: parsed font has exactly 67 glyphs (66 Cyrillic + .notdef); slot 0 = `.notdef`
+- Test 9: cmap maps А → glyph with unicode 0x0410
+- Test 10: Ё sits at glyph slot 7 (Cyrillic index 6, alphabetical position after А,Б,В,Г,Д,Е); unicode 0x0401
+- Test 11: `font.names.fontFamily.en` matches passed `familyName` string
+- Test 12: empty glyphImages map → valid ArrayBuffer with .notdef
+
+**FontDownloader (3 tests):**
+- Test 13: `URL.createObjectURL` called once; `URL.revokeObjectURL` called with the returned URL
+- Test 14: intercepted anchor's `.click()` is called; `.download === filename`, `.href === blob URL`
+- Test 15: Blob passed to createObjectURL has `type === 'font/otf'`
+
+**Design decisions:**
+- Used `// @vitest-environment jsdom` directive for FontDownloader DOM/URL tests
+- Defined local `XYCommand` type alias (`PathCommand & { x; y }`) to work with opentype.js union type
+- Explicit `as opentype.PathCommand[]` casts on `path.commands` to avoid implicit-any cascade from missing modules
+- Tests 4/5 rely on Y mapping formula: `y_top = ascender − row × (1000/128)`, `y_bottom = ascender − (row+1) × (1000/128)`; matches LOCKED font metrics (ascender=800, descender=-200, advanceWidth=600)
+- Font Ё ordering: alphabetical position 6 in Cyrillic set (А=0…Е=5, Ё=6) — per decisions.md LOCKED tensor contract; differs from cyrillicCharset.ts which puts Ё at index 32 (model ordering). Togusa's FontAssembler is expected to use alphabetical order for the font glyph array.
+- Tests are spec-first: two expected TS2305 errors (GlyphVectorizer, FontAssembler modules not yet created by Togusa). All other TS errors resolved. Vitest runs tests regardless of tsc errors.
+- **Cross-team notes:** Togusa implemented all three modules; coordinate mapping bugs found and fixed (X scale 600/128, Y baseline 800-row*scale). Single inference pass eliminates redundancy. Ready for code review and merge.
+
+### 2026-02-26: PR #11 — REQUEST CHANGES (stale duplicate)
+
+**PR #11 — feat/fix-checkpoint-paths → dev:**
+- **Verdict:** REQUEST CHANGES / CLOSE AS DUPLICATE
+- **GitHub self-review restriction → posted as comment**
+
+**What was found:**
+
+1. **Duplicate fix:** The three output path changes (`model_output_dir`, `checkpoint_dir`, `sample_dir`) in `train_config.yaml` were already applied to dev by the PR #10 squash-merge (commit 3e54f39). The feature branch was branched from `f07d86a` (pre-PR-#10), so PR #10 landed the fix first.
+
+2. **Regression risk:** Because the feature branch pre-dates PR #10, it carries stale values for `fonts_dir` (`../../data/fonts` instead of `data/fonts`) and `style_latin_chars` (old incorrect mixed-case list instead of `["A","B","C","D","E","H","I","O","R","X"]`). Merging would cause merge conflicts, and resolving them in favour of the feature branch would break the tensor contract and font loading.
+
+3. **PR dirty state confirmed:** `mergeable_state: "dirty"` — conflicts exist for the stale fields.
+
+4. **No other missed references:** Scanned all of `src/` for `../../models` and `../../data` patterns — only `train_config.yaml` had them, and they are already correct on dev.
+
+5. **train.py synthetic defaults:** Feature branch's `train.py` has no hardcoded `../../` paths. The flagged issue from PR #10 review appears already resolved.
+
+**Patterns learned:**
+- Always verify the merge-base of a PR branch, especially after squash-merges to dev. A fix PR created before a squash-merge can duplicate or regress work.
+- `git show <merge-base>:file` and `git merge-base` are essential to diagnose stale-branch PRs.
+- PRs in `dirty` merge state against a recently-updated dev deserve extra scrutiny for regressions.
+
+### 2026-02-25T180000: PR #10 APPROVED & MERGED — training pipeline fixes
+
+**PR #10 — feat/major-training-pipeline-fixes → dev:**
+- **Verdict:** APPROVED (GitHub self-approve restriction → posted as comment, then merged)
+- **Squash-merged to dev; feature branch deleted**
+
+**What was verified:**
+1. **model.py — UNet skip-connections fixed:** dec5/dec6/dec7 input channels corrected to asymmetric sums (nf*8+nf*4, nf*4+nf*2, nf*2+nf) matching actual encoder output dimensions; duplicate `self.final` ConvTranspose2d removed; forward pass no longer double-concatenates e1; output [B,1,128,128] float32 Tanh [-1,1]. Contract: PASS.
+2. **dataset.py — style chars contract enforced:** `DEFAULT_STYLE_CHARS = ["A","B","C","D","E","H","I","O","R","X"]` uppercase-only 10 chars; fontTools casing fixed; TTFont.close() in finally (Windows locking); SyntheticFontDataset produces correct tensor shapes/dtypes. Contract: PASS.
+3. **train_config.yaml:** style_latin_chars = ["A","B","C","D","E","H","I","O","R","X"] ✅; paths relative to repo root (data/fonts, models/). Contract: PASS.
+4. **download_fonts.py:** fontTools casing + TTFont.close() Windows file locking fix. PASS.
+5. **train.py CLI:** --synthetic/--batch_size/--num_epochs all correctly implemented; 1-epoch real-data validation passed (47,388 samples, no crashes). PASS.
+
+**Minor non-blocking finding:** Synthetic default config in train.py hardcodes `../../models/checkpoints/` (old relative path). Does not affect real training (which uses config file). Suggest follow-up fix.
+
+**Patterns learned:**
+- Always verify feature branch content via GitHub API when local checkout is on a different branch
+- The recurring style chars bug (lowercase in default list) is a known issue that has now been fixed in both dataset.py, train_config.yaml, AND the synthetic defaults (though checkpoint path in synthetic defaults missed)
+- SyntheticFontDataset is a good addition for CI — validates pipeline without requiring 718 font downloads
+
 ### 2026-02-25T160138: Major & Batou Sessions — Ready for QA Review
 
 **PR #8 — cGAN Training Pipeline (Major):**
