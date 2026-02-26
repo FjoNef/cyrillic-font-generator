@@ -9,6 +9,19 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-26: Font assembly pipeline implemented
+- **Branch:** feat/togusa-font-assembly
+- **Files created:**
+  - `src/frontend/src/GlyphVectorizer.ts` — scanline vectorizer with correct coordinate mapping
+  - `src/frontend/src/FontAssembler.ts` — OTF assembly from `Map<number, Float32Array>` with OFL license metadata
+  - `src/frontend/src/FontDownloader.ts` — `downloadFont(buffer, filename)` helper
+- **Files modified:**
+  - `src/frontend/src/App.tsx` — single inference pass (no double inference), wired to FontAssembler + FontDownloader
+- **Key bug fixed:** FontLoader.vectorizeGlyph had wrong X scale (1000/128 instead of 600/128) and missing Y ascender offset. GlyphVectorizer uses corrected math.
+- **Architecture:** FontAssembler takes `Map<number, Float32Array>` (model index → raw output); App.tsx collects this during the generation loop and passes it post-loop. No re-inference for assembly.
+- **OFL:** License text (name ID 13) and URL (name ID 14) written into opentype.js name table via `font.names.license` / `font.names.licenseURL`.
+- **Build status:** My new files introduce 0 TypeScript errors. 7 pre-existing errors in test files (unused `vi` import, unused params) remain; they predate this branch.
+
 ### 2026-02-25T162500: Fixed PR #8 doc conflict (Reviewer Rejection Lockout Protocol)
 - **Timestamp:** 2026-02-25T162500
 - **Branch:** feat/major-model-training (PR #8)
