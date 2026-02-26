@@ -4,6 +4,38 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-02-26: Togusa CI Frontend Build TS6133 Fix — Exclude Test Files from tsconfig
+**By:** Togusa (Frontend Dev)  
+**Status:** Accepted (merged to dev in PR #13)
+
+**Decision:** Add `exclude` field to `src/frontend/tsconfig.json` to prevent test files from being included in production build compilation:
+
+```json
+"exclude": ["src/**/__tests__/**", "src/**/*.test.ts", "src/**/*.spec.ts"]
+```
+
+**Rationale:** CI was failing on `npm run build` because tsc compiled test files with `noUnusedLocals: true` and `noUnusedParameters: true`, flagging 7 TS6133 errors in test-only code. Test files are compiled and type-checked by Vitest independently (esbuild-based). Excluding test files from the build tsconfig is the standard pattern for React/Vite projects and resolves all errors without modifying test code.
+
+**Files Changed:** `src/frontend/tsconfig.json`
+
+---
+
+### 2026-02-26: Saito QA Review — PR #13 CI Fix (APPROVED)
+**By:** Saito (QA)  
+**PR:** #13 (fix/togusa-ci-ts-errors → dev)
+
+**Verdict:** ✅ APPROVED
+
+**Findings:**
+- All 5 test files covered by exclude patterns (no production files excluded) ✅
+- All 7 TS6133 errors resolved in single change ✅
+- Vitest test discovery unaffected (independent glob + esbuild) ✅
+- No regression to test execution or build output ✅
+
+**Recommendation:** MERGE. Minimal, correct, non-regressive fix.
+
+---
+
 ### 2026-02-26: Aramaki PR #12 Revision — Font Assembly Fix Summary
 **By:** Aramaki (Lead)  
 **Context:** Togusa under Reviewer Rejection Lockout. Aramaki applied 3 critical fixes on behalf of team.

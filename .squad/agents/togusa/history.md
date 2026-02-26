@@ -9,6 +9,15 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-26: Fixed CI TS6133 errors — test files excluded from tsc build
+- **Branch:** fix/togusa-ci-ts-errors
+- **PR:** #13 → dev
+- **Problem:** `npm run build` (tsc && vite build) included `src/**/__tests__/**` and `**/*.test.ts` files. With `noUnusedLocals` and `noUnusedParameters` enabled, 7 TS6133 errors in test files broke CI.
+- **Root cause:** `tsconfig.json` had `"include": ["src"]` with no `exclude`, so all test files were compiled.
+- **Fix:** Added `"exclude": ["src/**/__tests__/**", "src/**/*.test.ts", "src/**/*.spec.ts"]` to `src/frontend/tsconfig.json`.
+- **Verified:** `npx tsc --noEmit` exits 0 after fix.
+- **Key lesson:** Always exclude test files from the build tsconfig when `noUnusedLocals`/`noUnusedParameters` are enabled. Vitest has its own tsconfig or runs with relaxed settings; the build tsc should not see test files.
+
 ### 2026-02-26: Font assembly pipeline implemented
 - **Branch:** feat/togusa-font-assembly
 - **Files created:**

@@ -1,0 +1,14 @@
+docs: log session, orchestration, and merge PR #13 CI fix decisions
+
+- Added orchestration log entries for Togusa (fix) and Saito (review)
+- Created session log: 2026-02-26T141513Z-ci-tsconfig-fix.md
+  * Documented root cause: test files in tsc compile with strict unused-var checks
+  * Fix: excluded test files from src/frontend/tsconfig.json
+  * Validation: all 5 test files covered, all 7 TS6133 errors resolved
+  * Outcome: CI passes, test execution unaffected, merged to dev
+- Merged decisions from inbox/ to decisions.md:
+  * Togusa decision: exclude test files (rationale, files changed)
+  * Saito review verdict: APPROVED (findings, recommendation)
+- Deleted inbox files (togusa-ci-ts-fix.md, saito-pr13-review.md)
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

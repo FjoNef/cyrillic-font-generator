@@ -9,6 +9,26 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-26: PR #13 — APPROVED (CI TS6133 fix)
+
+**PR #13 — fix/togusa-ci-ts-errors → dev:**
+- **Verdict:** APPROVED (GitHub self-review restriction → posted as comment)
+
+**What was verified:**
+
+1. **Exclude patterns correct:** Three patterns added to `tsconfig.json` — `src/**/__tests__/**`, `src/**/*.test.ts`, `src/**/*.spec.ts`. All 5 test files on the branch are covered. No production files (.ts/.tsx) are accidentally excluded.
+
+2. **All 7 CI TS6133 errors addressed:** Root cause was `"include": ["src"]` with `noUnusedLocals/noUnusedParameters: true` pulling in test files. Excluding test files from tsc build resolves all errors in a single line.
+
+3. **Vitest unaffected:** Vitest discovers tests by glob (`**/*.{test,spec}.ts`) via its own esbuild transform — independent of tsconfig `include`/`exclude`. All 5 test files still execute under `npx vitest run`.
+
+4. **No vitest.config.ts:** `vite.config.ts` has no `test` block; Vitest uses defaults. Confirmed glob-based discovery is unaffected.
+
+**Patterns learned:**
+- tsconfig `include`/`exclude` affects tsc build only, not Vitest's file discovery. These are orthogonal concerns.
+- `noUnusedLocals` + `noUnusedParameters` in tsconfig will always cause TS6133 errors if test files are included in the build tsconfig — test helpers by nature declare variables for descriptive clarity.
+- The correct fix is excluding test files from the build tsconfig (this PR), not weakening compiler flags.
+
 ### 2026-02-26: PR #12 — REQUEST CHANGES (font assembly pipeline)
 
 **PR #12 — feat/togusa-font-assembly → dev:**
