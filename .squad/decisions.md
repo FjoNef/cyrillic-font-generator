@@ -135,6 +135,16 @@ The training pipeline (PR #8) **exactly implements** the tensor contract defined
 
 ---
 
+### 2026-02-25T214539: Style Character Contract Violation Fix
+**By:** Major (AI/ML Engineer)  
+**Status:** Fixed  
+
+Training script failure on synthetic data: style character list in `dataset.py` and `train_config.yaml` did not match LOCKED tensor contract. Both files used old mixed-case list `["A", "B", "H", "O", "g", "n", "o", "p", "s", "x"]` instead of required uppercase-only `["A", "B", "C", "D", "E", "H", "I", "O", "R", "X"]`. Surgical fix applied (2 lines):
+1. `src/model/data/dataset.py` line 59: Updated DEFAULT_STYLE_CHARS
+2. `src/model/configs/train_config.yaml` line 13: Updated style_latin_chars
+
+Impact: Any model trained with incorrect character set would violate LOCKED tensor contract and cause inference failures. Frontend (PR #4) explicitly extracts uppercase A,B,C,D,E,H,I,O,R,X. Contract comments added to prevent future regressions.
+
 ### 2026-02-25T152812: PR #4 approved — inference pipeline
 **By:** Saito (QA)  
 **What:** PR #4 feat/togusa-inference-pipeline approved after Major fixed color inversion bug.
@@ -216,6 +226,68 @@ Key decisions:
 - Hosting: Self-hosted (not Azure-managed services).
 - Generated font licensing: All generated fonts must be OFL (Open Font License) licensed.
 **Why:** User request — establishes project constraints and licensing commitments.
+
+### 2026-02-25: Training Data — Google Fonts OFL with Latin+Cyrillic Coverage
+**By:** Major (AI/ML Engineer)  
+**Status:** Ready for GPU training
+
+Completed dataset setup: 718 OFL-licensed Google Fonts with full Latin and Cyrillic (Russian) coverage. Each font contains all 10 style reference characters (A, B, C, D, E, H, I, O, R, X) and all 66 Cyrillic target characters (А–Я, а–я including Ё/ё).
+
+**Dataset statistics:**
+- Font count: 718 font files across diverse families
+- Total samples: 47,388 (718 fonts × 66 Cyrillic chars)
+- Train/val split: 45,207 train (95%) / 2,379 val (5%)
+- Batch size: 32 → 1,413 batches per epoch
+- Storage: `data/fonts/` (gitignored, ~400 MB)
+
+**Validation results (1-epoch run):**
+- Data loading works correctly
+- Tensor shapes match contract: style_glyphs [B,10,1,128,128], char_index [B], target [B,1,128,128]
+- Initial losses nominal: D≈0.74, G≈114, L1≈112.5 (expected for untrained GAN)
+- No crashes or data loading errors
+
+**Fixed issues during setup:**
+1. `fontTools` import case sensitivity on Python 3.14 (capital T required)
+2. Windows file locking: added `TTFont.close()` before `unlink()` in coverage checks
+3. Path resolution: changed config paths from `../../data/fonts` to `data/fonts` (relative to repo root)
+
+**Full training command:**
+```bash
+python src/model/train/train.py --config src/model/configs/train_config.yaml --num_epochs 200
+```
+GPU recommended (4-8 hours on GPU vs 19 days on CPU). Outputs: checkpoints in `models/checkpoints/epoch_NNNN.pth`, final export to `models/v1/generator.onnx`.
+
+---
+
+### 2026-02-25: Synthetic Training Mode and CLI Overrides
+**By:** Major (AI/ML Engineer)  
+**Status:** Implemented
+
+Added `--synthetic` flag and CLI parameter overrides to training pipeline. Enables training without font files via random noise tensors matching tensor contract.
+
+**New flags in `src/model/train/train.py`:**
+- `--synthetic`: Use synthetic data instead of real fonts (1000 samples, random [-1,1] noise)
+- `--batch_size N`: Override batch_size from config
+- `--num_epochs N`: Override epochs from config
+- `--config`: Now optional when `--synthetic` is used
+
+**Usage examples:**
+```bash
+# Synthetic training with overrides (no config needed)
+python src/model/train/train.py --synthetic --batch_size 16 --num_epochs 50
+
+# Override config parameters
+python src/model/train/train.py --config configs/train_config.yaml --batch_size 64
+
+# Standard training with real fonts
+python src/model/train/train.py --config configs/train_config.yaml
+```
+
+**Rationale:** Fast pipeline validation without downloading fonts, CI/CD testing without large data dependencies, rapid hyperparameter experimentation, debugging in isolation.
+
+**Verification:** Tested successfully on CPU; batch size and epoch overrides verified; tensor shapes and value ranges correct.
+
+---
 
 ### 2026-02-25: ML engineering decisions
 **By:** Major (AI/ML Engineer)
@@ -336,3 +408,59 @@ Key decisions:
 **What:** Always create a separate feature branch before doing any work. Never commit directly to dev. Applies to ALL agents on ALL tasks — no exceptions.  
 **Branch naming:** `<type>/<agent>-<short-description>` branching from dev.  
 **Why:** User re-issued branching reminder after checkpoint-path fix was initially committed directly to dev (later corrected). Reinforces existing branching policy from 2026-02-25T140433.
+
+---
+
+### 2026-02-26: Font Assembly Pipeline — Module Architecture & Coordinate Mapping
+**By:** Togusa (Frontend Dev)  
+**Branch:** feat/togusa-font-assembly  
+**Status:** Implemented (commit 5710067)
+
+**Decisions:**
+
+#### 1. Separate GlyphVectorizer, FontAssembler, FontDownloader modules
+Refactored font assembly into three focused modules instead of keeping vectorization/assembly inside FontLoader. FontLoader continues to exist for style glyph extraction only.
+
+**Why:** Single Responsibility Principle. Each module has one reason to change: GlyphVectorizer owns raster-to-path logic, FontAssembler owns font structure + metadata, FontDownloader owns browser download mechanics.
+
+#### 2. Correct font coordinate mapping in GlyphVectorizer
+FontLoader.vectorizeGlyph had two critical bugs:
+- **X scale bug:** used `1000/128` (UPM/pixels), mapping columns 0–128 → 0–1000. Correct: `600/128` (advance width / pixels), mapping 0–600.
+- **Y offset bug:** used `(size - row) * scale`, giving range 0–1000 (outside ascender/descender bounds). Correct: `800 - row * (1000/128)`, placing row 0 at ascender y=800 and row 128 at descender y=-200.
+
+GlyphVectorizer uses corrected formulas:
+- `X_SCALE = 600/128 ≈ 4.6875`
+- `Y_SCALE = 1000/128 ≈ 7.8125`
+- `yTop = 800 - row * Y_SCALE`, `yBottom = 800 - (row+1) * Y_SCALE`
+
+**Why:** Glyphs must fit within font metrics (ascender=800, descender=-200, advance=600) per LOCKED tensor contract in decisions.md. Incorrect mapping distorted glyph placement.
+
+#### 3. Single inference pass — eliminate double inference
+App.tsx old flow: ran inference twice (once for ImageData preview, again inside `assembleCyrillicFont`). New flow: single inference loop collects both Float32Array (for FontAssembler) and ImageData (for preview). FontAssembler receives `Map<number, Float32Array>` keyed by model index.
+
+**Why:** Performance and correctness. Double inference wasted CPU; single pass is deterministic and fast.
+
+#### 4. OFL license metadata in font name table
+FontAssembler writes SIL OFL 1.1 license text and URL into opentype.js `font.names.license` / `font.names.licenseURL` (name IDs 13/14).
+
+**Why:** Legal requirement from user directive (2026-02-25T112635): "Generated font licensing: All generated fonts must be OFL (Open Font License) licensed."
+
+#### 5. Download button gating
+Download button disabled until `generationStatus === 'done' && fontBuffer !== null`. Progress indicator "Generating glyphs… N/66" shown during generation.
+
+**Why:** Prevents user from downloading incomplete font files.
+
+#### 6. FontAssembler API design
+```typescript
+assembleFontFromGlyphs(glyphImages: Map<number, Float32Array>, familyName: string): ArrayBuffer
+```
+- Synchronous (vectorization is CPU-only, no async needed)
+- Blank `.notdef` glyph always at index 0
+- Falls back to blank path for any missing glyph index
+
+**Why:** Simplicity. No async overhead for deterministic CPU work. Graceful degradation for sparse glyphImages.
+
+#### 7. Safe Blob URL lifecycle in FontDownloader
+`URL.revokeObjectURL` called immediately after anchor click event dispatches. Safe because browser queues download before DOM cleanup.
+
+**Why:** Prevents memory leaks from long-lived blob URLs. Trust browser queueing semantics.

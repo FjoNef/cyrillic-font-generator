@@ -1,8 +1,9 @@
 import { useCallback, useEffect } from 'react';
 import { useAppStore } from './stores/appStore';
 import { modelLoader } from './inference/ModelLoader';
-import { FontLoader } from './font/FontLoader';
 import { CYRILLIC_CHARS } from './font/cyrillicCharset';
+import { assembleFontFromGlyphs } from './FontAssembler';
+import { downloadFont } from './FontDownloader';
 import FontUpload from './components/FontUpload';
 import ModelLoadingBar from './components/ModelLoadingBar';
 import GlyphPreview from './components/GlyphPreview';
@@ -54,14 +55,20 @@ export default function App() {
     setGenerationProgress(0);
 
     try {
-      // Generate all 66 Cyrillic glyphs
+      // Collect raw Float32Array outputs alongside ImageData for preview
+      const rawGlyphs = new Map<number, Float32Array>();
+
+      // Generate all 66 Cyrillic glyphs (single inference pass)
       for (let i = 0; i < CYRILLIC_CHARS.length; i++) {
         const { char, index } = CYRILLIC_CHARS[i];
-        
-        // Run inference
+
+        // Run inference → Float32Array [-1,1]
         const output = await modelLoader.infer(styleGlyphs, index);
-        
-        // Convert Float32Array [-1,1] → ImageData [0,255]
+
+        // Store raw output for font assembly
+        rawGlyphs.set(index, output);
+
+        // Convert to ImageData for glyph preview
         const pixels = new Uint8ClampedArray(128 * 128 * 4);
         for (let px = 0; px < 128 * 128; px++) {
           const val = Math.round(((1 - output[px]) / 2) * 255);
@@ -70,40 +77,27 @@ export default function App() {
           pixels[px * 4 + 2] = val; // B
           pixels[px * 4 + 3] = 255; // A
         }
-        
+
         const imageData = new ImageData(pixels, 128, 128);
         setGeneratedGlyph(char, imageData);
         setGenerationProgress(i + 1);
       }
 
-      // Assemble font
-      const loader = new FontLoader();
-      const inferFn = async (charIndex: number) => {
-        return await modelLoader.infer(styleGlyphs, charIndex);
-      };
-
-      const buffer = await loader.assembleCyrillicFont(styleGlyphs, inferFn);
+      // Assemble OTF from already-generated raw glyphs (no re-inference)
+      const buffer = assembleFontFromGlyphs(rawGlyphs, fontName ?? 'Generated Cyrillic');
       setFontBuffer(buffer);
       setGenerationStatus('done');
     } catch (error) {
       console.error('Generation failed:', error);
       setGenerationStatus('error');
     }
-  }, [styleGlyphs, reset, setGenerationStatus, setGenerationProgress, setGeneratedGlyph, setFontBuffer]);
+  }, [styleGlyphs, fontName, reset, setGenerationStatus, setGenerationProgress, setGeneratedGlyph, setFontBuffer]);
 
   const handleDownload = useCallback(() => {
     if (!fontBuffer) return;
-
-    const blob = new Blob([fontBuffer], { type: 'font/otf' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'cyrillic-font.otf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [fontBuffer]);
+    const safeName = (fontName ?? 'generated-cyrillic').replace(/\s+/g, '-').toLowerCase();
+    downloadFont(fontBuffer, `${safeName}.otf`);
+  }, [fontBuffer, fontName]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -171,10 +165,17 @@ export default function App() {
             <h2 className="text-lg font-semibold mb-3">
               <span className="text-blue-600 mr-2">4.</span>Download font
             </h2>
+            {generationStatus === 'running' && (
+              <p className="mb-2 text-sm text-gray-500">
+                Generating glyphs… {generationProgress}/66
+              </p>
+            )}
             <button
               onClick={handleDownload}
+              disabled={generationStatus !== 'done' || !fontBuffer}
               className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium
-                         hover:bg-green-700 transition-colors"
+                         hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed
+                         transition-colors"
             >
               Download .otf
             </button>

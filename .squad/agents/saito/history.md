@@ -9,6 +9,62 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-26: PR #12 — REQUEST CHANGES (font assembly pipeline)
+
+**PR #12 — feat/togusa-font-assembly → dev:**
+- **Verdict:** REQUEST CHANGES (GitHub self-review restriction → posted as comment)
+
+**What was found:**
+
+1. **API surface mismatch (Blocking):** Tests import `GlyphVectorizer` and `FontAssembler` as classes (`new GlyphVectorizer()`, `.vectorize()`, `new FontAssembler()`, `.assemble()`). Implementation exports plain functions `vectorizeGlyph` and `assembleFontFromGlyphs`. 12 of 15 tests fail at import. Fix: add class wrappers.
+
+2. **cyrillicCharset.ts Yo/yo indices violate LOCKED tensor contract (Blocking):** decisions.md LOCKED specifies Yo (U+0401) at model index 6 and yo (U+0451) at index 39. cyrillicCharset.ts places Yo at index 32 (end of uppercase block) and yo at index 65 (end of lowercase block). App.tsx passes this index directly to model inference → model generates wrong characters. Fix: alphabetical ordering in cyrillicCharset.ts.
+
+3. **makeGlyphImages() key type mismatch (Blocking):** Test helper returns `Map<string, Float32Array>` (char string keys), but `assembleFontFromGlyphs` expects `Map<number, Float32Array>` (model index keys). At runtime all `glyphImages.get(index)` calls return undefined → every glyph is blank path. FontAssembler tests 7-11 silently validate an empty font. Fix: return `Map<number, Float32Array>` keyed 0-65.
+
+**What passed:** Coordinate math (X=600/128, Y flip row0→800, row127→-200), threshold `> 0`, opentype.js metrics (UPM=1000, asc=800, desc=-200, adv=600), .notdef slot 0, OFL license in name table, download button gating, progress counter, single inference pass, opentype.js in package.json, FontDownloader lifecycle.
+
+**Patterns learned:**
+- Spec-first tests must explicitly document expected API surface (class vs function) to prevent this mismatch.
+- cyrillicCharset.ts model index ordering must be validated against decisions.md LOCKED contract at review time — silent ordering bugs produce no TypeScript errors but break inference output.
+- Test helper types must match the implementation signatures exactly; `Map<string,…>` vs `Map<number,…>` is a silent bug that produces no assertion failures, just blank output.
+
+### 2026-02-26: Font pipeline spec tests written — feat/togusa-font-assembly
+
+**Task:** Write spec-first tests for three modules Togusa is building on `feat/togusa-font-assembly`.
+
+**Test file created:** `src/frontend/src/fontPipeline.test.ts` (15 test cases)
+
+**GlyphVectorizer (6 tests):**
+- Test 1: all-white (-1.0) input → `path.commands.length === 0`
+- Test 2: all-black (+1.0) input → `path.commands.length > 0`
+- Test 3: single horizontal run (row 64, cols 10-19) → exactly 5 commands (M,L,L,L,Z); X start ≈ 10 × (600/128)
+- Test 4: Y-axis flip — row 0 max Y = 800 (ascender), row 127 min Y = -200 (descender)
+- Test 5: X scaling — full row spans x [0, 600] (advanceWidth)
+- Test 6: threshold — pixel at 0.0 → no ink; pixel at 0.001 → ink (rule: > 0 = ink)
+
+**FontAssembler (6 tests):**
+- Test 7: returns `ArrayBuffer` with `byteLength > 0`
+- Test 8: parsed font has exactly 67 glyphs (66 Cyrillic + .notdef); slot 0 = `.notdef`
+- Test 9: cmap maps А → glyph with unicode 0x0410
+- Test 10: Ё sits at glyph slot 7 (Cyrillic index 6, alphabetical position after А,Б,В,Г,Д,Е); unicode 0x0401
+- Test 11: `font.names.fontFamily.en` matches passed `familyName` string
+- Test 12: empty glyphImages map → valid ArrayBuffer with .notdef
+
+**FontDownloader (3 tests):**
+- Test 13: `URL.createObjectURL` called once; `URL.revokeObjectURL` called with the returned URL
+- Test 14: intercepted anchor's `.click()` is called; `.download === filename`, `.href === blob URL`
+- Test 15: Blob passed to createObjectURL has `type === 'font/otf'`
+
+**Design decisions:**
+- Used `// @vitest-environment jsdom` directive for FontDownloader DOM/URL tests
+- Defined local `XYCommand` type alias (`PathCommand & { x; y }`) to work with opentype.js union type
+- Explicit `as opentype.PathCommand[]` casts on `path.commands` to avoid implicit-any cascade from missing modules
+- Tests 4/5 rely on Y mapping formula: `y_top = ascender − row × (1000/128)`, `y_bottom = ascender − (row+1) × (1000/128)`; matches LOCKED font metrics (ascender=800, descender=-200, advanceWidth=600)
+- Font Ё ordering: alphabetical position 6 in Cyrillic set (А=0…Е=5, Ё=6) — per decisions.md LOCKED tensor contract; differs from cyrillicCharset.ts which puts Ё at index 32 (model ordering). Togusa's FontAssembler is expected to use alphabetical order for the font glyph array.
+- Tests are spec-first: two expected TS2305 errors (GlyphVectorizer, FontAssembler modules not yet created by Togusa). All other TS errors resolved. Vitest runs tests regardless of tsc errors.
+- **Cross-team notes:** Togusa implemented all three modules; coordinate mapping bugs found and fixed (X scale 600/128, Y baseline 800-row*scale). Single inference pass eliminates redundancy. Ready for code review and merge.
+
 ### 2026-02-26: PR #11 — REQUEST CHANGES (stale duplicate)
 
 **PR #11 — feat/fix-checkpoint-paths → dev:**
