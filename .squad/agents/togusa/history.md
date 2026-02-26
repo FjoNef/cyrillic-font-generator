@@ -9,7 +9,35 @@
 ## Learnings
 <!-- Append new entries below -->
 
-### 2026-02-26: Fixed CI TS6133 errors — test files excluded from tsc build
+### 2026-02-26: Fixed opentype.js CJS/ESM interop in Vitest (PR #15 MERGED)
+
+- **Branch:** fix/togusa-opentype-vitest-interop
+- **PR:** #15 → dev ✅ MERGED
+- **Problem:** `fontPipeline.test.ts` and `FontLoader.test.ts` crashed at suite load time with `TypeError: Cannot assign to read only property 'load'`. 0 tests ran in either suite; the other 3 suites and their 20 tests were unaffected.
+- **Root cause:** opentype.js ships a CJS/UMD bundle (`dist/opentype.js`) and a native ESM build (`dist/opentype.module.js`). Vitest resolved `opentype.js` to the CJS bundle. Its UMD factory does `exports.load = load` at module-evaluation time, but Vitest's ESM strict mode seals the `exports` object, making that assignment throw. Neither `server.deps.inline`, `deps.inline`, nor `deps.optimizer.web.include` prevented the issue in practice with Vitest 1.6.
+- **Fix (vitest.config.ts):** Created `src/frontend/vitest.config.ts` with `resolve.alias: { 'opentype.js': '.../dist/opentype.module.js' }`. This forces Vitest to always resolve the ESM build, bypassing the CJS bundle entirely.
+- **Secondary fixes revealed by the above:**
+  1. `FontLoader.test.ts` was missing `// @vitest-environment jsdom` — `extractStyleGlyphs` calls `document.createElement('canvas')`, which requires a browser env.
+  2. jsdom doesn't implement `URL.createObjectURL/revokeObjectURL`, `HTMLCanvasElement.getContext('2d')`, or `Path2D`. Added `src/frontend/src/test-setup.ts` to stub all of these, guarded with `typeof` checks so node-env inference tests are unaffected.
+- **Result:** All 41 tests across all 5 suites pass (up from 20 passing with 2 suites crashing).
+- **Key lesson:** When a CJS/UMD package has a `module` field pointing to a native ESM build, the most reliable Vitest fix is `resolve.alias` to force the ESM file — not `deps.inline`/`server.deps.inline`, which in practice didn't intercept the load in Vitest 1.x jsdom pool. Also: always add `@vitest-environment jsdom` to any test file that touches `document`, `canvas`, or other DOM APIs.
+
+### 2026-02-26: Fixed CI test failures — jsdom + ModelLoader singleton/async pattern
+
+- **Branch:** fix/togusa-ci-test-failures
+- **PR:** #14 → dev
+- **Problem 1:** `Cannot find package 'jsdom'` — `fontPipeline.test.ts` uses `// @vitest-environment jsdom` but jsdom was absent from devDependencies.
+- **Fix 1:** `npm install --save-dev jsdom` added jsdom to package.json devDependencies.
+- **Problem 2:** `mockWorker.onmessage is not a function` at lines 85, 94, 102, 138, 174 in ModelLoader.test.ts — three interrelated root causes:
+  1. `modelLoader` singleton retained `loadPromise`/`worker` across tests; subsequent tests got fresh `mockWorker` from `beforeEach` but `onmessage` handler was set on the OLD worker.
+  2. `load()` was `async`, so every call returned a new Promise wrapper — the `toBe` same-reference assertion in "same promise for concurrent loads" always failed.
+  3. `infer()` internally `await this.loadPromise` before calling `postMessage`; even when resolved, `await` defers to microtask queue — tests reading `mock.calls` synchronously right after `infer()` saw empty arrays.
+- **Fix 2a:** Exported `ModelLoader` class; test uses `new ModelLoader()` in `beforeEach` for a clean instance.
+- **Fix 2b:** Removed `async` from `load()` — it already builds and returns a `Promise<void>` manually, so returning `this.loadPromise` directly gives same object reference.
+- **Fix 2c:** Added `await Promise.resolve()` microtask flush in 3 tests after calling `infer()` before reading `mockWorker.postMessage.mock.calls`.
+- **Key lesson:** Never export a stateful singleton as the only test surface — export the class too. And `async` on a function that manually returns a Promise wraps it in a second Promise, breaking reference equality. Finally, `await resolvedPromise` still defers to the microtask queue; synchronous mock reads after `infer()` must flush first.
+
+
 - **Branch:** fix/togusa-ci-ts-errors
 - **PR:** #13 → dev
 - **Problem:** `npm run build` (tsc && vite build) included `src/**/__tests__/**` and `**/*.test.ts` files. With `noUnusedLocals` and `noUnusedParameters` enabled, 7 TS6133 errors in test files broke CI.

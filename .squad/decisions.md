@@ -548,3 +548,112 @@ assembleFontFromGlyphs(glyphImages: Map<number, Float32Array>, familyName: strin
 `URL.revokeObjectURL` called immediately after anchor click event dispatches. Safe because browser queues download before DOM cleanup.
 
 **Why:** Prevents memory leaks from long-lived blob URLs. Trust browser queueing semantics.
+
+
+---
+
+# Decision: Vitest config for opentype.js CJS/ESM interop
+
+**Date:** 2026-02-26  
+**Author:** Togusa  
+**Branch:** fix/togusa-opentype-vitest-interop  
+**PR:** #15
+
+## Decision
+
+Use `resolve.alias` in `vitest.config.ts` to map `opentype.js` → `dist/opentype.module.js` (the native ESM build).
+
+## Context
+
+opentype.js ships:
+- `dist/opentype.js` — CJS/UMD bundle (resolved by Node's `main` field)
+- `dist/opentype.module.js` — native ESM (the `module` field)
+
+Vitest 1.x resolved to the CJS bundle. Its factory function runs `exports.load = load` at module-evaluation time. In Vitest's ESM strict mode the `exports` namespace object is sealed → `TypeError: Cannot assign to read only property 'load'`. Both `fontPipeline.test.ts` and `FontLoader.test.ts` crashed at load time; 0 tests ran.
+
+## Options Considered
+
+| Option | Result |
+|--------|--------|
+| `server.deps.inline: ['opentype.js']` | No effect in Vitest 1.x jsdom pool |
+| `deps.inline + interopDefault: true` | No effect |
+| `deps.optimizer.web.include: ['opentype.js']` | No effect |
+| **`resolve.alias` → ESM build** | ✅ Fixed; all 41 tests pass |
+
+## Files Changed
+
+- `src/frontend/vitest.config.ts` *(new)* — alias + react plugin + jsdom test stubs setup
+- `src/frontend/src/test-setup.ts` *(new)* — stubs `URL.createObjectURL`, `URL.revokeObjectURL`, canvas `getContext('2d')`, `Path2D` for jsdom; guarded so node-env tests are unaffected
+- `src/frontend/src/font/__tests__/FontLoader.test.ts` — added `// @vitest-environment jsdom`
+
+## Consequences
+
+- Any future upgrade of opentype.js should verify that `dist/opentype.module.js` still exists; if the package restructures, the alias will need updating.
+- The alias also applies to production Vite builds (Vite already preferred the `module` field, so this is a no-op there).
+
+
+---
+
+# Decision: Frontend CI Test Fixes — jsdom + ModelLoader Mock Pattern
+
+**Date:** 2026-02-26  
+**Author:** Togusa  
+**PR:** #14  
+
+## Context
+
+Two CI test failures on `dev` branch in `src/frontend`:
+1. `Cannot find package 'jsdom'`
+2. `TypeError: mockWorker.onmessage is not a function` (ModelLoader.test.ts lines 85, 94, 102, 138, 174)
+
+## Decisions Made
+
+### 1. Install jsdom as devDependency
+`fontPipeline.test.ts` uses `// @vitest-environment jsdom` doc-comment to opt into DOM environment. jsdom must be explicitly installed for vitest v1 (`npm install --save-dev jsdom`).
+
+### 2. Export ModelLoader class alongside singleton
+Instead of only exporting `export const modelLoader = new ModelLoader()`, also export the class as `export class ModelLoader`. Tests must instantiate `new ModelLoader()` in `beforeEach` to avoid singleton state leaking across tests (stale `loadPromise` + `worker` references).
+
+### 3. Remove `async` from `load()` 
+`load()` manually constructs and returns a `Promise<void>`. Marking it `async` caused every call to return a new wrapper Promise, breaking the `toBe` same-reference assertion in the concurrent-loads test. Non-async method returning `this.loadPromise` directly gives same object reference on repeated calls.
+
+### 4. Flush microtasks before reading mock.calls after infer()
+`infer()` contains `await this.loadPromise` internally. Even when the promise is already resolved, `await` yields to the microtask queue before executing `postMessage`. Tests that read `mockWorker.postMessage.mock.calls` synchronously after calling `infer()` must add `await Promise.resolve()` first to flush the queue.
+
+
+---
+
+# Saito QA Review — PR #14 (fix/togusa-ci-test-failures → dev)
+
+**By:** Saito (QA)
+**PR:** #14
+**Date:** 2026-02-26
+**Verdict:** ✅ APPROVED
+
+## Changes Reviewed
+
+1. `jsdom` added to `devDependencies` in `src/frontend/package.json`
+2. `ModelLoader` class exported in `src/frontend/src/inference/ModelLoader.ts`
+3. `async` removed from `load()` in `ModelLoader.ts`
+4. `ModelLoader.test.ts` restructured: imports class, creates `new ModelLoader()` in `beforeEach`, adds `await Promise.resolve()` flushes in 3 tests
+
+## Findings
+
+| Check | Result |
+|---|---|
+| jsdom placement (devDependencies) | ✅ Correct |
+| new ModelLoader() in beforeEach | ✅ Good pattern — prevents stale state |
+| Removing async from load() | ✅ Correct — no internal await, still returns Promise<void> |
+| await Promise.resolve() placement | ✅ Correct — after infer() call, before postMessage assertions |
+| No unintended test file modifications | ✅ Only 4 files changed |
+
+## Notes
+
+- `load()` constructs and returns `new Promise<void>()` directly with no `await` inside — removing `async` is accurate and avoids the implicit promise-wrapping overhead.
+- The `await Promise.resolve()` flushes are necessary because `infer()` contains `await this.loadPromise` internally; the flush lets that continuation execute so `postMessage` is called before assertions run.
+- `new ModelLoader()` per test is the correct fix for CI failures caused by shared singleton state (`loadPromise` not null on second test).
+
+## Recommendation
+
+MERGE to dev.
+

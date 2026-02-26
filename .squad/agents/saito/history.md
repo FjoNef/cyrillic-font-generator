@@ -9,6 +9,40 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-26: PR #15 Review — APPROVED (opentype.js CJS/ESM interop fix)
+
+**PR #15 — fix/togusa-opentype-vitest-interop → dev:**
+- **Verdict:** ✅ APPROVED — Merged to dev
+- **What was verified:**
+  1. **opentype.module.js availability** ✅ — Confirmed dist/opentype.module.js exists in node_modules.
+  2. **All 41 tests pass** ✅ — 5 suites, 100% pass rate under Vitest 1.6 with jsdom.
+  3. **vitest.config.ts alias correct** ✅ — `resolve.alias` mapping forces ESM resolution, bypasses CJS bundle.
+  4. **test-setup.ts stubs safe** ✅ — `URL.createObjectURL/revokeObjectURL`, `canvas.getContext('2d')`, `Path2D` stubs guarded with `typeof` checks; node-env tests unaffected.
+  5. **jsdom directive placed correctly** ✅ — `// @vitest-environment jsdom` in FontLoader.test.ts enables DOM APIs.
+- **CI Status:** ✅ All 11 steps pass (build frontend, type check, vitest, dotnet restore/build/test).
+
+### 2026-02-26: PR #14 — APPROVED (CI test failure fix)
+
+**PR #14 — fix/togusa-ci-test-failures → dev:**
+- **Verdict:** APPROVED (GitHub self-review restriction → posted as comment)
+
+**What was verified:**
+
+1. **jsdom in devDependencies** ✅ — Correct placement; dev-only test environment dependency, not needed at runtime.
+
+2. **new ModelLoader() in beforeEach** ✅ — Good pattern. Fresh instance per test prevents stale `loadPromise`/worker state leaking between tests — this was the root cause of CI failures.
+
+3. **Removing async from load()** ✅ — Correct. `load()` uses no internal `await`; it constructs and returns `new Promise<void>()` directly and stores it in `this.loadPromise`. Removing `async` is accurate — callers still receive `Promise<void>` but the implementation no longer wraps in an unnecessary implicit promise.
+
+4. **await Promise.resolve() flushes** ✅ — Correctly placed after each `infer()` call and before `mockWorker.postMessage` assertions. `infer()` contains `await this.loadPromise` internally; one microtask flush is sufficient to let that continuation execute and `postMessage` to be called before assertions run.
+
+5. **No other test files modified** ✅ — Diff scoped to exactly 4 files: `package.json`, `package-lock.json`, `ModelLoader.ts` (export added), `ModelLoader.test.ts`.
+
+**Patterns learned:**
+- When mocking async code in Vitest, `await Promise.resolve()` is the minimal flush needed to advance microtask continuations (e.g., code after `await somePromise` inside the SUT). One flush suffices when the promise is already resolved.
+- Singleton instances in tests cause inter-test state pollution. Always create fresh instances in `beforeEach` for stateful classes.
+- Removing `async` from a method that only returns a manually constructed `Promise` (no internal `await`) is a correctness improvement, not a breaking change.
+
 ### 2026-02-26: PR #13 — APPROVED (CI TS6133 fix)
 
 **PR #13 — fix/togusa-ci-ts-errors → dev:**
