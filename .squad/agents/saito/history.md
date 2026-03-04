@@ -9,6 +9,40 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-04: E2E Pipeline Smoke Test — epoch_0020
+
+**Task:** End-to-end pipeline smoke test after Major exported `models/v1/generator.onnx` (230 MB, fp32, opset 18).
+
+**Overall pipeline health:** Structurally sound but one critical routing gap blocks full E2E.
+
+**Stage results:**
+
+1. **Model file** ✅ — `models/v1/generator.onnx` present, 230 MB, output shape `(1,1,128,128)` confirmed by Major.
+
+2. **Backend** ✅ structural / ⚠️ path resolution  
+   - Endpoints registered: `/health`, `/api/model`, `/api/model/manifest`, static `/models/v1/generator.onnx`, `POST /api/font/validate`  
+   - ⚠️ Model resolved via `Path.GetFullPath(..., AppContext.BaseDirectory)` → points to bin dir, not repo root. Model file won't be found without copy-to-output or absolute path config.  
+   - 4/4 backend tests pass, but the "model present → 200 + stream" happy path is not tested.
+
+3. **Frontend inference pipeline** ✅  
+   - `ModelLoader` / `inferenceWorker` / `GlyphVectorizer` / `FontAssembler` / `FontDownloader` all present and correct.  
+   - Tensor contract correct: `style_glyphs [1,10,1,128,128]`, `char_index [1]`, `generated_glyph` output.  
+   - Color mapping formula correct. cyrillicCharset.ts tensor ordering matches LOCKED contract.  
+   - 41/41 frontend tests pass.
+
+4. **Integration path** ❌ CRITICAL  
+   - `App.tsx` line 34 calls `modelLoader.load('/api/models/v1/generator.onnx', ...)` — this URL matches NO backend route.  
+   - Backend serves at `/api/model` (API endpoint, singular, no suffix) OR `/models/v1/generator.onnx` (static file, no `/api/` prefix).  
+   - In dev: Vite proxies `/api` to backend, but `/api/models/v1/generator.onnx` hits SPA fallback → returns HTML.  
+   - Fix: change `App.tsx` (and matching `ModelLoader.test.ts`) to `/api/model`.
+
+5. **OnnxInference.ts** ⚠️ low — dead code path, still has old TODO comments for tensor names. Not blocking.
+
+**Patterns learned:**
+- URL integration bugs don't surface in tests when the Worker is mocked — ModelLoader.test.ts mocks Worker globally, so the model URL is never actually fetched.
+- Backend integration tests passing 404 tests do NOT validate the happy path. A test that seeds a temp model file and verifies `200 + binary stream` is needed.
+- `AppContext.BaseDirectory` is the binary output directory, not the project/repo root — model files need to be either copy-to-output or path config must use absolute paths for local dev.
+
 ### 2026-02-26: PR #15 Review — APPROVED (opentype.js CJS/ESM interop fix)
 
 **PR #15 — fix/togusa-opentype-vitest-interop → dev:**

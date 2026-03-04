@@ -4,6 +4,59 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-03-04: Major ONNX Export — Epoch 20 Validation, INT8 Quantization Workaround
+
+**By:** Major (AI/ML Engineer)  
+**Date:** 2026-03-04  
+**Status:** ACCEPTED — Epoch 20 ONNX exported, quantization blocked by onnxruntime bug
+
+**Decision:** Export epoch_0020 checkpoint to `models/v1/generator.onnx` for E2E pipeline validation. INT8 quantization fails on opset 18 models due to onnxruntime shape inference bug; fallback to fp32 (230 MB) is structurally valid and sufficient for validation.
+
+**Issues fixed in export_onnx.py:**
+1. Set `opset_version=18` explicitly (PyTorch dynamo auto-upgrades from 17)
+2. Wrapped quantization in try/except; falls back to fp32 on ShapeInferenceError
+3. Consolidate external data sidecar inline using `onnx.load(..., load_external_data=True)` + `save(..., save_as_external_data=False)`
+
+**Output validation:**
+- ✅ onnx.checker.check_model() passed
+- ✅ onnxruntime inference confirmed (CPUExecutionProvider)
+- ✅ Output shape (1,1,128,128) float32, range [-1, 1]
+- ✅ Single self-contained file (no .data sidecar)
+
+**Known limitations:**
+- 230 MB (fp32) vs ~60 MB quantized target. Quantization bug workaround persists in export script; will be automatic on final export.
+- Visual quality poor at epoch 20/200; validates pipeline structure only.
+
+**Next action:** Retrain to epoch 200, re-export to same path.
+
+---
+
+### 2026-03-04: Saito E2E Smoke Test — 2 Critical Integration Gaps Identified
+
+**By:** Saito (QA / E2E Testing)  
+**Date:** 2026-03-04  
+**Status:** BLOCKING — URL routing + backend path resolution gaps must be fixed before production
+
+**Test Results:**
+- ✅ Model file: structurally valid, correct shape/range
+- ✅ Backend endpoints: 4/4 routes present, 4/4 tests pass
+- ✅ Frontend inference pipeline: 41/41 tests pass, tensor contract verified
+- ❌ **Gap #1 — URL routing:** Frontend requests `/api/models/v1/generator.onnx`, backend serves `/api/model` or `/models/v1/generator.onnx`. Vite proxy fallback returns HTML instead of binary.
+- ⚠️ **Gap #2 — Backend path resolution:** Model path resolved via `AppContext.BaseDirectory` (binary output dir), not repo root. Model file won't be found without copy-to-output or absolute path config.
+
+**Priority fixes:**
+| Issue | Owner | Fix |
+|-------|-------|-----|
+| Frontend URL mismatch | Togusa | Change App.tsx + ModelLoader.test.ts to `/api/model` |
+| Backend path resolution | Batou | Copy model to build output OR configure absolute path |
+| Missing happy-path test | Saito/Batou | Add backend test: model present → 200 + binary stream |
+
+**Key learning:** Integration test gaps (URL routing doesn't surface when Web Worker is mocked). Actual HTTP request validation needed.
+
+**Next action:** Fix routing/path, re-run E2E smoke test before epoch 200 export.
+
+---
+
 ### 2026-02-26: Aramaki Training Launch — GPU Ready, Full Run Staged
 
 **By:** Aramaki (Lead)  

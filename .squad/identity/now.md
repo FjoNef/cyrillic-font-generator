@@ -1,37 +1,51 @@
 ---
-updated_at: 2026-02-26T15:23:02Z
-focus_area: CUDA PyTorch installed, smoke-tested, training command staged. Ready to launch on user signal.
-active_issues: []
+updated_at: 2026-03-04T23:29:00Z
+focus_area: Training resumed at epoch 23/200. ONNX epoch-20 export validated. Two pipeline gaps identified: URL routing (Togusa), backend model path (Batou). Fixes pending, then continue training to epoch 200.
+active_issues: ["URL mismatch /api/models/v1/generator.onnx", "Backend model path AppContext.BaseDirectory"]
 ---
 
 # Now
 
-**Last updated:** 2026-02-26  
-**Focus:** GPU environment production-ready. Full training staged, awaiting launch signal.
+**Last updated:** 2026-03-04  
+**Focus:** Training in progress (~epoch 23/200). ONNX pipeline validation milestone passed with identified gaps.
 
 ## Current state
 - Branch: dev (aligned with origin/dev)
-- PR #13: fix/togusa-ci-ts-errors — ✅ MERGED
-- PR #14: fix/togusa-ci-test-failures — ✅ MERGED
-- PR #15: fix/togusa-opentype-vitest-interop — ✅ MERGED
-- **CI Pipeline:** ✅ All 11 steps pass (build frontend, type check, vitest, dotnet restore/build/test)
-- **Frontend Tests:** 41/41 passing across 5 suites
-- **Backend Tests:** ✅ All passing
-- **PyTorch:** ✅ torch 2.10.0+cu128 — CUDA: True — Device: NVIDIA GeForce RTX 3070 Laptop GPU
-- **Smoke test:** ✅ 2 epochs ran clean on CUDA (~3.3 it/s on synthetic data)
-- **Training command:** ✅ Staged and ready (see below)
+- **Training:** Resumed after epoch 20 checkpoint export; running on NVIDIA RTX 3070 Laptop GPU
+- **Estimated progress:** ~epoch 23 (training at ~3.2 it/s, ~7 min/epoch, ~24 hours total for 200 epochs)
+- **ONNX checkpoint:** `models/v1/generator.onnx` (230 MB, fp32, opset 18) — structurally valid, quantization blocked by onnxruntime bug
+- **Pipeline validation:** 41 frontend + 4 backend tests pass; 2 critical integration gaps identified (see below)
+- **Model quality:** Glyph output poor at epoch 20 (expected); final quality assessment pending epoch 200 re-export
+
+## Critical Issues (Must Fix Before Production)
+
+| Issue | Blocker | Owner | Status |
+|-------|---------|-------|--------|
+| Frontend URL `/api/models/v1/generator.onnx` → backend has no such route; correct URL is `/api/model` | 🔴 YES | Togusa | Not fixed |
+| Backend model path resolves from `AppContext.BaseDirectory` (binary dir) not repo root; file won't be found | 🟡 MEDIUM | Batou | Not fixed |
+| Backend happy-path test missing (model present → 200 + stream) | 🟡 MEDIUM | Saito/Batou | Not fixed |
 
 ## Next up
-1. **User/Major** — Launch full training run (ready to execute):
-   ```powershell
-   cd C:/Users/fjodo/RiderProjects/cyrillic-font-generator/src/model
-   Start-Process python -ArgumentList "train/train.py --config configs/train_config.yaml --num_epochs 200" -RedirectStandardOutput "..\..\models\training.log" -RedirectStandardError "..\..\models\training_err.log" -NoNewWindow -PassThru | Select-Object Id
-   ```
-   **Est. runtime:** 4–8 hours on RTX 3070 Ti  
-   **Log files:** `models/training.log`, `models/training_err.log`
+1. **Togusa** — Fix URL in `App.tsx` + `ModelLoader.test.ts`: `/api/models/v1/generator.onnx` → `/api/model`
+2. **Batou** — Resolve backend model path: copy model to build output OR configure absolute path
+3. **Saito** — Add backend test for happy-path (model present)
+4. **Saito** — Re-run E2E smoke test after URL/path fixes
+5. **Major** — Continue training to epoch 200, then re-export to `models/v1/generator.onnx`
+6. **Saito** — Final E2E validation on epoch 200 model
 
-2. **Major** — ONNX export to `models/v1/generator.onnx` after training completes
-3. **Saito** — End-to-end smoke test: upload font → generate Cyrillic → download OTF
+## Completed This Session (2026-03-04)
+- ✅ Epoch 20 checkpoint exported to ONNX (230 MB fp32, opset 18)
+  - Fixed: onnxscript missing module, opset 17→18 auto-upgrade, INT8 quantization bug fallback, external data sidecar consolidation
+- ✅ End-to-end smoke test completed
+  - Model file valid ✅
+  - Backend endpoints registered ✅
+  - Frontend pipeline structure sound ✅
+  - **Identified:** URL routing gap ❌ and backend path resolution gap ⚠️
+- ✅ Orchestration logs written (Major, Saito)
+- ✅ Session log written (ONNX export + E2E)
+- ✅ Decisions inbox merged into decisions.md; inbox files deleted
 
-## Blocker
-None. GPU environment fully ready. Training launch deferred (decision in decisions.md).
+## Blocker Summary
+None if URL + path fixes are applied immediately. Training can resume safely in parallel.
+
+

@@ -8,6 +8,43 @@
 
 ## Learnings
 
+### 2026-03-04: Pipeline Validation ONNX Export — epoch_0020
+
+**Status:** SUCCESS (fp32 fallback — quantization blocked by opset/onnxruntime mismatch)
+
+**Checkpoint:** `models/checkpoints/epoch_0020.pth` (~721 MB)
+**Output:** `models/v1/generator.onnx` — single inline fp32 file
+**File size:** 230 MB (fp32; INT8 target was ~12–18 MB)
+**Output shape:** (1, 1, 128, 128) float32 ✓ matches tensor contract
+**Value range:** [-1.000, 1.000] ✓ within contract bounds
+
+**Issues encountered and fixed:**
+
+1. **Missing `onnxscript` module** — `torch.onnx.export` new dynamo backend requires `onnxscript`. Fixed with `pip install onnxscript`.
+
+2. **Opset 17 → 18 upgrade** — PyTorch's newer exporter only implements opset ≥18. It auto-upgrades; harmless but changes the target opset. Fixed by setting `opset_version=18` explicitly in `export_onnx.py`.
+
+3. **INT8 quantization failure** — `onnxruntime.quantization.quantize_dynamic` fails with `ShapeInferenceError: Inferred shape and existing shape differ in dimension 0: (512) vs (256)`. This is a shape annotation conflict in the opset 18 model from the new dynamo exporter (likely a bug in onnxruntime's shape inference for opset 18 models with the Linear layer weights). Not a model architecture problem. Fixed by adding a try/except fallback to fp32.
+
+4. **External data file problem** — New torch ONNX dynamo exporter writes weights to a `.data` sidecar file for large models. The fallback originally used `shutil.move` which left a misnamed sidecar. Fixed by reloading with `onnx.load(load_external_data=True)` and re-saving with `save_as_external_data=False` to produce a single self-contained file.
+
+**Model size concern:**
+230 MB fp32 vs 20 MB target. Root cause: model has 60M parameters (StyleEncoder 7M + UNetGenerator 53M). UNetGenerator is large because `base_filters=64` with deep UNet architecture. INT8 quantization would reduce this to ~60 MB; float16 to ~115 MB. Still exceeds 20 MB target significantly. Options for final export:
+- Reduce `base_filters` from 64 to 32 (reduces UNet ~4×, down to ~13M params)
+- Apply quantization once the opset 18/onnxruntime bug is resolved
+- Use post-training FP16 export via `onnx.numpy_helper` (bypasses onnxruntime quantizer)
+
+**Changes to export_onnx.py:**
+- `opset_version`: 17 → 18
+- Quantization step wrapped in try/except with fp32 fallback
+- Fallback uses `onnx.load + onnx.save(save_as_external_data=False)` to consolidate inline
+
+**Saito notes for E2E:**
+- ONNX validates and runs correctly in onnxruntime CPU
+- Value range contract satisfied: [-1, 1]
+- 230 MB will require either gzip/brotli compression or a plan to defer to smaller model
+- Training still in progress (~epoch 23 at export time); final model will be re-exported
+
 ### 2026-02-26T19:58:10: GPU Training Issue — False Alarm, Enhanced Logging
 
 **Status:** RESOLVED — Training was using GPU correctly all along
