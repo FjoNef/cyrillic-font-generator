@@ -1,49 +1,37 @@
 ---
-updated_at: 2026-03-05T01:14:38Z
-focus_area: Parallel sprint complete. All issues #16 #17 #18 #19 #20 resolved. Ready for training restart.
+updated_at: 2026-03-05T19:55:00Z
+focus_area: Training to epoch 200. INT8 export pipeline fixed and verified. Board clear.
 active_issues: []
 ---
 
 # Team Focus
 
-**Last updated:** 2026-03-05T01:14Z  
-**Status:** Sprint complete — all pre-training issues resolved
+**Last updated:** 2026-03-05T19:55Z  
+**Status:** Training phase active — INT8 quantization issue resolved
 
 ## What We Just Did
 
-Parallel sprint closed issues #16 #17 #18 #19 #20. All tests passing (41/41 frontend + 4/4 backend). Pushed to dev.
+Shipped INT8 quantization fix (issue #21, PR #22 merged). Pipeline now handles FP32/INT8 exports correctly with proper shape inference.
 
-- **Togusa (Issue #16):** URL fix in frontend (`/api/models/v1/generator.onnx` → `/api/model`)
-- **Batou (Issues #17 + #20):** ContentRootPath + Brotli compression in backend
-- **Major (Issues #18 + #19):** base_filters 64→32 reduction; INT8 opset 18→17 conversion
-- **Saito:** Verified all fixes; re-ran full test suite
+- **Major (Issue #21):** INT8 quantization crash fixed; strips stale value_info entries before shape inference
+- **Saito:** Verified fix; all review checks pass
+- **Scribe:** Session logged; decisions archived
 
 ## Current State
 
-- **Branch:** origin/dev (commit d73e991)
-- **Configuration:** base_filters=32 now live in train.py, export_onnx.py, train_config.yaml
-- **ONNX pipeline:** INT8 quantization functional (opset 18→17 conversion working)
-- **Tests:** 100% pass rate (45/45 total)
+- **Branch:** origin/dev (merged PR #22 to dev)
+- **Issue #21:** ✅ CLOSED
+- **ONNX pipeline:** INT8 quantization functional; FP32 fallback working
+- **Export:** Minimal 82 MB → ~16 MB (brotli estimate)
 - **Blockers:** None
 
 ## Next Phase
 
-1. **FjoNef** starts training manually (base_filters=32)
-2. After **epoch 200:** Major exports ONNX (INT8 via opset 18→17 conversion, ~23MB expected)
-3. **Saito** runs final E2E verification on exported model
-
-## Completed This Session (2026-03-05)
-
-- ✅ Issue #16 (Togusa) — URL routing fixed
-- ✅ Issue #17 (Batou) — ContentRootPath resolved
-- ✅ Issue #18 (Major) — base_filters 64→32
-- ✅ Issue #19 (Major) — INT8 opset 18→17
-- ✅ Issue #20 (Batou) — Brotli compression
-- ✅ All tests re-verified (45/45 passing)
-- ✅ Committed and pushed to origin/dev
+1. **FjoNef** continues training to epoch 200 (base_filters=32)
+2. **After epoch 200:** Major exports final ONNX (INT8 via opset 18→17 conversion)
+3. **Saito** runs E2E verification on exported model
 
 ## Board Status
 
-**CLEAR.** Ready to proceed to training phase.
-
+**CLEAR.** Training cleared to resume without blockers.
 

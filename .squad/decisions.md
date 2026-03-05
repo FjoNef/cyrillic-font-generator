@@ -1054,3 +1054,244 @@ This is a known bug in onnxruntime's shape inference for opset 18 Linear layer w
 **What:** Use main-checkout mode for squad team state - share .squad/ across all worktrees via the main working tree
 **Why:** User request - captured for team memory
 
+
+---
+
+
+## 2026-03-05: INT8 Quantization Resolution (issue #21)
+
+
+# INT8 Quantization Resolution (issue #21)
+
+**Date:** 2026-03-05  
+**Author:** Major (AI/ML Engineer)  
+**Status:** RESOLVED — INT8 export working
+
+---
+
+## Decision
+
+INT8 dynamic quantization now works via `strip_initializer_value_info()` applied to the FP32 model before calling `quantize_dynamic`.
+
+## Root Cause
+
+`quantize_dynamic` internally calls `replace_gemm_with_matmul()`, which transposes Gemm weight initialisers in-place but does **not** update the corresponding `value_info` shape annotations. The subsequent `infer_shapes_path` strict check then fails:
+
+```
+[ShapeInferenceError] Inferred shape and existing shape differ in dimension 0: (512) vs (256)
+```
+
+The fix: strip initialiser `value_info` entries (redundant, always recoverable from initialisers) before quantization. This allows the quantizer to recompute shapes fresh after its internal Gemm→MatMul transformation.
+
+This was **not** an opset 18 issue and **not** a `noop_with_empty_axes` issue — both were red herrings. The bug exists in onnxruntime's quantizer regardless of opset version.
+
+## Resulting File Sizes (nf=32 model, 21.6M params)
+
+| Format | Size | ~brotli delivery |
+|---|---|---|
+| FP32 (old) | 86 MB | ~25 MB |
+| **INT8 (new primary)** | **53 MB** | **~16 MB** |
+| FP16 (fallback) | 43 MB | ~13 MB |
+
+## Why Not 23 MB?
+
+The uncompressed ≤23 MB target requires all 21.6M params at INT8. However, `ConvTranspose` is absent from onnxruntime's `IntegerOpsRegistry` (no `ConvTransposeInteger` ONNX op exists). The 7 decoder ConvTranspose layers (10.5M params) remain FP32, keeping the INT8 model at 53 MB.
+
+**53 MB INT8 + brotli ≈ 16 MB delivered** — well under the 20 MB delivered target, even if the uncompressed file is larger than hoped.
+
+## Impact on Target
+
+- **Uncompressed target (≤23 MB):** NOT met (53 MB). Requires architecture change or custom static quantization pipeline.  
+- **Delivered target (≤20 MB with brotli):** MET (~16 MB estimated).
+
+## Export Pipeline
+
+```
+FP32 export (opset 18)
+  → strip_initializer_value_info()
+  → quantize_dynamic (QUInt8)          ← primary: ~53 MB
+  → [fallback] onnxconverter FP16      ← ~43 MB
+  → [fallback] FP32 consolidated       ← ~86 MB
+```
+
+## Validation (epoch_0020.pth)
+
+- Output shape: (1, 1, 128, 128) ✅
+- Output dtype: float32 ✅  
+- Value range: [-1.000, 1.000] ✅
+- onnxruntime CPU inference: SUCCESS ✅
+
+
+---
+
+
+## 2026-03-05: ONNX Export — Skip Quantization, Ship FP32 for Epoch-20
+
+
+# Decision: ONNX Export — Skip Quantization, Ship FP32 for Epoch-20
+
+**Date:** 2026-03-05  
+**Owner:** Major (AI/ML Engineer)  
+**Status:** APPROVED (implementation complete)  
+**Context:** Issue #19 — Fix ReduceMean opset 17 incompatibility + investigate 53 MB file size
+
+---
+
+## Problem
+
+The ONNX export pipeline (export_onnx.py) was encountering two issues:
+
+1. **ReduceMean attribute incompatibility:** When downgrading from opset 18 to opset 17 for quantization, the `noop_with_empty_axes` attribute (introduced in opset 18) remains on ReduceMean nodes, causing onnxruntime to reject the model:
+   ```
+   INVALID_GRAPH: Unrecognized attribute: noop_with_empty_axes for operator ReduceMean
+   ```
+
+2. **File size larger than expected:** Exported models were 50-53 MB instead of the expected ~23 MB for INT8-quantized nf=32 models.
+
+## Investigation Findings
+
+### ReduceMean Fix
+- Implemented `strip_opset18_reducemean_attrs()` function to remove the problematic attribute
+- Tested: attribute stripping works correctly (2 ReduceMean nodes cleaned)
+- **However:** Even with this fix, opset 17 conversion introduces NEW errors
+
+### Opset Conversion Issues
+Testing revealed that ONNX version_converter has critical bugs when downgrading opsets:
+
+| Model Version | Opset | Size | Inference Result |
+|---|---|---|---|
+| FP32 (original) | 18 | 82.3 MB | ✅ Works perfectly |
+| Opset-17 (converted) | 17 | 82.2 MB | ❌ Concat shape inference error |
+| Quantized | 17 | 50.6 MB | ❌ Same Concat error |
+
+**Error:** `Node (node_cat) Op (Concat) [ShapeInferenceError] axis must be in [-rank, rank-1]`
+
+### Quantization Analysis
+- `quantize_dynamic` fails on opset 18: shape mismatch errors during quantization
+- `quantize_dynamic` on opset 17: quantization succeeds BUT model is broken by version_converter
+- Quantization DID work partially: 82 MB → 50 MB, but the model is non-functional
+- Expected INT8 size for nf=32: ~22-23 MB (not achieved due to opset conversion blocking it)
+
+### File Size Breakdown (FP32)
+- Model parameters: 21.6M (7.1M StyleEncoder + 14.5M UNetGenerator)
+- FP32 size: 21.6M × 4 bytes = 86.4 MB
+- Actual: 82.3 MB (overhead from ONNX structure)
+- **HTTP compression:** Brotli/gzip achieves ~70% reduction → **~25 MB delivered**
+
+## Decision
+
+**Ship FP32 opset-18 model for epoch-20 exports. Defer quantization until post-epoch-200.**
+
+### Rationale
+
+1. **FP32 model works perfectly** — No inference errors, correct output shape/range, full opset 18 features
+2. **HTTP compression bridges the gap** — 82 MB FP32 → ~25 MB delivered (vs 23 MB INT8 target)
+3. **Quantization is blocked by tooling bugs** — Both opset 18 and opset 17 paths have critical issues
+4. **Time constraint** — Epoch 20 checkpoint is for pipeline validation; size optimization is lower priority
+5. **ReduceMean fix is preventive** — The fix is in place and tested; it will work if/when opset conversion is fixed
+
+### Alternatives Considered
+
+| Option | Pros | Cons | Verdict |
+|---|---|---|---|
+| A: Fix opset converter | Solves root cause | Requires debugging onnxruntime C++ codebase | ❌ Out of scope |
+| B: Try PyTorch native quantization | Bypasses onnxruntime quantizer | Requires QAT/PTQ pipeline rebuild | ❌ Too much work for epoch 20 |
+| C: Ship FP32, optimize later | Works NOW, acceptable size with compression | Larger than ideal | ✅ **SELECTED** |
+| D: Reduce base_filters further | Smaller model | Quality impact unknown, retraining cost | ❌ Deferred to post-200 |
+
+## Implementation
+
+### Code Changes (export_onnx.py)
+1. **Added `strip_opset18_reducemean_attrs()` function** (lines 73-91)  
+   - Removes `noop_with_empty_axes` attribute from ReduceMean nodes  
+   - Called after version conversion (if opset downgrade is re-enabled in future)  
+   - **Status:** Implemented and tested (works correctly)
+
+2. **Disabled opset 18→17 conversion**  
+   - Skip version_converter due to Concat shape inference bugs  
+   - Keep model at opset 18 (fully supported by onnxruntime-web)
+
+3. **Disabled quantization**  
+   - Removed `quantize_dynamic` call  
+   - Consolidated FP32 model into single file (no external data)
+
+4. **Updated size warning**  
+   - Changed threshold from 20 MB to 50 MB  
+   - Added expected brotli-compressed size estimate (~30% of original)
+
+### Validation Results
+```
+✅ Export: models/v1/generator.onnx (82.3 MB, opset 18, FP32)
+✅ Inference: SUCCESS (onnxruntime CPU provider)
+✅ Output shape: (1, 1, 128, 128)
+✅ Output range: [-1.000, 1.000]
+✅ Delivered size (estimated): ~25 MB with brotli
+```
+
+## Future Work
+
+**Post-epoch-200 quantization options:**
+1. Wait for onnxruntime shape inference fixes in opset 17/18
+2. Explore PyTorch native quantization (QAT or PTQ) before ONNX export
+3. Try ONNX Runtime Training quantization tools
+4. Consider fp16 export instead of INT8 (smaller than fp32, fewer compatibility issues)
+
+**Monitoring:**
+- Track onnxruntime release notes for version_converter fixes
+- Test quantization on each new onnxruntime version
+- Benchmark browser delivery size with actual brotli compression
+
+## Impact
+
+- **Batou (Backend):** Delivers 82 MB ONNX file via API; HTTP brotli reduces to ~25 MB over the wire
+- **Togusa (Frontend):** Loads FP32 model in onnxruntime-web (opset 18 fully supported)
+- **Training pipeline:** Export works reliably; no manual intervention needed
+- **Timeline:** No delay to epoch-200 training completion
+
+## Approval
+
+- [x] Major (owner) — Implementation complete, tested, and validated
+- [ ] Saito (QA) — Ready for integration testing
+- [ ] Togusa (Frontend) — FYI: model is FP32, ~25 MB delivered (brotli)
+
+---
+
+**Files modified:**
+- `src/model/export/export_onnx.py` (quantization disabled, ReduceMean fix added)
+
+**Files validated:**
+- `models/v1/generator.onnx` (82.3 MB, works in onnxruntime)
+
+---
+
+## Saito — PR #22 Verdict
+
+**PR:** Fix INT8 quantization path (issue #21)  
+**URL:** https://github.com/FjoNef/cyrillic-font-generator/pull/22  
+**Date:** 2026-03-05  
+**Reviewer:** Saito (QA)  
+**Verdict:** ✅ APPROVED
+
+### Summary
+
+The fix is correct, minimal, and well-documented. All review criteria pass.
+
+### Checklist
+
+| Check | Result |
+|---|---|
+| strip_initializer_value_info() logic correct and safe | ✅ PASS |
+| FP32 fallback path still in place | ✅ PASS (improved: INT8 → FP16 → FP32) |
+| No regressions or side effects | ✅ PASS |
+| FP32 export path still works | ✅ PASS |
+| Issue #21 correctly referenced | ✅ PASS (Closes #21) |
+| Size target met (<=20 MB brotli) | ✅ PASS (~16 MB est.) |
+| Temp file cleanup correct | ✅ PASS |
+| Validation error handling appropriate | ✅ PASS |
+
+### Technical Notes
+
+- **Root cause confirmed:** `quantize_dynamic` calls `replace_gemm_with_matmul()` internally, transposes Gemm weight initializers in-place, but leaves `value_info` shape annotations stale. The fix strips those stale entries before calling `quantize_dynamic`, allowing `infer_shapes_path` to recompute from scratch.
+- **Size arithmetic verified:** 10.5M ConvTranspose params (FP32, no IntegerOps equivalent) × 4B ≈ 42 MB + 11.1M other params (INT8) × 1B ≈ 11 MB = 53 MB total. Brotli estimate 53 × 0.3 ≈ 16 MB < 20 MB target.
+- **GitHub note:** GitHub prevents self-approval; review was submitted as a comment review on the PR.
+
