@@ -8,6 +8,61 @@
 
 ## Learnings
 
+### 2026-03-05: base_filters Tradeoff Analysis — 64 vs 32
+
+**Task:** Evaluate quality/size/training-cost tradeoff of reducing UNetGenerator `base_filters` from 64 → 32.
+
+**Parameter counts (computed from model.py layer-by-layer):**
+
+| Component | nf=64 | nf=32 | Notes |
+|---|---|---|---|
+| StyleEncoder | 7,082,048 | 7,082,048 | Fixed — no base_filters parameter |
+| UNetGenerator | 53,198,209 | 14,477,313 | 3.67× reduction |
+| **Total exported** | **60,280,257 (60.3M)** | **21,559,361 (21.6M)** | **2.80× reduction** |
+
+Key bottleneck layers at nf=64: dec1–dec4 each have 8.4M params (CT2d 1024→512). At nf=32 these shrink to dec1: 3.1M (CT2d 768→256), dec2–dec4: 2.1M each.
+
+The StyleEncoder is hardcoded at 64/128/256/512/512 channels — it accounts for 7.1M of the 21.6M total at nf=32 and is the main obstacle to hitting ≤20 MB INT8.
+
+The `cond_proj` Linear(320→512) output is hardcoded at 512, which is oversized at nf=32 (bottleneck becomes 256 channels). A minor future optimization: change 512→256 here to save ~82K params and lighten dec1 (768→256 becomes 512→256).
+
+**Size projections (ONNX, quantize_dynamic INT8 ≈ 1 byte/param + ~5% overhead):**
+- nf=64 fp32: ~241 MB | INT8: ~63 MB
+- nf=32 fp32: ~86 MB | INT8: ~23 MB
+- Target: ≤20 MB
+
+nf=32 INT8 ≈ 23 MB — ~15% over target. The 7.1 MB StyleEncoder (unchanged) is the dominant contributor to the gap. HTTP brotli compression closes most of it: ONNX weight data compresses ~15-25% with brotli, bringing 23 MB → ~17-20 MB delivered.
+
+**Quality assessment for font glyph generation (128×128 near-binary, Latin→Cyrillic style transfer):**
+- StyleEncoder capacity is UNCHANGED — style embedding quality is identical
+- 14.5M decoder params for 128×128 = ~887 params/output pixel with full skip connections — far more than needed
+- Near-binary glyphs are low-entropy structured images vs. natural scene generation
+- Expected quality loss: minimal. Possible minor softening at thin stroke intersections; no readability impact
+- nf=32 is sufficient for this task. The bottleneck (nf*8=256) still gives full expressive power for letterforms.
+
+**Training cost:**
+- FLOPs scale roughly with param count in conv layers (~3.67× UNet reduction)
+- Practical speedup: ~2–3× overall (StyleEncoder cost unchanged)
+- Current speed: ~7 min/epoch (RTX 3070 Laptop, nf=64)
+- nf=32 estimate: ~3–4 min/epoch
+- Retrain 200 epochs at nf=32: ~600–800 min ≈ 10–13 hours total
+- Remaining at nf=64 (177 epochs): ~1,239 min ≈ 20.7 hours
+- Stopping now and switching saves ~8–9 hours of wall clock time
+
+**Recommendation: Option B — Stop, switch to nf=32, retrain from scratch.**
+
+Rationale:
+1. nf=32 INT8 ≈ 23 MB, and HTTP brotli compression bridges the last ~3 MB to hit ≤20 MB delivered
+2. 8–9 hours saved is significant given only 23/200 epochs done (sunk cost is minimal: ~2.7 hours)
+3. Quality impact is negligible for this domain
+4. No architecture change required in export pipeline — only `base_filters=32` in model.py and export_onnx.py
+5. Optional micro-optimization: change `cond_proj` output from 512→nf*8 to save ~82K params and reduce dec1 input; low priority
+
+**Files to update when retraining:**
+- `src/model/export/export_onnx.py` line 83: `UNetGenerator(..., base_filters=32)`
+- Training config or train.py: pass `base_filters=32` at model init
+- Note: checkpoint format changes (different state_dict shape) — epoch_0020.pth cannot be resumed with nf=32
+
 ### 2026-03-04: Pipeline Validation ONNX Export — epoch_0020
 
 **Status:** SUCCESS (fp32 fallback — quantization blocked by opset/onnxruntime mismatch)

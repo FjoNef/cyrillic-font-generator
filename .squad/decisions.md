@@ -4,6 +4,130 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-03-05: Reduce base_filters from 64 → 32, Retrain from Scratch
+
+**By:** Major (AI/ML Engineer)  
+**Date:** 2026-03-05  
+**Status:** PROPOSED — Awaiting FjoNef approval to stop current training run  
+
+---
+
+## Context
+
+Training is currently at ~epoch 23/200 on a `base_filters=64` UNetGenerator.  
+The fp32 ONNX export (epoch 20) measured 230 MB. INT8 quantization is blocked by an onnxruntime opset-18 bug; once fixed, nf=64 INT8 would be ~63 MB — still 3× over the 20 MB browser delivery target.
+
+---
+
+## Parameter Analysis
+
+**StyleEncoder** has no `base_filters` parameter. It is fixed at 64→128→256→512→512 and contributes **7,082,048 params** regardless of UNetGenerator width.
+
+**UNetGenerator layer-by-layer (nf = base_filters):**
+
+| Layer | nf=64 params | nf=32 params |
+|---|---|---|
+| char_embedding (66×64) | 4,224 | 4,224 |
+| cond_proj Linear(320→512)* | 164,352 | 164,352 |
+| enc1 Conv2d(1→nf, norm=False) | 1,088 | 544 |
+| enc2 Conv2d(nf→nf×2) + IN | 131,328 | 32,896 |
+| enc3 Conv2d(nf×2→nf×4) + IN | 524,800 | 131,328 |
+| enc4 Conv2d(nf×4→nf×8) + IN | 2,098,176 | 524,800 |
+| enc5 Conv2d(nf×8→nf×8) + IN | 4,195,328 | 1,049,088 |
+| enc6 Conv2d(nf×8→nf×8) + IN | 4,195,328 | 1,049,088 |
+| enc7 Conv2d(nf×8→nf×8, norm=False) | 4,194,816 | 1,048,832 |
+| dec1 CT2d(nf×8+512→nf×8) + IN | 8,389,632 | 3,146,240 |
+| dec2 CT2d(nf×16→nf×8) + IN | 8,389,632 | 2,097,664 |
+| dec3 CT2d(nf×16→nf×8) + IN | 8,389,632 | 2,097,664 |
+| dec4 CT2d(nf×16→nf×8) + IN | 8,389,632 | 2,097,664 |
+| dec5 CT2d(nf×12→nf×4) + IN | 3,146,240 | 786,688 |
+| dec6 CT2d(nf×6→nf×2) + IN | 786,688 | 196,736 |
+| dec7 CT2d(nf×3→nf) + IN | 196,736 | 49,216 |
+| final Conv2d(nf→1, k=3) | 577 | 289 |
+| **UNet total** | **53,198,209** | **14,477,313** |
+
+*`cond_proj` outputs hardcoded 512 — oversized at nf=32 (bottleneck=256). Future micro-opt: change to `nf×8` output.
+
+**Combined totals:**
+
+| | nf=64 | nf=32 |
+|---|---|---|
+| Total params | 60,280,257 (60.3M) | 21,559,361 (21.6M) |
+| UNet reduction factor | — | 3.67× |
+| Overall reduction | — | 2.80× |
+| fp32 ONNX | ~241 MB | ~86 MB |
+| INT8 ONNX (est.) | ~63 MB | ~23 MB |
+| HTTP brotli-compressed INT8 | ~52 MB | **~17–20 MB** |
+
+---
+
+## Quality Assessment
+
+**For 128×128 near-binary font glyph generation with Latin→Cyrillic style transfer:**
+
+- The StyleEncoder is **unchanged** — style embedding quality is identical at nf=32.
+- nf=32 bottleneck = 256 channels (nf×8). Still provides full expressive capacity for structured letterform generation.
+- 14.5M decoder params for a 128×128 output = ~887 params/pixel with full skip connections. This is ample for low-entropy near-binary images.
+- **Expected quality loss: minimal.** Possible marginal softening at thin stroke intersections on extreme fonts. No readability impact.
+- For comparison: the original pix2pix paper used nf=64 for 256×256 natural images. Font glyphs at 128×128 are far simpler.
+
+---
+
+## Training Cost
+
+- Current throughput: ~3.2 it/s → ~7 min/epoch on RTX 3070 Laptop (nf=64)
+- nf=32 FLOPs reduction ≈ 3.67× on UNet; practical speedup ≈ 2–3× overall
+- **nf=32 estimate: ~3–4 min/epoch → 200 epochs ≈ 10–13 hours total**
+- Remaining training at nf=64 (177 epochs): ~20.7 hours
+- **Switching now saves ~8–9 hours.**
+
+Sunk cost: ~2.7 hours (epoch 23 × 7 min). Minimal relative to the 20+ hours remaining on the current path.
+
+---
+
+## Decision
+
+**Recommendation: Option B — Stop current training. Switch to `base_filters=32`. Retrain from scratch.**
+
+### Rationale
+
+1. **Size:** nf=32 INT8 ≈ 23 MB. HTTP brotli compression in the backend delivery layer (~15–25% compression on ONNX binary) closes the remaining ~3 MB gap → **≤20 MB delivered**. This requires Batou to confirm brotli is enabled on the `/api/model` endpoint.
+
+2. **Quality:** Negligible degradation for this task domain. StyleEncoder is unchanged; decoder capacity at nf=32 is more than sufficient for 128×128 near-binary glyphs.
+
+3. **Training time:** 8–9 hours saved. At only epoch 23/200, the cost of restarting is low.
+
+4. **No inference contract change.** Input/output shapes and semantics are identical. Togusa's inference pipeline requires no changes.
+
+5. **Minor follow-up optimization (non-blocking):** Change `cond_proj` from `Linear(320, 512)` → `Linear(320, nf*8)` in `UNetGenerator.__init__`. At nf=32, this saves ~82K params and makes the bottleneck injection proportional. Not required for first retrain.
+
+### Required code changes
+
+1. `src/model/train/model.py` — no change needed (base_filters is already a parameter)
+2. `src/model/train/train.py` — pass `base_filters=32` when instantiating `UNetGenerator`
+3. `src/model/export/export_onnx.py` line 83 — change to `UNetGenerator(..., base_filters=32)`
+4. Existing checkpoint `epoch_0020.pth` is **incompatible** (different state_dict shapes) — do not attempt to resume; start fresh
+
+### Dependency on quantization bug fix
+
+The INT8 quantization bug (onnxruntime opset-18 shape inference error) must still be resolved before final export. The size estimate assumes INT8 succeeds. This is an independent workstream.
+
+### Brotli delivery confirmation needed
+
+Batou must confirm that the ASP.NET Core static file middleware or the `/api/model` response handler uses brotli compression for `.onnx` files. Without it, delivered size stays at ~23 MB (still usable, slightly over stated target).
+
+---
+
+## Options Not Chosen
+
+**Option A (let nf=64 finish, ship INT8 ~63 MB):** Even with INT8, the nf=64 model is 3× over target. Brotli won't rescue a 63 MB file. Rejected.
+
+**Option C (architecture pruning post-training):** Structured pruning of a trained 60M-param model is complex, requires sensitivity analysis, and may not reach the compression ratio INT8 alone achieves. Not worth the engineering cost when retraining at nf=32 is simpler and faster.
+
+**Option D (progressive delivery / model split):** Split StyleEncoder and UNetGenerator as separate ONNX files; load StyleEncoder lazily. Reduces cold-start payload slightly but total download is the same. Adds complexity to Togusa's inference pipeline. Defer unless nf=32 + INT8 + brotli still exceeds target after implementation.
+
+---
+
 ### 2026-03-04: Major ONNX Export — Epoch 20 Validation, INT8 Quantization Workaround
 
 **By:** Major (AI/ML Engineer)  
