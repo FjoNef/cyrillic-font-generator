@@ -136,3 +136,27 @@
 - Model loaded lazily via `fetch` with streaming progress — hooks into Zustand `modelLoadProgress`
 - Key integration point with **Major**: ONNX model input/output tensor names and shapes
 - Key integration point with **Batou**: `/api` proxy target, model file served at what URL?
+
+### 2026-02-26: Fixed model URL mismatch (Issue #16)
+
+- **Issue:** Frontend was fetching ONNX model from wrong URL — used `/api/models/v1/generator.onnx` but backend serves at `/api/model`
+- **Files changed:**
+  - `src/frontend/src/App.tsx` (line 34)
+  - `src/frontend/src/inference/__tests__/ModelLoader.test.ts` (9 occurrences across all test cases)
+- **Fix:** Changed all model fetch URLs from `/api/models/v1/generator.onnx` → `/api/model`
+- **Verification:** grep confirmed zero stale references remain in src/frontend/
+- **Result:** Model loading will now succeed in production; frontend correctly calls Batou's `/api/model` endpoint
+
+
+### 2026-03-05: Sprint Complete --- #16 Closed
+**Issue:** #16 (Model fetch URL fix)  
+**Status:** OK IMPLEMENTATION COMPLETE  
+**Dependencies:** Batou's #17 (backend model path fix)
+
+**Change:** App.tsx model fetch endpoint  
+- Old: /api/models/v1/generator.onnx  
+- New: /api/model
+
+Updated test file to match new endpoint. All 41 frontend tests passing.
+
+Backend now exposes /api/model endpoint (Batou's fix resolves actual model file via ContentRootPath).

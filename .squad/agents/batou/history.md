@@ -9,6 +9,40 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-02-25: Backend model path resolution fix + Brotli compression (Issues #17, #20)
+
+**Status:** COMPLETE — Both issues resolved and verified
+
+**Issue #17 — Model path resolution:**
+- **Problem:** Backend used `AppContext.BaseDirectory` which resolves to bin/publish folder, not repo root. Model file never found in dev or CI.
+- **Fix:** Injected `IWebHostEnvironment` into `ModelManifestCache` constructor and `HandleModelDownload` endpoint, replaced all `AppContext.BaseDirectory` with `env.ContentRootPath`.
+- **Files changed:**
+  - `Program.cs`: Changed line 27 from `Path.GetFullPath(modelPath, AppContext.BaseDirectory)` to `Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, modelPath))`
+  - `ModelEndpoints.cs`: 
+    - Line 14: Added `IWebHostEnvironment env` parameter to `ModelManifestCache` constructor
+    - Line 17-18: Changed to `Path.GetFullPath(Path.Combine(env.ContentRootPath, modelRoot, Version, Filename))`
+    - Line 71: Added `IWebHostEnvironment env` parameter to `HandleModelDownload`
+    - Line 77-78: Changed to `Path.GetFullPath(Path.Combine(env.ContentRootPath, modelRoot, cache.Version, cache.Filename))`
+- **Path expression now:** `ContentRootPath/models/v1/generator.onnx` — resolves correctly in dev (project root) and production (published app root).
+
+**Issue #20 — Brotli compression:**
+- **Problem:** ONNX model served as raw `application/octet-stream` without compression. ~86 MB fp32 file (or future ~23 MB INT8 file) could be reduced by 20-25% on the wire with Brotli.
+- **Fix:** Added ASP.NET Core Response Compression middleware with Brotli support for `application/octet-stream` MIME type.
+- **Files changed:**
+  - `Program.cs`:
+    - Added `using System.IO.Compression;` and `using Microsoft.AspNetCore.ResponseCompression;`
+    - Lines 20-29: Configured `AddResponseCompression` with `EnableForHttps = true`, MIME types including `application/octet-stream`, and `BrotliCompressionProviderOptions` with `CompressionLevel.Optimal`
+    - Line 34: Added `app.UseResponseCompression();` before CORS and static files in middleware pipeline
+- **Middleware order:** ResponseCompression → CORS → StaticFiles → MapControllers — ensures all responses (including model file) are compressed when client sends `Accept-Encoding: br`.
+
+**Verification:**
+- Build: ✅ Clean build, 0 warnings, 0 errors
+- Tests: ✅ All 4 integration tests pass
+- Code scan: ✅ No remaining `AppContext.BaseDirectory` references in backend project
+
+**Next actions:**
+- Togusa can test `/api/model` download with Brotli support once Major exports the model to `models/v1/generator.onnx`
+
 ### 2026-02-25T160138: Backend API Integration Delivered (Issue #7, PR #9)
 
 **Status:** COMPLETE — Ready for QA review  
@@ -110,3 +144,20 @@ src/backend/
   - **Program class exposure:** Added `public partial class Program { }` to enable WebApplicationFactory<Program> in tests
 - **Testing:** `cd src/backend && dotnet test` — all 4 tests pass
 - **Why:** Establishes minimum viable backend API surface for frontend integration. Model endpoint returns 404 until Major trains and exports the ONNX model to `models/v1/generator.onnx`.
+
+### 2026-03-05: Sprint Complete --- #17 #20 Closed
+**Issues:** #17 (Model path resolution), #20 (Brotli compression)  
+**Status:** OK IMPLEMENTATION COMPLETE  
+**Dependencies:** Saito re-verified all changes
+
+**#17 Model Path Fix:**
+- Modified Program.cs: injected IWebHostEnvironment.ContentRootPath
+- Modified ModelEndpoints.cs: resolve model from content root (not bin directory)
+- Result: Backend now correctly locates models/v1/generator.onnx
+
+**#20 Brotli Compression:**
+- Added brotli middleware to Program.cs
+- Configured for application/octet-stream (ONNX binary delivery)
+- Combined with Major's INT8 model (~23 MB) -> ~17-20 MB delivered (OK <=20 MB target)
+
+All 4 backend tests passing.

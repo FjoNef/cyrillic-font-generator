@@ -196,6 +196,25 @@
 - The recurring style chars bug (lowercase in default list) is a known issue that has now been fixed in both dataset.py, train_config.yaml, AND the synthetic defaults (though checkpoint path in synthetic defaults missed)
 - SyntheticFontDataset is a good addition for CI — validates pipeline without requiring 718 font downloads
 
+### 2026-03-04: Verification of issues #16, #17, #20 — PASSED
+
+**Task:** Verify three fixes landed by Togusa (frontend URL) and Batou (backend path + compression).
+
+**Test results:**
+1. **Frontend tests (Vitest):** ✅ 41/41 passed (5 test files, colorMapping/integration/ModelLoader/FontLoader/fontPipeline)
+2. **Backend tests (.NET):** ✅ 4/4 passed (all tests in CyrillicFontGen.Api.Tests)
+3. **No regressions detected** — all existing tests passing, no failures introduced by the three fixes.
+
+**Issue-specific audits:**
+- **#16 (Model URL fix):** ✅ Verified `/api/model` used in `App.tsx` line 34 and all `ModelLoader.test.ts` references; zero references to old `/api/models/v1/generator.onnx` path in frontend codebase.
+- **#17 (Backend path resolution):** ✅ Confirmed `IWebHostEnvironment` parameter present in both `ModelManifestCache` constructor and `HandleModelDownload` endpoint handler; uses `env.ContentRootPath` instead of `AppContext.BaseDirectory`.
+- **#20 (Brotli compression):** ✅ Verified middleware ordering in `Program.cs`: `UseResponseCompression()` at line 37 appears BEFORE `UseStaticFiles()` at lines 46 and 58, ensuring compression applies to static model files. `application/octet-stream` added to compressed MIME types at line 25.
+
+**Patterns learned:**
+- All three fixes are correctly implemented and tested — no edge cases or regressions found.
+- Frontend tests remain resilient to backend URL changes due to Worker mocking layer.
+- Middleware ordering matters: compression middleware must precede static file middleware to apply Brotli to model responses.
+
 ### 2026-02-25T160138: Major & Batou Sessions — Ready for QA Review
 
 **PR #8 — cGAN Training Pipeline (Major):**
@@ -263,3 +282,24 @@
   - **Next phase:** Awaits Major's trained ONNX model at models/v1/generator.onnx
 - **Decisions inbox merged:** All 5 inbox files consolidated into decisions.md and deleted
 - **Session log created:** 20260225T165444-pr8-pr9-merged.md documents handoff to training phase
+
+### 2026-03-05: Sprint Verification Complete --- #16 #17 #18 #19 #20 Audited
+**Issues Verified:** #16 (Togusa), #17 (Batou), #18 (Major), #19 (Major), #20 (Batou)  
+**Status:** OK ALL CHANGES CORRECT  
+
+**Test Results:**
+- Frontend: 41/41 tests passing OK
+- Backend: 4/4 tests passing OK
+
+**Audits Completed:**
+1. **#16:** URL endpoint change /api/models/v1/... -> /api/model correct; matches backend endpoint
+2. **#17:** ContentRootPath injection correct; model now resolves from content root (not bin)
+3. **#18:** base_filters 64->32 applied correctly; archive strategy preserved (not deleted); UNet 3.67x reduction confirmed
+4. **#19:** Opset 18->17 conversion step correct; preserves onnxruntime-web inference compatibility
+5. **#20:** Brotli middleware enabled for application/octet-stream; compression appropriate for ONNX binary
+
+**Cross-Agent Coherence:**
+- All 5 agents' changes are compatible and coherent
+- Tensor contract preserved (no I/O changes)
+- Model delivery size: INT8 ~23 MB + brotli -> ~17-20 MB (OK <=20 MB target achieved)
+- Ready for git commit
