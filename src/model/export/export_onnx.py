@@ -31,6 +31,7 @@ import sys
 
 import torch
 import onnx
+from onnx import version_converter
 from onnxruntime.quantization import quantize_dynamic, QuantType
 
 # Ensure src/model is on the path.
@@ -80,7 +81,7 @@ def export(checkpoint_path: str, output_path: str) -> None:
     ckpt = torch.load(checkpoint_path, map_location=device)
 
     style_encoder = StyleEncoder(style_dim=256)
-    generator = UNetGenerator(style_dim=256, char_emb_dim=64, base_filters=64)
+    generator = UNetGenerator(style_dim=256, char_emb_dim=64, base_filters=32)
 
     style_encoder.load_state_dict(ckpt["style_encoder_state"])
     generator.load_state_dict(ckpt["generator_state"])
@@ -107,7 +108,7 @@ def export(checkpoint_path: str, output_path: str) -> None:
             model,
             (dummy_style_glyphs, dummy_char_index),
             str(temp_fp32_path),
-            opset_version=17,
+            opset_version=18,
             input_names=["style_glyphs", "char_index"],
             output_names=["generated_glyph"],
             dynamic_axes={
@@ -127,16 +128,37 @@ def export(checkpoint_path: str, output_path: str) -> None:
 
     # --- Float16 / dynamic quantization ---
     # Apply dynamic INT8 quantization to weight tensors to reduce file size.
-    # This targets the largest linear and conv operators.
+    # onnxruntime.quantization.quantize_dynamic has shape inference issues on opset 18.
+    # Convert to opset 17 for quantization — onnxruntime web supports opset 13-18 for inference.
     print(f"Applying dynamic INT8 quantization → {output_path}")
-    quantize_dynamic(
-        str(temp_fp32_path),
-        str(output_path),
-        weight_type=QuantType.QUInt8,
-    )
-
-    # Clean up fp32 intermediate.
-    temp_fp32_path.unlink(missing_ok=True)
+    try:
+        # Downgrade opset 18 → 17 to avoid shape inference conflicts in quantize_dynamic.
+        print("  Converting opset 18 → 17 for quantization…")
+        fp32_model = onnx.load(str(temp_fp32_path))
+        opset17_model = version_converter.convert_version(fp32_model, 17)
+        temp_opset17_path = output_path.with_suffix(".opset17.onnx")
+        onnx.save(opset17_model, str(temp_opset17_path))
+        
+        # Quantize the opset 17 model.
+        quantize_dynamic(
+            str(temp_opset17_path),
+            str(output_path),
+            weight_type=QuantType.QUInt8,
+        )
+        # Clean up intermediates.
+        temp_fp32_path.unlink(missing_ok=True)
+        temp_opset17_path.unlink(missing_ok=True)
+        print("  ✓ INT8 quantization applied.")
+    except Exception as quant_err:
+        print(f"  ⚠️  INT8 quantization failed ({quant_err.__class__.__name__}: {quant_err})")
+        print("  ↩  Falling back to fp32 export (consolidating external data inline).")
+        # Reload and re-save with all weights inlined so output is a single file.
+        fp32_model = onnx.load(str(temp_fp32_path), load_external_data=True)
+        onnx.save(fp32_model, str(output_path), save_as_external_data=False)
+        # Remove the temp fp32 file and any associated external data.
+        temp_fp32_path.unlink(missing_ok=True)
+        for ext_data in output_path.parent.glob(f"{temp_fp32_path.name}.data"):
+            ext_data.unlink(missing_ok=True)
 
     # --- Validate quantized model with onnxruntime ---
     print("Validating quantized ONNX model with onnxruntime…")

@@ -31,7 +31,7 @@ export default function App() {
     const loadModel = async () => {
       setModelStatus('loading', 0);
       try {
-        await modelLoader.load('/api/models/v1/generator.onnx', (progress) => {
+        await modelLoader.load('/api/model', (progress) => {
           setModelStatus('loading', progress);
         });
         setModelStatus('ready', 100);

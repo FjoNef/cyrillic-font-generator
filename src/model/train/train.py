@@ -150,7 +150,7 @@ def train(
             "model": {
                 "style_embedding_dim": 256,
                 "char_embedding_dim": 64,
-                "unet_base_filters": 64,
+                "unet_base_filters": 32,
                 "patch_discriminator_ndf": 64,
             },
             "training": {

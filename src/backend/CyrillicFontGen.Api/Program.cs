@@ -1,4 +1,6 @@
+using System.IO.Compression;
 using CyrillicFontGen.Api.Endpoints;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,16 +17,29 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod());
 });
 
+// Response compression with Brotli for model delivery
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        new[] { "application/octet-stream" });
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Optimal;
+});
+
 // Model manifest cache (populated at startup, reused per-request)
 builder.Services.AddSingleton<ModelManifestCache>();
 
 var app = builder.Build();
 
+app.UseResponseCompression();
 app.UseCors();
 
 // -- Static model files: immutable cache + HTTP Range support --
 var modelPath = builder.Configuration["ModelPath"] ?? "models";
-var modelPhysicalPath = Path.GetFullPath(modelPath, AppContext.BaseDirectory);
+var modelPhysicalPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, modelPath));
 
 if (Directory.Exists(modelPhysicalPath))
 {

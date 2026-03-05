@@ -22,7 +22,7 @@ data:
 model:
   style_embedding_dim: 256         # StyleEncoder output dimension
   char_embedding_dim: 64           # Learned character embedding dimension
-  unet_base_filters: 64            # UNet channel width at first layer
+  unet_base_filters: 32            # UNet channel width at first layer
   patch_discriminator_ndf: 64      # PatchGAN discriminator base filters
 
 # --- Training ---

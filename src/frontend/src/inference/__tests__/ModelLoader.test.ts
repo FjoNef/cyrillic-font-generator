@@ -39,7 +39,7 @@ describe('ModelLoader', () => {
 
   it('should load model and report progress', async () => {
     const progressCallback = vi.fn();
-    const loadPromise = modelLoader.load('/api/models/v1/generator.onnx', progressCallback);
+    const loadPromise = modelLoader.load('/api/model', progressCallback);
 
     // Worker should be created
     expect(global.Worker).toHaveBeenCalledWith(
@@ -50,7 +50,7 @@ describe('ModelLoader', () => {
     // Worker should receive load message
     expect(mockWorker.postMessage).toHaveBeenCalledWith({
       type: 'load',
-      modelUrl: '/api/models/v1/generator.onnx',
+      modelUrl: '/api/model',
     });
 
     // Simulate progress updates
@@ -70,8 +70,8 @@ describe('ModelLoader', () => {
   });
 
   it('should return same promise for concurrent load calls', async () => {
-    const promise1 = modelLoader.load('/api/models/v1/generator.onnx');
-    const promise2 = modelLoader.load('/api/models/v1/generator.onnx');
+    const promise1 = modelLoader.load('/api/model');
+    const promise2 = modelLoader.load('/api/model');
 
     expect(promise1).toBe(promise2);
 
@@ -82,7 +82,7 @@ describe('ModelLoader', () => {
   });
 
   it('should handle load errors', async () => {
-    const loadPromise = modelLoader.load('/api/models/v1/generator.onnx');
+    const loadPromise = modelLoader.load('/api/model');
 
     // Simulate error
     mockWorker.onmessage({ data: { type: 'error', message: 'Network failure' } });
@@ -91,7 +91,7 @@ describe('ModelLoader', () => {
   });
 
   it('should handle worker error events', async () => {
-    const loadPromise = modelLoader.load('/api/models/v1/generator.onnx');
+    const loadPromise = modelLoader.load('/api/model');
 
     // Trigger onerror
     mockWorker.onerror({ message: 'Worker crashed' });
@@ -101,7 +101,7 @@ describe('ModelLoader', () => {
 
   it('should run inference with request ID tracking', async () => {
     // Load model first
-    const loadPromise = modelLoader.load('/api/models/v1/generator.onnx');
+    const loadPromise = modelLoader.load('/api/model');
     mockWorker.onmessage({ data: { type: 'loaded' } });
     await loadPromise;
 
@@ -140,7 +140,7 @@ describe('ModelLoader', () => {
 
   it('should handle concurrent inference requests', async () => {
     // Load model
-    const loadPromise = modelLoader.load('/api/models/v1/generator.onnx');
+    const loadPromise = modelLoader.load('/api/model');
     mockWorker.onmessage({ data: { type: 'loaded' } });
     await loadPromise;
 
@@ -179,7 +179,7 @@ describe('ModelLoader', () => {
 
   it('should handle inference errors', async () => {
     // Load model
-    const loadPromise = modelLoader.load('/api/models/v1/generator.onnx');
+    const loadPromise = modelLoader.load('/api/model');
     mockWorker.onmessage({ data: { type: 'loaded' } });
     await loadPromise;
 
