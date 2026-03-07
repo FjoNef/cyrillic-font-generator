@@ -39,9 +39,9 @@ app.UseCors();
 
 // -- Static model files: immutable cache + HTTP Range support --
 var modelPath = builder.Configuration["ModelPath"] ?? "models";
-var modelPhysicalPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, modelPath));
+var modelPhysicalPath = ResolveModelsDirectory(app.Environment.ContentRootPath, modelPath, app.Logger);
 
-if (Directory.Exists(modelPhysicalPath))
+if (modelPhysicalPath != null && Directory.Exists(modelPhysicalPath))
 {
     app.UseStaticFiles(new StaticFileOptions
     {
@@ -72,6 +72,45 @@ app.MapModelEndpoints();
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+static string? ResolveModelsDirectory(string contentRootPath, string modelPathConfig, ILogger logger)
+{
+    // 1. Try the configured path first (respects explicit config)
+    var configured = Path.GetFullPath(Path.Combine(contentRootPath, modelPathConfig));
+    if (Directory.Exists(configured))
+    {
+        logger.LogInformation("Models directory found at configured path: {Path}", configured);
+        return configured;
+    }
+
+    // If the configured path is absolute and doesn't exist, don't walk up
+    // (respect explicit absolute path configuration)
+    if (Path.IsPathRooted(modelPathConfig))
+    {
+        logger.LogWarning(
+            "Models directory not found at absolute configured path: {Configured}",
+            configured);
+        return null;
+    }
+
+    // 2. Walk up the directory tree looking for models/
+    var dir = new DirectoryInfo(contentRootPath);
+    while (dir != null)
+    {
+        var candidate = Path.Combine(dir.FullName, "models");
+        if (Directory.Exists(candidate))
+        {
+            logger.LogInformation("Models directory found by directory walk at: {Path}", candidate);
+            return candidate;
+        }
+        dir = dir.Parent;
+    }
+
+    logger.LogWarning(
+        "Models directory not found. Tried configured path: {Configured}. Also searched parent directories for models/",
+        configured);
+    return null;
+}
 
 // Expose for integration tests
 public partial class Program { }
