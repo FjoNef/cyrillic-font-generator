@@ -1934,3 +1934,114 @@ Excellent test — directly validates the fix and will catch future regressions.
 **Follow-up (non-blocking):**
 Apply the same fix to OnnxInference.ts line 93 for consistency, even though it's test-only code. This ensures test behavior matches production behavior.
 
+
+---
+
+### 2026-03-07: Style Conditioning Debug & Diagnosis
+
+#### Togusa — Runtime Tensor Path Analysis (Agent-6)
+
+**By:** Togusa (Frontend Dev)  
+**Date:** 2026-03-07  
+**Status:** FINDINGS LOGGED — AWAITING BROWSER CONSOLE VERIFICATION  
+
+**Summary:**
+JS inference pipeline is structurally correct. Added 7 console.debug statements to diagnose identical-output bug.
+
+**Key Finding:**
+Most likely root cause: ONNX model's actual input names differ from style_glyphs/char_index. If names are wrong, ORT silently receives feeds with unknown keys and uses zero defaults.
+
+**What to Verify in Browser Console:**
+- session.inputNames: Should be ['style_glyphs', 'char_index']. If not, feed keys are WRONG.
+- session.outputNames: Should be ['generated_glyph'].
+- style_glyphs first 5 values: Should be **different** when loading different fonts. If always [0,0,0,0,0], style extraction is broken.
+- outputTensor first 5 values: Should be **different** for different char_index AND different fonts. If always identical, model is ignoring inputs.
+- char_index: Should increment 0→65 across the 66 inferences.
+
+**Debug Logging Added:**
+\\\
+// After session creation:
+console.debug('[inferenceWorker] session.inputNames:', session.inputNames);
+console.debug('[inferenceWorker] session.outputNames:', session.outputNames);
+
+// Before session.run():
+console.debug('[inferenceWorker] char_index:', charIndex);
+console.debug('[inferenceWorker] style_glyphs first 5 values:', Array.from(styleGlyphs.slice(0, 5)));
+console.debug('[inferenceWorker] style_glyphs tensor shape:', styleTensor.dims);
+console.debug('[inferenceWorker] char_index tensor shape:', indexTensor.dims, 'dtype:', indexTensor.type);
+
+// After session.run():
+console.debug('[inferenceWorker] outputTensor.name/key resolved:', Object.keys(results)[0]);
+console.debug('[inferenceWorker] outputTensor first 5 raw values:', Array.from(outputData.slice(0, 5)));
+\\\
+
+**Next Steps:** Run generation in browser, capture console logs, verify session.inputNames.
+
+---
+
+#### Major — Style Conditioning Root Cause Diagnosis (Agent-7)
+
+**By:** Major (ML Engineer)  
+**Date:** 2026-03-07  
+**Status:** DIAGNOSIS COMPLETE — DESIGN WEAKNESS IDENTIFIED  
+
+**Summary:**
+The identical-output bug is **NOT** inference-time or data-format related. It is a compounding training & architecture issue.
+
+**Root Causes (Ranked):**
+
+**1. [PRIMARY] Architecture Weakness:**
+- File: src/model/train/model.py, UNetGenerator.forward()
+- Problem: Encoder receives 	orch.zeros(B, 1, 128, 128) — always zeros, never style data.
+- Effect: All 6 U-Net skip connections (e1–e6) are **deterministic constants**, identical across every inference regardless of font style.
+- Style conditioning injects via cond_spatial **only at the 1×1 bottleneck** (single injection point).
+- After 6 decoder stages each mixed with constant skip connections, the constant structural pattern overwhelms the per-font style signal.
+- Documentation vs Code: Comment says "inject at the very first conv" but code injects at bottleneck (deepest layer). Mismatch.
+
+**2. [PRIMARY] Training Loss Insufficient:**
+- File: src/model/configs/train_config.yaml + src/model/train/train.py
+- Config: lambda_l1=100, epochs=200
+- Problem: Loss regime is L_G = L_GAN + L_L1 * 100. No explicit style supervision (no feature matching, perceptual loss, triplet loss, style reconstruction).
+- Gradient pressure: Only indirect (GAN + L1 against per-font ground truth). L1 penalizes every pixel equally, minimized by averaging across fonts.
+- Effect: Model converges to style-invariant output that minimizes L1 without needing to learn style.
+
+**3. [SUPPORTING] GAN Instability:**
+- Evidence: Training log epochs 11–22:
+  - Epoch 11: G loss 10.838, D loss 0.315, L1 loss 8.293
+  - Epoch 22: G loss 11.123, D loss 0.260, L1 loss 7.930
+- Pattern: G loss rising, D loss falling → **discriminator winning**, **generator losing** → GAN mode collapse precursor.
+- Logs only cover epochs 11–22; final 200-epoch state unobservable.
+- TensorBoard event files all 88 bytes (empty — no integration).
+
+**Verified CLEAN:**
+- ✅ Training data: Real fonts, 45,207 samples, DEFAULT_STYLE_CHARS = ["A","B","C","D","E","H","I","O","R","X"], genuine per-font variation.
+- ✅ ONNX export: style_glyphs and char_index are **dynamic ONNX inputs**, not frozen. Constant folding folds the blank-canvas encoder path but NOT the style pathway.
+- ✅ PR #40 (SharedArrayBuffer fix) was correct; style tensors DO reach the model.
+- ✅ JS inference pipeline: Tensor shapes, dtypes, feed keys correct.
+
+**Documentation Bug:**
+- inference_contract.md lists wrong style chars: "g","n","o","p","s","x" (should be "C","D","E","I","R","X").
+- Frontend FontLoader correctly uses training chars. Contract doc outdated only.
+
+**Remediation Plan (Option A — Minimal/Most Likely to Work):**
+
+1. Replace blank canvas encoder input with style_glyphs[:, 0]:
+   - Change line: x = torch.zeros(B, 1, 128, 128) → x = style_glyphs[:, 0]
+   - Effect: Skip connections get per-font structural information at every scale.
+
+2. Add discriminator feature matching loss:
+   - Extract intermediate discriminator features for real and fake.
+   - Add L1 loss on mismatched layers (standard pix2pix++ pattern).
+   - Effect: Direct per-sample style supervision without separate style encoder.
+
+3. Reduce lambda_l1 from 100 → 10:
+   - Current ratio gives GAN loss almost no weight.
+   - Rebalance: GAN and L1 both matter.
+
+**Validation Test (before full retrain):**
+- Run 10-epoch training with Option A changes on small font set.
+- Visually inspect samples per font at epoch 10.
+- If samples show font-specific structure, architecture fix works; full retrain justified.
+
+**No Source Code Changed:** Diagnosis only.
+

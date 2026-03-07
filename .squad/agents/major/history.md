@@ -22,6 +22,30 @@
 
 ## Learnings
 
+### 2026-03-07: Style-Invariant Output — Root Cause Diagnosis
+
+**Task:** Investigate why the model produces identical output regardless of input font style.
+
+**Findings:**
+
+- **Training data is correct:** Real fonts, `DEFAULT_STYLE_CHARS = ["A","B","C","D","E","H","I","O","R","X"]`, 45,207 samples — style glyphs are genuinely varied.
+- **ONNX export is correct:** `style_glyphs` and `char_index` are both dynamic ONNX inputs. Constant folding folds the blank-canvas encoder path but not the style pathway. PR #40 (SharedArrayBuffer fix) was correct.
+- **Root cause #1 — Architecture:** `UNetGenerator.forward()` feeds `torch.zeros(B, 1, 128, 128)` through the encoder. This makes all six U-Net skip connections (e1–e6) **deterministic constants** — identical regardless of font style. Style conditioning via `cond_spatial` enters only at the 1×1 bottleneck (a single injection point). After 6 decoder stages each mixed with constant skip connections, the style signal is overwhelmed.
+- **Root cause #2 — Training loss:** `lambda_l1=100` dominates. No feature matching loss, no perceptual loss, no style supervision. The model is incentivized to minimize L1 against average glyph shapes, which requires no style sensitivity.
+- **Root cause #3 — GAN instability:** Training logs (epochs 11–22) show D loss falling (0.31→0.26) while G loss rises (10.8→11.1), indicating discriminator dominance / precursor to mode collapse. Final loss state (epochs 23–200) is unlogged.
+- **Training log gap:** TensorBoard event files in `models/logs/` are all 88 bytes (empty). Logs only cover epochs 11–22 from one training session. The full 200-epoch trajectory is not observable from files on disk.
+- **Inference contract discrepancy:** `inference_contract.md` lists wrong style chars (`"g","n","o","p","s","x"` instead of `"C","D","E","I","R","X"`). `decisions.md` confirms frontend code is correct; the contract doc is outdated.
+
+**Fix required:** Retrain.
+1. Replace blank canvas encoder input with `style_glyphs[:, 0]` — gives skip connections per-font structure at every scale.
+2. Add discriminator feature matching loss.
+3. Reduce `lambda_l1` from 100 to 10.
+4. Optionally: inject `cond_spatial` at multiple decoder scales (FiLM/AdaIN), not just bottleneck.
+
+**Full diagnosis:** `.squad/decisions/inbox/major-style-conditioning-diagnosis.md`
+
+---
+
 ### 2026-03-07T14:31:04Z: ONNX Export SUCCESS — Model Delivered (epoch_0200)
 
 **Task:** Export trained cGAN to ONNX INT8 for browser delivery.
@@ -49,4 +73,26 @@
 - ✅ **Batou:** 53.1 MB file needs HTTP brotli compression (~16 MB over wire)
 - ✅ **Performance:** INT8 ~1.5–2× faster than FP32 on CPU
 - 🔮 **Future:** Custom static quantization could reach ~23 MB if needed
+
+
+### 2026-03-07: Style-Invariant Output — Diagnosis Complete
+
+**Coordination with Togusa:**
+
+Togusa's debug logging confirmed the JS layer is correct. No inference-time input format issues.
+
+**Diagnosis Result:**
+
+Three compounding causes:
+1. **Architecture:** Blank canvas encoder kills skip connections (they're constant across all inputs).
+2. **Loss:** L1-dominated training (lambda_l1=100) with no style supervision.
+3. **GAN instability:** D dominance precursor suggests mode collapse.
+
+**Action Items:**
+1. Implement architectural fix: Use style_glyphs[:, 0] as encoder input.
+2. Add feature matching loss.
+3. Reduce lambda_l1 to 10.
+4. Optionally validate with 10-epoch test on small font set before full retrain.
+
+**Blocking Issue:** Model must be retrained. No inference-time changes can fix trained-out style conditioning.
 

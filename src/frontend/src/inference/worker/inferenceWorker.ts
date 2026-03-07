@@ -75,6 +75,10 @@ async function loadModel(modelUrl: string): Promise<void> {
     executionProviders: ['webgl', 'wasm'],
   });
 
+  // DEBUG: log actual model input/output names so we can verify key correctness
+  console.debug('[inferenceWorker] session.inputNames:', session.inputNames);
+  console.debug('[inferenceWorker] session.outputNames:', session.outputNames);
+
   self.postMessage({ type: 'loaded' });
 }
 
@@ -94,6 +98,12 @@ async function runInference(
   const styleTensor = new ort.Tensor('float32', styleGlyphs, [1, 10, 1, 128, 128]);
   const indexTensor = new ort.Tensor('int64', BigInt64Array.from([BigInt(charIndex)]), [1]);
 
+  // DEBUG: verify inputs vary between font loads and that char_index is correct
+  console.debug('[inferenceWorker] char_index:', charIndex);
+  console.debug('[inferenceWorker] style_glyphs first 5 values:', Array.from(styleGlyphs.slice(0, 5)));
+  console.debug('[inferenceWorker] style_glyphs tensor shape:', styleTensor.dims);
+  console.debug('[inferenceWorker] char_index tensor shape:', indexTensor.dims, 'dtype:', indexTensor.type);
+
   const feeds: Record<string, ort.Tensor> = {
     style_glyphs: styleTensor,
     char_index: indexTensor,
@@ -104,6 +114,10 @@ async function runInference(
   // Output tensor name should be 'generated_glyph' per contract
   const outputTensor = results['generated_glyph'] ?? results['output'] ?? Object.values(results)[0];
   const outputData = outputTensor.data as Float32Array;
+
+  // DEBUG: verify raw output varies between inferences
+  console.debug('[inferenceWorker] outputTensor.name/key resolved:', Object.keys(results)[0]);
+  console.debug('[inferenceWorker] outputTensor first 5 raw values:', Array.from(outputData.slice(0, 5)));
 
   // ⚠️ Critical: copy output before returning.
   //

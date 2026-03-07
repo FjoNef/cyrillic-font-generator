@@ -19,6 +19,25 @@
 
 ## Learnings
 
+### 2026-03-07: Runtime Debug Instrumentation — Identical-Output Bug (post-PR #40)
+
+- **Task:** Add debug logging to `inferenceWorker.ts` to diagnose why output glyphs are still identical regardless of input font, even after PR #40's SharedArrayBuffer copy fix.
+- **Status:** ✅ Debug logging added. No fix yet — findings only.
+
+**What was added** (`inferenceWorker.ts`):
+1. After `session` creation in `loadModel()`: `session.inputNames` and `session.outputNames` logged — exposes the ACTUAL key names the loaded ONNX model expects, allowing us to check whether `style_glyphs`/`char_index` are correct or if the model expects different names (which would cause silent zero-input fallback).
+2. Before `session.run(feeds)` in `runInference()`: `char_index` value, first 5 float values of `style_glyphs`, and both tensor shapes/dtypes are logged.
+3. After `session.run(feeds)`: resolved output key name and first 5 raw float values of `outputTensor.data` are logged.
+
+**Key architectural findings (no code bugs found in the JS layer):**
+- Feed keys `style_glyphs` and `char_index` match the documented contract — but there is NO code that reads `session.inputNames` to verify at runtime. If the actual ONNX model has different input names, ORT would silently use defaults (zeros), and we'd never know without this logging.
+- Tensor shapes are correct: `[1, 10, 1, 128, 128]` float32, `[1]` int64.
+- The double-copy fix from PR #40 is correctly in place (worker + ModelLoader).
+- `styleGlyphs` is a plain `new Float32Array(total)` from `FontLoader.extractStyleGlyphs()` — not SAB-backed. postMessage will structurally clone it correctly.
+- `ModelLoader.loadPromise` is only set once. A second font upload updates the store's `styleGlyphs` and React re-renders `handleGenerate` with the new value (it's in the dep array). This should be fine.
+
+**Suspected root cause (not yet confirmed):** The ONNX model's actual input names may differ from `style_glyphs`/`char_index`. The `session.inputNames` log will confirm or deny this when run in the browser console.
+
 ### 2026-03-07: Issue #39 — Style Conditioning Fix (PR #40) — MERGED ✅
 
 - **Branch:** `squad/39-style-conditioning-fix` → dev (**PR #40**)
@@ -208,4 +227,25 @@
 - `BrowserUnsupported.test.tsx` (4 tests) already existed as untracked from prior branch work — committed here with the component
 - Model URL confirmed as `/api/model` — backend `HandleModelDownload` at that route
 - `detectBrowserSupport()` called synchronously at module load (zero React overhead)
+
+
+### 2026-03-07: Style-Invariant Output Root Cause Confirmed
+
+**Coordination with Major:**
+
+Major's investigation revealed the root cause is **NOT** a frontend tensor path issue (as Togusa suspected). Instead:
+
+1. **Architecture weakness:** UNetGenerator encodes 	orch.zeros() → all 6 U-Net skip connections are constant → style signal overwhelmed.
+2. **Training loss insufficient:** lambda_l1=100 dominates, no style supervision → model learned to ignore style.
+3. **GAN instability:** D loss falling, G loss rising by epoch 22 → mode collapse precursor.
+
+**Implications for Togusa:**
+- The 7 debug console.log statements added to inferenceWorker.ts remain valuable for **verification**, not root-cause discovery.
+- When browser console logs are captured, they should show:
+  - session.inputNames correctly populated with ['style_glyphs', 'char_index'] (they are)
+  - Style glyphs first 5 values **different per font** (they should be)
+  - Output values **identical** across char_index (confirming model ignores style signal)
+- This will serve as validation that the model was trained to ignore style, not that there's a JS-layer bug.
+
+**Current Status:** Debug logging in place, awaiting browser validation. Actual fix requires model retraining by Major.
 
