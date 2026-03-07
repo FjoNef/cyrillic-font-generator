@@ -45,25 +45,12 @@ const PERF_TARGETS = {
 
 describe('Performance Targets — Model Load', () => {
   it('target: model load completes within 5 000 ms', () => {
-<<<<<<< HEAD
     // 📌 PROACTIVE: Promoted to e2e/performance.spec.ts for live browser assertion.
-=======
-    // 📌 PROACTIVE: Replace with actual measurement when browser test harness is available.
-    // Measurement approach:
-    //   const t0 = performance.now();
-    //   await modelLoader.load('/api/model/v1/generator.onnx');
-    //   const elapsed = performance.now() - t0;
-    //   expect(elapsed).toBeLessThan(PERF_TARGETS.MODEL_LOAD_MS);
->>>>>>> origin/squad/27-e2e-glyph-generation-ui
     expect(PERF_TARGETS.MODEL_LOAD_MS).toBe(5_000);
   });
 
   it('target: model file is ≤ 20 MB compressed (impacts load time)', () => {
     // 📌 PROACTIVE: CI artifact size check should gate on this.
-<<<<<<< HEAD
-=======
-    // Measurement: check Content-Length or file size after Brotli compression.
->>>>>>> origin/squad/27-e2e-glyph-generation-ui
     expect(PERF_TARGETS.MODEL_MAX_COMPRESSED_BYTES).toBe(20_971_520);
   });
 
@@ -77,15 +64,7 @@ describe('Performance Targets — Model Load', () => {
 
 describe('Performance Targets — Per-Glyph Inference', () => {
   it('target: single glyph inference < 500 ms (WASM fallback)', () => {
-<<<<<<< HEAD
     // 📌 PROACTIVE: Promoted to e2e/performance.spec.ts for live browser assertion.
-=======
-    // 📌 PROACTIVE: Replace with timed assertion in browser test.
-    // Measurement approach:
-    //   const t0 = performance.now();
-    //   await modelLoader.infer(styleGlyphs, charIndex);
-    //   expect(performance.now() - t0).toBeLessThan(PERF_TARGETS.INFERENCE_PER_GLYPH_MS);
->>>>>>> origin/squad/27-e2e-glyph-generation-ui
     expect(PERF_TARGETS.INFERENCE_PER_GLYPH_MS).toBe(500);
   });
 
@@ -110,11 +89,7 @@ describe('Performance Targets — Full Font Generation (66 glyphs)', () => {
   });
 
   it('target: all 66 glyphs complete within 10 s (WASM 4-thread)', () => {
-<<<<<<< HEAD
     // 📌 PROACTIVE: Promoted to e2e/performance.spec.ts for live browser assertion.
-=======
-    // 📌 PROACTIVE: Use Playwright + performance.now() in real browser.
->>>>>>> origin/squad/27-e2e-glyph-generation-ui
     expect(PERF_TARGETS.FULL_FONT_WASM_MS).toBe(10_000);
   });
 
