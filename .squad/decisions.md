@@ -4,6 +4,185 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-03-07: Browser Inference Integration (Togusa)
+
+**By:** Togusa (Frontend Dev)  
+**Date:** 2026-03-07  
+**Status:** ACCEPTED
+
+---
+
+#### Decisions Made
+
+**1. onnxruntime-web version:** `^1.20.0`  
+Already pinned in `package.json`. Retains this version — compatible with the opset-17 ONNX graph.
+
+**2. Execution provider order:** `['webgl', 'wasm']`  
+Per inference contract recommendation: WebGL preferred for GPU acceleration (~15–30 ms/glyph), WASM fallback (~80–600 ms/glyph). Encoded in both `OnnxInference.ts` and `inferenceWorker.ts`.
+
+**3. Inference runs in a Web Worker (non-blocking)**  
+`ModelLoader` spawns `inferenceWorker.ts` as a Vite module Worker. All ONNX session creation and `session.run()` calls happen off the main thread. `ModelLoader` provides a promise-based API with request-ID multiplexing for concurrent safety.
+
+**4. Input tensor shape confirmed:** `[1, 10, 1, 128, 128]`  
+Batch dimension **must** be included. Previous placeholder in `OnnxInference.ts` used `[10, 1, 128, 128]` (no batch dim) — corrected. `inferenceWorker.ts` already had the correct shape.
+
+**5. Output tensor name confirmed:** `generated_glyph`  
+Primary lookup `results['generated_glyph']` with `Object.values(results)[0]` fallback.
+
+**6. Normalisation convention (cross-team relevant)**  
+Training renders **white glyph on black background** (`glyph=255 → +1.0`, `bg=0 → -1.0`).  
+FontLoader renders black-on-white then inverts (`1 - brightness * 2`) to match training space. This is correct.  
+Postprocessing for display: `((1 - output) / 2) * 255` → maps `+1` (ink) → 0 (black pixel), `-1` (bg) → 255 (white pixel).
+
+**7. Style chars:** `["A","B","C","D","E","H","I","O","R","X"]`  
+Confirmed against `dataset.py:DEFAULT_STYLE_CHARS`. FontLoader was already correct.
+
+**8. Browser support utility added**  
+`src/frontend/src/inference/browserSupport.ts` — synchronous, call once on app init. Returns recommended execution providers and human-readable error for unsupported browsers (missing WASM or Workers).
+
+---
+
+### 2026-03-07: Model Delivery URL Scheme & Caching Strategy (Batou)
+
+**By:** Batou (Backend Dev)  
+**Date:** 2026-03-07  
+**Status:** IMPLEMENTED
+
+---
+
+#### Decisions Made
+
+**1. Versioned API URL for model downloads**
+
+The primary model download URL is the **versioned API endpoint**:
+
+```
+GET /api/model/{version}/{filename}
+```
+
+Example: `GET /api/model/v1/generator.onnx`
+
+This is preferred over the static file path (`/models/v1/generator.onnx`) because:
+- Sets `ETag: "{sha256}"` — browser and CDN can revalidate with `If-None-Match`
+- Sets `Cache-Control: public, max-age=31536000, immutable` explicitly on every response
+- Version in URL = natural cache-bust when model version changes (new URL → fresh download)
+- Validates version/filename server-side; unknown versions return 404 cleanly
+
+**2. Manifest endpoint as the frontend's entry point**
+
+Togusa's frontend **should call `GET /api/model/manifest` first** to get the current `downloadUrl`, `sha256`, and `sizeBytes`. Do not hardcode the download URL client-side.
+
+```json
+{
+  "version": "v1",
+  "filename": "generator.onnx",
+  "sizeBytes": 55677952,
+  "sha256": "abc123...",
+  "downloadUrl": "http://host/api/model/v1/generator.onnx"
+}
+```
+
+**3. Health endpoint includes model readiness**
+
+`GET /health` now returns:
+```json
+{
+  "status": "healthy",
+  "model": { "version": "v1", "filename": "generator.onnx", "sizeBytes": ..., "sha256Prefix": "..." }
+}
+```
+`model` is `null` if the model file is absent. Frontend can poll this before initiating download.
+
+**4. Caching strategy summary**
+
+| URL | Cache-Control | ETag | Range |
+|-----|---|---|---|
+| `/api/model/v1/generator.onnx` | `public, max-age=31536000, immutable` | SHA-256 full hex | ✅ |
+| `/models/v1/generator.onnx` (static) | `public, max-age=31536000, immutable` | Auto (ASP.NET) | ✅ |
+| `/api/model` (unversioned) | None | None | ✅ |
+| `/api/model/manifest` | None (always fresh) | None | — |
+
+**5. ETag format**
+
+```
+ETag: "abc123...{full-sha256-hex}"
+```
+
+SHA-256 is computed once at startup by `ModelManifestCache` singleton. No per-request I/O.
+
+#### Rationale
+- Brotli compression (~15.9 MB on wire) already wired up from previous sprint.
+- Immutable + versioned URL = zero re-download cost after first fetch.
+- ETag / 304 = cheap revalidation when user revisits.
+- Range requests = progressive chunked loading in the browser Web Worker.
+
+---
+
+### 2026-03-07: Quality Risks — ONNX Inference Test Coverage (Saito)
+
+**Filed by:** Saito (Tester)  
+**Date:** 2026-03-07  
+**Status:** HIGH risk RESOLVED, MEDIUM risk documented, LOW risks deferred
+
+---
+
+#### Risk 1 — OnnxInference.ts had CONTRACT VIOLATIONS (HIGH) — **NOW FIXED**
+
+**File:** `src/frontend/src/inference/OnnxInference.ts`  
+**Severity:** HIGH — would produce wrong output or ONNX runtime error at runtime
+
+| Line | Bug | Contract requirement | Fix |
+|------|-----|-----|---|
+| 72 | `new ort.Tensor('float32', styleGlyphs, [10, 1, 128, 128])` — missing batch dim | Shape must be `[1, 10, 1, 128, 128]` | ✅ Togusa corrected to `[1, 10, 1, 128, 128]` |
+| 83 | `results['output'] ?? Object.values(results)[0]` — wrong key | Output name is `generated_glyph` per contract | ✅ Togusa corrected to `results['generated_glyph']` |
+
+**Note:** `inferenceWorker.ts` was always correct and matches the contract. `OnnxInference.ts` predates the official contract publication. The Worker path (`ModelLoader` → `inferenceWorker`) is the production path. **Cross-validation working: Togusa fixed this before Saito filed the risk.**
+
+---
+
+#### Risk 2 — Static File Caching Headers Not Covered by Integration Tests (MEDIUM)
+
+**Files:** `Program.cs` (`/models/*` static file route), `ModelEndpointTests.cs`  
+**Severity:** MEDIUM — caching headers verified via source code assertion only, not live HTTP response
+
+The `/models/v1/generator.onnx` static file path sets `Cache-Control: public, max-age=31536000, immutable` via `OnPrepareResponse`. However, `WebApplicationFactory` does not register the static file middleware when `ModelPath` is injected via `ConfigureAppConfiguration` — the middleware is registered at `app.Build()` time using `builder.Configuration` before factory config injection takes effect.
+
+Current mitigation: source-level assertion in `StaticModel_HasImmutableCacheControlHeader`.
+
+**Action required:** Batou — add an E2E smoke test (e.g., Playwright or curl-based CI step) that:
+1. Starts the server with the real model file
+2. Requests `GET /models/v1/generator.onnx`
+3. Verifies `Cache-Control: public, max-age=31536000, immutable` is present
+
+---
+
+#### Risk 3 — Performance Targets Unverified (LOW / DEFERRED)
+
+**Files:** `src/frontend/src/inference/__tests__/performance.test.ts`  
+**Severity:** LOW — targets documented as stubs; no actual measurement
+
+Inference latency (<500ms per glyph WASM) and model load time (<5s) targets are currently documented as specification stubs. Actual browser measurement requires:
+- A Playwright test harness running in a real Chromium instance
+- The ONNX model loaded via the worker
+- `performance.now()` measurement before/after
+
+**Action required:** Togusa — once `inferenceWorker.ts` is wired up end-to-end, promote the performance stubs to live assertions in a Playwright test.
+
+---
+
+#### Risk 4 — Low-Memory Device Fallback Untested (LOW / DEFERRED)
+
+**Severity:** LOW — edge case for mobile/low-RAM devices
+
+The inference contract mentions WASM single-thread latency of 300–600ms. No test validates:
+- Graceful degradation when WebGL is unavailable (WASM fallback)
+- Correct worker error message when WASM heap is exhausted
+- `ort.InferenceSession.create` failing silently vs. throwing
+
+**Action required:** Togusa — add error handling in `inferenceWorker.ts` for WASM OOM and webgl init failure; add test cases once the worker error path is confirmed.
+
+---
+
 ### 2026-03-05: Reduce base_filters from 64 → 32, Retrain from Scratch
 
 **By:** Major (AI/ML Engineer)  

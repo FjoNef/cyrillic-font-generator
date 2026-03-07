@@ -58,7 +58,13 @@ if (Directory.Exists(modelPhysicalPath))
 app.UseStaticFiles(); // wwwroot (React SPA)
 
 // -- API routes --
-app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+app.MapGet("/health", (ModelManifestCache cache) => Results.Ok(new
+{
+    status = "healthy",
+    model  = cache.Available
+        ? new { version = cache.Version, filename = cache.Filename, sizeBytes = cache.SizeBytes, sha256Prefix = cache.Sha256[..16] }
+        : null
+}));
 app.MapFontEndpoints();
 app.MapModelEndpoints();
 

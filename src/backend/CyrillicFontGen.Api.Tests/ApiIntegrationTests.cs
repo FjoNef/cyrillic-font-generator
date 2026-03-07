@@ -27,6 +27,23 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task HealthEndpoint_ContainsModelField()
+    {
+        // Health endpoint always includes a "model" field (null when absent, object when present)
+        var response = await _client.GetAsync("/health");
+        var content  = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"model\"", content);
+    }
+
+    [Fact]
+    public async Task VersionedModelEndpoint_WhenModelNotExists_Returns404()
+    {
+        var response = await _client.GetAsync("/api/model/v1/generator.onnx");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ModelEndpoint_WhenModelNotExists_Returns404()
     {
         // Act
