@@ -160,3 +160,16 @@
 Updated test file to match new endpoint. All 41 frontend tests passing.
 
 Backend now exposes /api/model endpoint (Batou's fix resolves actual model file via ContentRootPath).
+
+### 2026-03-07T14:31:04Z: Major exports ONNX model — Ready for Integration
+
+- **Status:** ✅ COMPLETE
+- **Model file:** models/v1/generator.onnx
+- **Size:** 53.1 MB (INT8 quantized)
+- **Compressed delivery:** ~15.9 MB (meets ≤20 MB browser target)
+- **Output shape:** (1, 1, 128, 128)
+- **Output dtype:** float32
+- **Value range:** [-1.0, 1.0]
+- **Validation:** CPU inference SUCCESS
+- **Implementation:** INT8 dynamic quantization; ConvTranspose FP32 fallback
+- **Key note:** Model ready for onnxruntime-web integration with ModelLoader singleton pattern

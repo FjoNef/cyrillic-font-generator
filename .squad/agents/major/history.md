@@ -131,6 +131,24 @@ Rationale:
 - Training config or train.py: pass `base_filters=32` at model init
 - Note: checkpoint format changes (different state_dict shape) — epoch_0020.pth cannot be resumed with nf=32
 
+### 2026-03-06: Final ONNX Export — epoch_0200 (Training Complete)
+
+**Status:** SUCCESS (INT8 quantization)
+
+**Checkpoint:** `models/checkpoints/epoch_0200.pth` (final training checkpoint, base_filters=32)
+**Output:** `models/v1/generator.onnx` — INT8 quantized ONNX file
+**File size:** 53.1 MB (INT8 quantized)
+**Estimated brotli-compressed delivery size:** ~15.9 MB
+**Output shape:** (1, 1, 128, 128) float32 ✓ matches tensor contract
+**Value range:** [-1.000, 1.000] ✓ within contract bounds
+**onnxruntime validation:** ✅ PASSED
+
+**Key achievements:**
+- Successfully applied INT8 dynamic quantization using the `strip_initializer_value_info()` fix
+- Conv and MatMul ops quantized to INT8; ConvTranspose layers remain FP32 (no IntegerOps equivalent in ONNX)
+- Model is production-ready for browser deployment via onnxruntime-web
+- Inference API contract validated: inputs (style_glyphs, char_index) → output (generated_glyph)
+
 ### 2026-03-04: Pipeline Validation ONNX Export — epoch_0020
 
 **Status:** SUCCESS (fp32 fallback — quantization blocked by opset/onnxruntime mismatch)
