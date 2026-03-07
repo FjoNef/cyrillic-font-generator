@@ -1,6 +1,0 @@
-{
-  "version": "1.0",
-  "universe_allowlist": ["ghost-in-the-shell"],
-  "max_agents": 20,
-  "overflow_strategy": "diegetic-expansion"
-}
