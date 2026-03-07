@@ -118,3 +118,28 @@ Three compounding causes:
 **Key lesson:** The U-Net skip connections are the primary carrier of spatial structure across decoder scales. Feeding them with constant zeros (blank canvas) made the generator learn structure-independent decoding — style only entered at the 1×1 bottleneck and was diluted across 6 decoder stages before reaching output resolution.
 
 **Status:** Code committed 2026-03-07T21:06:51Z. Requires retraining from scratch (existing epoch_0200 incompatible with new architecture).
+
+---
+
+### 2026-03-07T21:10:19Z: Regression Test Suite — Saito (Tester)
+
+**Cross-Agent Update from Saito**
+
+Wrote 9 regression tests in `src/model/tests/test_style_conditioning.py` to guard against regressions on the two bug fixes:
+
+**Encoder-Not-Zeros (3 tests via PyTorch forward hooks on generator.enc1):**
+- Validates that `UNetGenerator.forward()` receives non-zero style glyph input
+- Guards against reversion to blank canvas encoder (bug root cause #1)
+
+**Loss Config (2 tests via YAML/AST validation):**
+- `lambda_l1` value check (≤ 20)
+- `PatchDiscriminator.forward_with_features()` method existence
+- Guards against loss misconfiguration (bug root cause #2)
+
+**Additional Coverage (4 tests):**
+- Style glyph input shape [B, 10, 1, 128, 128]
+- Character index encoding semantics
+- Forward pass without errors
+- Feature matching tensor shapes
+
+**Result:** All 9 tests pass in 2.3s. Test suite now prevents regression when retraining begins.
