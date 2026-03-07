@@ -31,6 +31,30 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07: PR #24 (Playwright E2E Harness) Approved & Merged — Issue #23 Closed
+
+**Review Lead:** Aramaki (Lead)  
+**Status:** APPROVED ✅ — Merged to dev  
+**Issue:** #23 closed
+
+**Review outcome:** All 7 criteria passed:
+1. Playwright config correct (Vite dev server, CI settings optimized)
+2. Performance assertions meaningful (load <5s, per-glyph <500ms, full run <10s, sourced from inference_contract.md)
+3. Cross-browser setup (Chromium + Firefox + WebKit with CI auto-install)
+4. Stub ONNX model sound (345-byte Slice+Reshape, UMD+page.route interception, offline-capable)
+5. Squad files appropriate (history update, skill documented, decision filed)
+6. Test structure clean (shared helpers, `test.describe` grouping, 269 lines)
+7. npm script present (`test:e2e`, `test:e2e:headed`, `test:e2e:report`)
+
+**Impact:**
+- 51 Playwright E2E tests (17/browser × 3 browsers) now run on every CI push
+- Performance regression detection active for WASM load and inference targets
+- `test:e2e` is the canonical command for the harness
+
+**Minor notes:**
+- `squad-heartbeat.yml` cron commented out (noise reduction)
+- Two model-load tests assert same condition (minor redundancy, acceptable for test harness)
+
 ### 2026-03-07: Inference Test Suite Complete — 117 Total Tests, HIGH Risk Resolved
 
 **Task:** Write comprehensive test suite for inference integration (browser ONNX + backend model delivery).
