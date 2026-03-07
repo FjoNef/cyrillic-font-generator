@@ -9,6 +9,36 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07: PR #43 QA REVIEW — AMP + RTX 3070Ti Training Optimization — CHANGES REQUESTED
+
+**Task:** QA code review of PR #43 (Issue #42 — perf(training): optimize for RTX 3070Ti Laptop GPU).
+
+**Verdict:** CHANGES REQUESTED — 2 blocking issues, 2 minor notes. Core AMP implementation is correct.
+
+**Changes Reviewed:**
+- `src/model/train/train.py`: AMP (dual GradScaler + autocast), cudnn.benchmark, DataLoader persistent_workers/pin_memory, epoch timing
+- `src/model/configs/train_config.yaml`: batch_size VRAM comment
+- `src/model/TRAINING.md`: New training guide
+
+**Findings (Blocking):**
+1. **`persistent_workers=True` has no explicit guard** — hardcoded unconditionally; if `num_workers` is ever set to 0 this silently becomes a `ValueError`. Current code is safe (`min(4, os.cpu_count() or 1) >= 1`) but coupling is implicit. Fix: `persistent_workers=num_workers > 0`.
+2. **No AMP smoke test** — 9 existing tests cover style conditioning and loss weights, none exercise the `autocast`+`GradScaler` path. For a GPU-perf PR, at least one test verifying a training step completes with finite losses is needed. Can run on CPU with `enabled=False`.
+
+**Findings (Non-blocking):**
+3. Deprecated import `from torch.cuda.amp import GradScaler, autocast` — generates `FutureWarning` in PyTorch 2.4+. Should migrate to `from torch.amp import GradScaler, autocast`.
+4. TRAINING.md shows `pin_memory=True` unconditionally in code snippet; actual code is `device.type == 'cuda'` (minor doc drift).
+
+**What's Good:**
+- AMP scoping is correct: `autocast` wraps forward+loss, `backward()` is outside. ✅
+- Two separate `GradScaler` instances for independent G/D backward passes. ✅
+- `use_amp = device.type == "cuda"` — CPU training path completely unaffected. ✅
+- `export_onnx.py` is fully isolated: CPU device, `torch.no_grad()`, no `autocast`. ✅
+- TRAINING.md is production-quality: power mode guide, nvidia-smi dmon, batch size table, epoch benchmarks.
+
+**Note:** GitHub API returned "can't review your own PR" — review was posted as a PR comment instead of a formal review event. Comment at: https://github.com/FjoNef/cyrillic-font-generator/pull/43#issuecomment-4017427024
+
+**Pattern captured:** Created `.squad/skills/amp-review-checklist/SKILL.md` for reuse on future AMP PRs.
+
 ### 2026-03-07T21:06:51Z: Style Conditioning Regression Tests — 9/9 Passing ✅
 
 **Task:** Write regression tests guarding against reintroduction of style conditioning bugs fixed by Major.
@@ -805,3 +835,23 @@ result = sess.run(None, {"style_glyphs": style_glyphs, "char_index": char_index}
 **All 9 tests pass (2.27s).** Tests would catch regression back to zeros/100/no-feature-matching.
 
 **Key pattern:** AST-walk with st.parse() is a clean way to test numeric literals in Python scripts without importing/executing them.
+
+
+### 2026-PR#44: SAB Input Guard in OnnxInference.ts — APPROVED ✅
+
+**Task:** QA Code Review of PR #44 (Issue #41 — Guard SAB-backed Float32Array inputs in OnnxInference.ts).
+
+**Status:** ✅ APPROVED — Fix is correct, complete, and non-regressive. Posted as PR comment (author cannot self-approve via gh CLI).
+
+**Changes Reviewed:**
+- \OnnxInference.ts\ — conditional \uffer.slice()\ copy in \generateGlyph()\ before creating \styleTensor\
+- Guard: \styleGlyphs.buffer instanceof SharedArrayBuffer\ → copies to plain ArrayBuffer; otherwise passes through unchanged
+
+**Fix Validation:**
+- ✅ Fix correctness: correct \instanceof SharedArrayBuffer\ check; byteOffset-aware \uffer.slice()\ handles sub-views correctly
+- ✅ Coverage completeness: only \styleGlyphs\ is a Float32Array that could be SAB-backed; \charIndex\ is a primitive number → \BigInt64Array\ always freshly allocated → not SAB-susceptible. All inputs covered.
+- ⚠️ Test gap: 38 onnxContract tests don't exercise the SAB branch (all use plain Float32Array). Fix is safe without it, but a SAB regression test is recommended as follow-up.
+- ⚠️ Minor style inconsistency: PR #40 used unconditional copy; this PR uses conditional. Both correct; different contexts (output vs input). Acceptable but worth standardizing.
+- ✅ No regressions: non-SAB path unchanged from pre-fix behavior
+
+**Key Architecture Reminder:** ORT WASM input tensors must not be backed by SharedArrayBuffer. Guard on input side (this PR) mirrors guard on output side (PR #40). Both are required invariants for the inference pipeline.
