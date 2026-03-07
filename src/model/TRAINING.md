@@ -202,3 +202,189 @@ Override via CLI: `--batch_size 48`
 
 Actual times depend on font count (dataset size), disk speed, and power limit.
 Always measure on your own hardware after setting High Performance power mode.
+
+---
+
+## Performance Tuning
+
+> Profiled 2026-03-08 on RTX 3070 Laptop GPU (8 GB VRAM) · PyTorch 2.10.0+cu128 · 16-core CPU.
+> All timings use `torch.cuda.synchronize()` + `time.perf_counter()` on the **synthetic** 1000-sample dataset
+> (32 batch size = 31.25 batches/epoch) unless noted.  Epoch 1 is warm-up; epoch 2 is the measured value.
+
+### Baseline
+
+| Metric | Value |
+|---|---|
+| Config | B=32, num_workers=4, prefetch_factor=2, AMP on, cudnn.benchmark on |
+| Epoch 1 time | **16.71 s** (includes cuDNN algorithm auto-benchmark, one-time cost) |
+| Epoch 2 time | **5.47 s** ← measured baseline |
+| VRAM allocated | 0.38 GB |
+| VRAM reserved | 1.86 GB |
+| AMP scaler scale | G=16384, D=32768 (>>1 → FP16 is active and stable) |
+
+Phase breakdown (both epochs):
+
+| Phase | Time | Share |
+|---|---|---|
+| G_backward | 11.04 s | 58.1% ← **primary bottleneck** |
+| D_forward | 3.88 s | 20.4% |
+| G_forward | 2.73 s | 14.4% |
+| D_backward | 1.21 s | 6.4% |
+| data_transfer | 0.13 s | 0.7% |
+
+**The generator backward pass is the bottleneck** — 58% of compute time. Data loading is negligible (0.7%) because the DataLoader pipeline overlaps with GPU compute.
+
+---
+
+### Strategy 1 — `num_workers` sweep
+
+| Config | Epoch 2 time | Notes |
+|---|---|---|
+| num_workers=0 | 6.24 s | No async prefetch, CPU blocks GPU briefly |
+| num_workers=2 | 5.47 s | Same as baseline |
+| **num_workers=4** | **5.47 s** | ✓ Optimal — matches baseline |
+| num_workers=6 | 5.55 s | No improvement, slight overhead |
+| num_workers=8 | 5.55 s | No improvement |
+
+**Finding:** num_workers=4 is optimal. Workers beyond 4 add process management overhead without
+improving throughput. This confirms the current default.
+
+---
+
+### Strategy 2 — `batch_size` sweep
+
+| Config | Epoch 2 time | VRAM reserved | Notes |
+|---|---|---|---|
+| batch_size=32 | 5.47 s | 1.86 GB | Baseline |
+| **batch_size=64** | **5.45 s** | 3.14 GB | Marginally faster, better GPU utilisation |
+| batch_size=128 | 5.48 s | 6.14 GB | Similar to B=32 at small dataset |
+
+**Finding:** Larger batches do not significantly reduce per-epoch time (total work is the same).
+B=64 is marginally fastest and uses VRAM more efficiently without risk of OOM. Updated default.
+
+For the **real 130k-sample dataset**, batch size affects:
+- B=32: 4071 batches/epoch × ~175 ms/batch ≈ 712 s GPU compute
+- B=64: 2036 batches/epoch × ~349 ms/batch ≈ 710 s GPU compute
+- Epoch time is dominated by GPU compute regardless of batch size.
+
+---
+
+### Strategy 3 — `prefetch_factor`
+
+| Config | Epoch 2 time |
+|---|---|
+| prefetch_factor=2 | 5.47 s |
+| prefetch_factor=4 | 5.60 s |
+
+**Finding:** prefetch_factor=2 is slightly faster. Higher prefetch uses more CPU memory and adds
+minor overhead without benefit when data loading is not the bottleneck. Keep at 2.
+
+---
+
+### Strategy 4 — `torch.compile(mode="reduce-overhead")`
+
+**Result: FAILED** — Triton is not installed. `torch.compile` on Windows requires
+[triton-lang/triton](https://github.com/triton-lang/triton) which does not have an official
+Windows release. The code wraps the compile call in `try/except` with graceful eager fallback,
+but the failure occurs during the first forward pass, not at compile time.
+
+```
+torch._inductor.exc.TritonMissing: Cannot find a working triton installation.
+```
+
+**Workaround for Linux:** Install `triton` (`pip install triton`) and then:
+
+```python
+try:
+    gen = torch.compile(gen, mode="reduce-overhead")
+    se = torch.compile(se, mode="reduce-overhead")
+    disc = torch.compile(disc, mode="reduce-overhead")
+except Exception:
+    pass  # graceful fallback to eager mode
+```
+
+Expected speedup on Linux/WSL2: ~15–25% on G_backward (the primary bottleneck).
+
+---
+
+### Real Dataset Profiling (1974 fonts × 66 chars = 130,284 samples)
+
+Data loading speed with on-the-fly PIL rendering:
+
+| num_workers | ms/sample | Full-epoch data-loading time |
+|---|---|---|
+| 0 | 6.91 ms | ~900 s (15 min) |
+| 4 | 2.45 ms | ~319 s (5.3 min) |
+
+GPU compute is ~175 ms/batch at B=32 → **712 s (11.9 min) per epoch**.
+
+With `num_workers=4`, data loading (78 ms/batch) is **hidden behind** GPU compute
+(175 ms/batch). The pipeline is **GPU-compute-bound**, not data-bound.
+
+**On-the-fly rendering bottleneck:** Each `__getitem__` renders 10 style glyphs + 1 Cyrillic
+target = 11 `PIL ImageFont.truetype()` calls. For 130,284 samples/epoch that is **~1.43 million
+font render calls per epoch**.
+
+---
+
+### Strategy 5 — Cached `.pt` Dataset
+
+**Implementation:** `data/build_cache.py` + `CachedFontDataset` (in `data/dataset.py`).
+
+Pre-render all fonts to per-font `.pt` files. Each file stores `style_glyphs [10, 1, 128, 128]`
+and `target_glyphs [66, 1, 128, 128]` as float32 tensors. `__getitem__` loads the .pt file
+(memoised via `functools.lru_cache(maxsize=256)`) and indexes into the pre-loaded tensors.
+
+```bash
+# Build cache (one-time, ~10–15 min for 1974 fonts)
+cd src/model
+python data/build_cache.py --fonts_dir ../../data/fonts --output ../../data/fonts_cache
+
+# Estimated cache size:
+#   float32: 1974 × 5 MB ≈ 9.9 GB
+#   uint8 (--uint8 flag): 1974 × 1.25 MB ≈ 2.5 GB
+```
+
+Enable in `configs/train_config.yaml`:
+
+```yaml
+data:
+  fonts_cache_dir: "../../data/fonts_cache"   # uncomment to use cached dataset
+```
+
+**Expected impact:** Reduces per-sample CPU overhead from ~6.91 ms (w=0 rendering) to ~0.01 ms
+(tensor index after first-load). Since `num_workers=4` already makes data loading latent, the
+practical speedup for full-dataset training is minimal (~5%). Primary benefit: reduced CPU
+utilization frees thermal headroom for GPU boost clock on laptop hardware.
+
+---
+
+### Recommended Configuration (Winning Setup)
+
+```yaml
+training:
+  batch_size: 64           # Marginally faster than 32; 3.1 GB VRAM
+  # DataLoader (in train.py):
+  num_workers: 4           # Optimal for 16-core laptop CPU
+  prefetch_factor: 2       # Better than 4 when compute-bound
+  persistent_workers: true # (automatically set when num_workers > 0)
+  pin_memory: true         # (automatically set when CUDA is available)
+```
+
+**Achieved epoch time (1000 synthetic samples):** **5.45 s** — well under the 60 s target.
+
+**Limiting factor for real-data training:** GPU compute is the hard wall at ~710 s/epoch
+(12 min) for the full 1974-font dataset. This is dominated by G_backward (58% of GPU time —
+the UNet decoder + feature-matching loss backward pass). Removing this bottleneck requires
+either:
+1. `torch.compile` (available on Linux with Triton installed; ~20% gain expected)
+2. A smaller training set per "fast epoch" (e.g., sample 400 random fonts per epoch → ~3 min)
+3. Reducing model depth (not recommended — would hurt quality)
+
+| Config | Synthetic epoch (1000 samples) | vs 60 s target |
+|---|---|---|
+| FP32, w=0, no benchmark (old estimate) | ~120 s | ✗ |
+| FP32 + benchmark + w=4 | ~80 s | ✗ |
+| AMP + benchmark + w=4 (old estimate) | ~45–60 s | borderline |
+| **AMP + benchmark + w=4 (measured)** | **5.47 s** | **✓ 11× under target** |
+| **AMP + benchmark + w=4 + B=64 (recommended)** | **5.45 s** | **✓ 11× under target** |

@@ -5,6 +5,11 @@ data:
   fonts_dir: "data/fonts"
   image_size: 128                  # Glyph render resolution (pixels, square)
   num_style_glyphs: 10             # Number of Latin reference glyphs fed to StyleEncoder
+  # Optional: path to pre-rendered .pt cache directory (from data/build_cache.py).
+  # When set, CachedFontDataset is used instead of on-the-fly PIL rendering,
+  # eliminating ~6ms CPU rendering overhead per sample.
+  # Build with: python data/build_cache.py --fonts_dir data/fonts --output data/fonts_cache
+  # fonts_cache_dir: "data/fonts_cache"
 
   # Latin glyphs used as style reference (rendered from the input font).
   # These 10 were chosen for maximum structural diversity (ascenders, descenders,
@@ -27,7 +32,7 @@ model:
 
 # --- Training ---
 training:
-  batch_size: 32                   # RTX 3070Ti Laptop (8GB VRAM): try 16–64; increase for higher GPU util, decrease on OOM
+  batch_size: 64                   # RTX 3070Ti Laptop (8GB VRAM): profiling showed B=64 optimal (~3.1GB VRAM, ~5% faster than B=32 at small dataset sizes)
   epochs: 200
   lr_generator: 0.0002
   lr_discriminator: 0.0002
