@@ -79,8 +79,13 @@ export class OnnxInference {
       throw new Error('Model not loaded. Call loadModel() first.');
     }
 
-    // style_glyphs: [1, 10, 1, 128, 128] — batch dimension required
-    const styleTensor = new ort.Tensor('float32', styleGlyphs, [1, 10, 1, 128, 128]);
+    // style_glyphs: [1, 10, 1, 128, 128] — batch dimension required.
+    // Guard: if styleGlyphs is backed by a SharedArrayBuffer (SAB), copy it to a plain
+    // ArrayBuffer first — ORT's WASM backend cannot accept SAB-backed views directly.
+    const safeStyleGlyphs = styleGlyphs.buffer instanceof SharedArrayBuffer
+      ? new Float32Array(styleGlyphs.buffer.slice(styleGlyphs.byteOffset, styleGlyphs.byteOffset + styleGlyphs.byteLength))
+      : styleGlyphs;
+    const styleTensor = new ort.Tensor('float32', safeStyleGlyphs, [1, 10, 1, 128, 128]);
     const indexTensor = new ort.Tensor('int64', BigInt64Array.from([BigInt(charIndex)]), [1]);
 
     const results = await this.session.run({
