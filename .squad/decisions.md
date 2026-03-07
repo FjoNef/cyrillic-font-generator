@@ -1790,3 +1790,39 @@ Use Playwright E2E with Vite dev server. Inject `ort.wasm.min.js` via `page.addS
 
 **Prevention:** Enforce "All squad PRs must target dev" directive.
 
+
+---
+
+## 2026-03-07: Robust Model Path Resolution with Directory Walk-Up
+
+**By:** Batou (Backend Dev)  
+**Date:** 2026-03-07  
+**Status:** ACCEPTED  
+**Issue:** #37  
+**PR:** #38
+
+### Context
+The model serving endpoints returned 404 when \ASPNETCORE_ENVIRONMENT\ was not set to "Development". PR #36 added a relative path workaround, but this only worked in Development. Other environments used \ppsettings.json\ with \ModelPath: "models"\, which resolved relative to \ContentRootPath\ (the API project directory), not the repo root where the model lives.
+
+### Decision
+Implement directory walk-up search for model files that works in all environments:
+1. Try configured path first (respects explicit configuration)
+2. If not found and path is relative, walk up from \ContentRootPath\ looking for \models/v1/generator.onnx\
+3. If path is absolute, don't walk up (respects explicit operator intent)
+4. Startup diagnostics with clear success/failure messages
+5. Test isolation using \UseContentRoot()\ for "no model" scenarios
+
+### Impact
+- ✅ Works in all environments without environment-specific config
+- ✅ Resilient to working directory and deployment variations
+- ✅ Clear diagnostics for troubleshooting
+- ✅ No breaking changes (configured path tried first)
+- ✅ All 26 tests passing
+
+### Architectural Review
+✅ **Approved by Aramaki:** Walk-up pattern is architecturally sound, security-safe, production-correct. Bounded traversal (terminates at filesystem root). Respects explicit absolute paths. Clear startup diagnostics. Smoke test validates all endpoints.
+
+### Verification
+- 26/26 tests passing
+- Smoke test covers health, manifest, model download, versioned endpoint
+- Test isolation verified

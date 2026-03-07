@@ -9,6 +9,43 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07: PR #38 APPROVED — Robust Model Path Resolution with Directory Walk-Up
+
+**Task:** QA Code Review of PR #38 (Issue #37 — Replace environment-dependent path resolution with directory walk-up).
+
+**Status:** ✅ APPROVED — All 26 tests pass, comprehensive test coverage, clean implementation.
+
+**Changes Reviewed:**
+- `ModelManifestCache.ResolveModelFile()`: Directory walk-up from ContentRootPath to filesystem root
+- `Program.ResolveModelsDirectory()`: Parallel walk-up logic for static file serving
+- Test isolation: `UseContentRoot()` with temp directories prevents walk-up from finding repo models in 404 tests
+- New test: `Manifest_WhenModelAvailable_ModelWasFoundByWalkUp()` validates walk-up success
+- Added `smoke-test.ps1`: 4 endpoint checks (health, manifest, model download, versioned endpoint)
+
+**Test Coverage Analysis (all ✅):**
+1. **Walk-up finds model at parent level** — Implicit in `ModelEndpointTests.Manifest_WhenModelAvailable_ModelWasFoundByWalkUp` (model placed at temp root, walk-up from nested ContentRootPath)
+2. **Returns null/404 when not found** — `ModelEndpointNoModelTests.*` (3 tests), `ApiIntegrationTests.ModelEndpoint_WhenModelNotExists_Returns404`
+3. **Configured path priority** — Code: checks configured path first (line 50-55 in ModelEndpoints.cs), then walks up only if relative
+4. **Startup logs on success** — Code: `LogInformation("✓ Model serving ready...")` (line 39)
+5. **Startup logs on failure** — Code: `LogError("✗ Model file not found...")` (line 23)
+6. **Manifest returns 200 with JSON** — 8 tests verify manifest structure (sha256, downloadUrl, version, sizeBytes)
+7. **Model download returns 200 + octet-stream** — `ModelDownload_WhenModelAvailable_ContentTypeIsOctetStream`, smoke test covers this
+8. **Walk-up terminates at filesystem root** — Code: `while (dir != null) { ... dir = dir.Parent; }` (line 69-78). `.Parent` returns null at root, preventing infinite loop. ✅ Safe.
+
+**Smoke Test Script Quality:**
+- Covers 4 critical endpoints: `/health`, `/api/model/manifest`, `/api/model`, `/api/model/v1/generator.onnx`
+- Validates headers (Content-Type, ETag), status codes, JSON structure
+- Exit code = fail count (CI-friendly)
+- Minor improvement opportunity: Could add negative test (expect 404 for wrong version), but current scope is adequate
+
+**Architectural Improvements:**
+- Eliminates `appsettings.Development.json` dependency on hardcoded `"../../../models"` — more robust across different working directories
+- Test isolation improved: explicit ContentRootPath override instead of relying on path-not-found side effects
+- Respects absolute paths (no walk-up if `Path.IsPathRooted()`), preventing unwanted filesystem traversal
+- Logging clarity improved: ✓/✗ symbols, actionable error messages
+
+**Verdict:** APPROVED. Implementation is robust, test coverage comprehensive, termination safe. Smoke test is a valuable addition.
+
 ### 2026-03-07: PR #36 APPROVED & MERGED — Model Path Fix (Development Configuration)
 
 **Task:** QA Code Review of PR #36 (Backend model endpoint 404 fix).

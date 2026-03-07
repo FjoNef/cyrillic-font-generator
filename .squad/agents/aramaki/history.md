@@ -9,7 +9,20 @@
 ## Learnings
 <!-- Append new entries below -->
 
-### 2026-03-07T: PR #36 APPROVED & MERGED — Model Path Resolution (Development Fix + Cross-Agent Coordination)
+### 2026-03-07T: PR #38 APPROVED — Robust Model Path Resolution (Walk-Up Pattern)
+- **Decision:** ✅ APPROVED for merge to dev. Issue #37 addressed.
+- **What changed:** Replaced environment-dependent relative path config with directory walk-up discovery.
+- **Walk-up pattern evaluation:**
+  - Tries configured path first (respects explicit operator configuration)
+  - Only walks up for *relative* paths — absolute paths disable walk-up
+  - Bounded traversal (stops at filesystem root)
+  - No security concerns: searches for known `models/` directory name, not arbitrary paths
+- **Production correctness:** When deployed to `/app/` with model at `/app/models/v1/generator.onnx`, direct path resolves on first attempt — no walk-up needed. Walk-up only activates in dev scenarios.
+- **Diagnostics:** Clear operator-friendly log messages at appropriate levels (Info for success, Error for 404 scenarios).
+- **Smoke test:** New `smoke-test.ps1` covers health, manifest, model download, versioned endpoint — good pre-deployment check.
+- **Pattern established:** Walk-up fallback for path discovery is acceptable for model file resolution, but should be used sparingly (dev convenience, not production complexity).
+
+### 2026-03-07T: PR #36 APPROVED & MERGED— Model Path Resolution (Development Fix + Cross-Agent Coordination)
 - **Decision:** ✅ APPROVED & MERGED to dev. Issue #35 closed.
 - **Issue #35 Fixed:** Backend 404 on GET /api/model and GET /api/model/v1/generator.onnx.
 - **Root cause:** ContentRootPath = `src/backend/CyrillicFontGen.Api/`, but model lives at repo root `models/v1/generator.onnx`.

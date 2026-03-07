@@ -1,0 +1,10 @@
+docs: orchestration logs, session log, and decision inbox merge
+
+- Add orchestration logs for batou, saito, aramaki (2026-03-07T19:25:00Z)
+- Add session log for robust-model-path-fix
+- Merge decisions inbox (batou-robust-model-path, aramaki-pr38-review) → decisions.md
+- Delete processed inbox files
+
+PR #38 merged to dev. Issue #37 closed.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
