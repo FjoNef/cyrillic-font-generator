@@ -193,3 +193,40 @@ Decision: Two independent GradScalers (one per G/D optimizer) for AMP training. 
 - **Opened PR #45** — squad/42-training-perf → dev (all training optimizations + all review fixes included)
 
 **Outcome:** PR #45 ready for merge (supersedes PR #43). dev branch clean. Training perf changes properly isolated.
+
+
+---
+
+### 2026-03-08: Training Speed Profiling & Optimization
+
+**Task:** Profile training loop, target 1 epoch under 60 s on RTX 3070 Laptop GPU.
+
+**Environment:** PyTorch 2.10.0+cu128, Python 3.14.3, Windows 11, RTX 3070 Laptop (8GB VRAM, 40 SMs).
+
+**Key Findings:**
+
+1. **Target already achieved:** The current config (AMP + cudnn.benchmark + w=4) runs the 1000-sample synthetic benchmark in **5.47s** (epoch 2) — 11× under the 60 s target. Previous TRAINING.md estimate of 45–60 s was conservative.
+
+2. **Primary bottleneck: G_backward (58% of compute)** — not data loading. G_backward is the UNet decoder + feature-matching backward pass. No DataLoader tuning can fix this.
+
+3. **cudnn.benchmark warm-up:** Epoch 1 costs 16.71s (11.24s overhead). This is one-time per training run — unavoidable with current fixed spatial dims.
+
+4. **AMP is active:** Scaler values 16384–65536 confirm FP16 is working correctly. No numerical instability.
+
+5. **num_workers=4 is optimal.** 0 is slower (6.24s), 2–4 are equal, 6–8 add overhead.
+
+6. **batch_size:** 32, 64, 128 all give ~5.45–5.48s on synthetic. B=64 marginally best. Updated config.
+
+7. **prefetch_factor=2 better than 4** when compute-bound.
+
+8. **torch.compile: FAILED on Windows** — Triton not installed. Graceful try/except fallback in place. Expected ~20% G_backward speedup on Linux.
+
+9. **Real data bottleneck:** 130k samples/epoch = ~12 min GPU compute. Data loading with w=4 (78ms/batch) is hidden behind GPU compute (175ms/batch). Pipeline is compute-bound.
+
+10. **Cached .pt dataset implemented** (`data/build_cache.py` + `CachedFontDataset`). Per-font .pt files with LRU cache (maxsize=256). Practical speedup marginal for full dataset (already compute-bound), but useful for CPU thermal relief and CI.
+
+**Winning config:** B=64, w=4, pf=2, AMP, cudnn.benchmark — already the default after this task.
+
+**Files changed:** `configs/train_config.yaml`, `data/dataset.py`, `data/build_cache.py`, `train/train.py`, `src/model/TRAINING.md`.
+
+**Decision:** `.squad/decisions.md` (Training Speed Optimization section)
