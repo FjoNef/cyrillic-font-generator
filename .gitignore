@@ -19,6 +19,10 @@ Thumbs.db
 *.user
 .idea/
 .vscode/
+# Squad: ignore generated logs
+.squad/orchestration-log/
+.squad/log/
 
-# Squad team tooling — not product code
-.squad/
+# User added
+.squad-v054-backup
+.github/agents-v540-backup
