@@ -52,7 +52,12 @@ export class ModelLoader {
         } else if (msg.type === 'result') {
           const pending = this.pendingRequests.get(msg.requestId);
           if (pending) {
-            pending.resolve(msg.output);
+            // Defensive copy: ORT's WASM backend may return a Float32Array that
+            // views SharedArrayBuffer (WASM memory). postMessage does not clone
+            // SAB — the received Float32Array would alias the same WASM memory
+            // and would be overwritten by the next inference.  Copying here
+            // guarantees an independent buffer regardless of SAB availability.
+            pending.resolve(new Float32Array(msg.output));
             this.pendingRequests.delete(msg.requestId);
           }
         } else if (msg.type === 'error') {
