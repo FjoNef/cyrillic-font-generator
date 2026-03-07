@@ -15,7 +15,14 @@ dotnet run --project CyrillicFontGen.Api
 | Artifact | Location |
 |---|---|
 | React build output | `CyrillicFontGen.Api/wwwroot/` |
-| Trained ONNX model | `CyrillicFontGen.Api/models/v1/generator.onnx` |
+| Trained ONNX model | `models/v1/generator.onnx` (repo root, **not** inside the API project) |
+
+> **Development:** `appsettings.Development.json` overrides `ModelPath` to `"../../../models"`, resolving
+> `src/backend/CyrillicFontGen.Api/` → 3 levels up → repo root `models/`. No extra setup needed.
+>
+> **Production (published):** When publishing with `dotnet publish`, place `models/v1/generator.onnx`
+> **alongside the published binary** (i.e., in the same directory as `CyrillicFontGen.Api.dll`).
+> The default `ModelPath: "models"` in `appsettings.json` will then resolve correctly from `ContentRootPath`.
 
 ## API surface
 

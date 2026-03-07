@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 
 namespace CyrillicFontGen.Api.Tests;
 
@@ -8,10 +9,26 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     private readonly WebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
 
+    // Factory that overrides ModelPath to a non-existent directory, simulating a missing model.
+    private readonly WebApplicationFactory<Program> _noModelFactory;
+    private readonly HttpClient _noModelClient;
+
     public ApiIntegrationTests(WebApplicationFactory<Program> factory)
     {
         _factory = factory;
         _client = factory.CreateClient();
+
+        _noModelFactory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ModelPath"] = "/nonexistent/path/that/does/not/exist"
+                });
+            });
+        });
+        _noModelClient = _noModelFactory.CreateClient();
     }
 
     [Fact]
@@ -39,7 +56,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task VersionedModelEndpoint_WhenModelNotExists_Returns404()
     {
-        var response = await _client.GetAsync("/api/model/v1/generator.onnx");
+        var response = await _noModelClient.GetAsync("/api/model/v1/generator.onnx");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -47,7 +64,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task ModelEndpoint_WhenModelNotExists_Returns404()
     {
         // Act
-        var response = await _client.GetAsync("/api/model");
+        var response = await _noModelClient.GetAsync("/api/model");
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
