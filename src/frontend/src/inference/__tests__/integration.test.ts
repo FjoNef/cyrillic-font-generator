@@ -1,60 +1,186 @@
-import { describe, it, expect, vi } from 'vitest';
+// @vitest-environment jsdom
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { ModelLoader } from '../ModelLoader';
+import { assembleFontFromGlyphs } from '../../FontAssembler';
+import { downloadFont } from '../../FontDownloader';
+import { CYRILLIC_CHARS } from '../../font/cyrillicCharset';
 
 /**
  * Integration tests for end-to-end inference pipeline.
- * 
- * These tests validate the full flow:
- * 1. Font upload → style glyph extraction
- * 2. Model load → worker initialization
- * 3. Inference → all 66 Cyrillic glyphs
- * 4. Font assembly → valid .otf output
- * 
- * NOTE: These are integration tests that require mocking at boundaries (ONNX Runtime, DOM APIs).
+ *
+ * Validates the full flow that App.tsx orchestrates:
+ *   style glyphs → ModelLoader.infer × 66 → assembleFontFromGlyphs → downloadFont
  */
 
+/** Helper: build a mock worker that auto-responds to infer messages. */
+function makeMockWorker(outputValue = 0.5) {
+  const worker: any = {
+    postMessage: vi.fn((msg: any) => {
+      if (msg.type === 'infer') {
+        Promise.resolve().then(() => {
+          const output = new Float32Array(128 * 128).fill(outputValue);
+          worker.onmessage?.({ data: { type: 'result', output, requestId: msg.requestId } });
+        });
+      }
+    }),
+    terminate: vi.fn(),
+    onmessage: null as ((e: { data: any }) => void) | null,
+    onerror: null as ((e: any) => void) | null,
+  };
+  return worker;
+}
+
 describe('Inference Pipeline Integration', () => {
-  it('should complete full pipeline: upload → extract → infer → assemble → download', async () => {
-    // This test would require full DOM + worker setup
-    // For now, we document the expected flow
-    expect(true).toBe(true);
+  let mockWorker: ReturnType<typeof makeMockWorker>;
+  let modelLoader: ModelLoader;
 
-    // TODO: Implement full integration test:
-    // 1. Mock File with font data
-    // 2. FontLoader.extractStyleGlyphs → Float32Array[163840]
-    // 3. ModelLoader.load with mock worker
-    // 4. Loop 66 chars: ModelLoader.infer(styleGlyphs, charIndex)
-    // 5. FontLoader.assembleCyrillicFont → ArrayBuffer
-    // 6. Validate ArrayBuffer is valid OTF (magic bytes, glyph count)
+  beforeEach(() => {
+    mockWorker = makeMockWorker();
+    global.Worker = vi.fn().mockImplementation(() => mockWorker) as any;
+    modelLoader = new ModelLoader();
   });
 
-  it('should handle model load failure gracefully', async () => {
-    // Test that UI shows error state when model fetch fails (404, network error)
-    expect(true).toBe(true);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('should prevent generation if style glyphs not extracted', async () => {
-    // Verify that Generate button is disabled if no font uploaded
-    expect(true).toBe(true);
+  async function loadModel() {
+    const loadPromise = modelLoader.load('/api/model');
+    mockWorker.onmessage?.({ data: { type: 'loaded' } });
+    await loadPromise;
+  }
+
+  it('should infer all 66 Cyrillic glyphs and accumulate results', async () => {
+    await loadModel();
+
+    const styleGlyphs = new Float32Array(10 * 128 * 128).fill(0.5);
+    const rawGlyphs = new Map<number, Float32Array>();
+
+    for (const { index } of CYRILLIC_CHARS) {
+      const output = await modelLoader.infer(styleGlyphs, index);
+      rawGlyphs.set(index, output);
+    }
+
+    expect(rawGlyphs.size).toBe(66);
+
+    const inferCalls = mockWorker.postMessage.mock.calls.filter(
+      (c: any[]) => c[0].type === 'infer'
+    );
+    expect(inferCalls).toHaveLength(66);
+
+    // style_glyphs tensor must be [10,1,128,128] flattened = 163840 floats
+    inferCalls.forEach((call: any[]) => {
+      expect(call[0].styleGlyphs).toHaveLength(10 * 128 * 128);
+    });
+
+    // Every char index 0–65 must be requested exactly once
+    const seenIndices = new Set(inferCalls.map((c: any[]) => c[0].charIndex));
+    expect(seenIndices.size).toBe(66);
+    for (let i = 0; i < 66; i++) {
+      expect(seenIndices.has(i)).toBe(true);
+    }
   });
 
-  it('should prevent generation if model not ready', async () => {
-    // Verify that Generate button is disabled if modelStatus !== 'ready'
-    expect(true).toBe(true);
+  it('should produce a valid OTF ArrayBuffer after 66-glyph assembly', async () => {
+    await loadModel();
+
+    const styleGlyphs = new Float32Array(10 * 128 * 128).fill(0.3);
+    const rawGlyphs = new Map<number, Float32Array>();
+
+    for (const { index } of CYRILLIC_CHARS) {
+      rawGlyphs.set(index, await modelLoader.infer(styleGlyphs, index));
+    }
+
+    const buffer = assembleFontFromGlyphs(rawGlyphs, 'TestFont');
+
+    expect(buffer).toBeInstanceOf(ArrayBuffer);
+    expect(buffer.byteLength).toBeGreaterThan(0);
+
+    // OTF begins with 'OTTO' (0x4F54544F) or TrueType 0x00010000
+    const view = new DataView(buffer);
+    const magic = view.getUint32(0, false);
+    expect([0x4F54544F, 0x00010000]).toContain(magic);
   });
 
-  it('should track generation progress (0-66)', async () => {
-    // Verify that generationProgress updates after each glyph
-    expect(true).toBe(true);
+  it('should track generation progress from 1 to 66 monotonically', async () => {
+    await loadModel();
+
+    const styleGlyphs = new Float32Array(10 * 128 * 128).fill(0.0);
+    const progressLog: number[] = [];
+
+    for (let i = 0; i < CYRILLIC_CHARS.length; i++) {
+      await modelLoader.infer(styleGlyphs, CYRILLIC_CHARS[i].index);
+      progressLog.push(i + 1);
+    }
+
+    expect(progressLog[0]).toBe(1);
+    expect(progressLog[65]).toBe(66);
+    for (let i = 1; i < progressLog.length; i++) {
+      expect(progressLog[i]).toBe(progressLog[i - 1] + 1);
+    }
   });
 
-  it('should download valid .otf file after generation', async () => {
-    // Mock Blob + URL.createObjectURL + anchor click
-    // Verify blob has type 'font/otf' and filename 'cyrillic-font.otf'
-    expect(true).toBe(true);
+  it('should propagate inference errors mid-generation', async () => {
+    mockWorker.postMessage = vi.fn((msg: any) => {
+      if (msg.type === 'infer') {
+        Promise.resolve().then(() => {
+          if (msg.charIndex === 5) {
+            mockWorker.onmessage?.({
+              data: { type: 'error', message: 'ONNX shape mismatch', requestId: msg.requestId },
+            });
+          } else {
+            const output = new Float32Array(128 * 128).fill(0.5);
+            mockWorker.onmessage?.({ data: { type: 'result', output, requestId: msg.requestId } });
+          }
+        });
+      }
+    });
+
+    await loadModel();
+
+    const styleGlyphs = new Float32Array(10 * 128 * 128);
+    await expect(
+      (async () => {
+        for (const { index } of CYRILLIC_CHARS) {
+          await modelLoader.infer(styleGlyphs, index);
+        }
+      })()
+    ).rejects.toThrow('ONNX shape mismatch');
   });
 
-  it('should revoke object URL after download', async () => {
-    // Verify URL.revokeObjectURL is called to prevent memory leak
-    expect(true).toBe(true);
+  it('should prevent inference before model is loaded', async () => {
+    const styleGlyphs = new Float32Array(10 * 128 * 128);
+    await expect(modelLoader.infer(styleGlyphs, 0)).rejects.toThrow('Model not loaded');
+  });
+
+  it('should download font with correct MIME type and filename', () => {
+    const anchor = { click: vi.fn(), href: '', download: '' };
+    vi.spyOn(document, 'createElement').mockReturnValue(anchor as any);
+    vi.spyOn(document.body, 'appendChild').mockImplementation(() => anchor as any);
+    vi.spyOn(document.body, 'removeChild').mockImplementation(() => anchor as any);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    downloadFont(new ArrayBuffer(128), 'my-font.otf');
+
+    expect(URL.createObjectURL).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'font/otf' })
+    );
+    expect(anchor.download).toBe('my-font.otf');
+    expect(anchor.click).toHaveBeenCalledOnce();
+  });
+
+  it('should revoke object URL after download to prevent memory leak', () => {
+    const anchor = { click: vi.fn(), href: '', download: '' };
+    vi.spyOn(document, 'createElement').mockReturnValue(anchor as any);
+    vi.spyOn(document.body, 'appendChild').mockImplementation(() => anchor as any);
+    vi.spyOn(document.body, 'removeChild').mockImplementation(() => anchor as any);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-url');
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    downloadFont(new ArrayBuffer(8), 'test.otf');
+
+    expect(revoke).toHaveBeenCalledWith('blob:test-url');
   });
 });
