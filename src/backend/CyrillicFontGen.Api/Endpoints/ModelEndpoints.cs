@@ -11,12 +11,11 @@ public sealed class ModelManifestCache
     public string Sha256 { get; private set; } = string.Empty;
     public bool Available { get; private set; }
 
-    public ModelManifestCache(IConfiguration config, ILogger<ModelManifestCache> logger)
+    public ModelManifestCache(IConfiguration config, IWebHostEnvironment env, ILogger<ModelManifestCache> logger)
     {
         var modelRoot = config["ModelPath"] ?? "models";
         var modelFile = Path.GetFullPath(
-            Path.Combine(modelRoot, Version, Filename),
-            AppContext.BaseDirectory);
+            Path.Combine(env.ContentRootPath, modelRoot, Version, Filename));
 
         if (!File.Exists(modelFile))
         {
@@ -49,6 +48,9 @@ public static class ModelEndpoints
     public static void MapModelEndpoints(this WebApplication app)
     {
         app.MapGet("/api/model/manifest", HandleManifest);
+        app.MapGet("/api/model", HandleModelDownload);
+        // Versioned URL — cache-busting safe; version is immutable by URL
+        app.MapGet("/api/model/{version}/{filename}", HandleVersionedModelDownload);
     }
 
     private static IResult HandleManifest(ModelManifestCache cache, HttpRequest request)
@@ -63,7 +65,58 @@ public static class ModelEndpoints
             filename    = cache.Filename,
             sizeBytes   = cache.SizeBytes,
             sha256      = cache.Sha256,
-            downloadUrl = $"{baseUrl}/models/{cache.Version}/{cache.Filename}"
+            downloadUrl = $"{baseUrl}/api/model/{cache.Version}/{cache.Filename}"
         });
+    }
+
+    private static IResult HandleModelDownload(ModelManifestCache cache, IConfiguration config, IWebHostEnvironment env)
+    {
+        if (!cache.Available)
+            return Results.NotFound(new { error = "Model not yet trained. Please train the model first." });
+
+        var modelRoot = config["ModelPath"] ?? "models";
+        var modelFile = Path.GetFullPath(
+            Path.Combine(env.ContentRootPath, modelRoot, cache.Version, cache.Filename));
+
+        if (!File.Exists(modelFile))
+            return Results.NotFound(new { error = "Model file not found at expected path." });
+
+        return Results.File(modelFile, "application/octet-stream", cache.Filename, enableRangeProcessing: true);
+    }
+
+    /// <summary>
+    /// Versioned endpoint: /api/model/v1/generator.onnx
+    /// Sets ETag (SHA-256), Cache-Control immutable, and supports Range requests.
+    /// Returns 304 Not Modified when client's ETag matches.
+    /// </summary>
+    private static IResult HandleVersionedModelDownload(
+        string version, string filename,
+        ModelManifestCache cache, IConfiguration config, IWebHostEnvironment env,
+        HttpContext httpContext)
+    {
+        if (!cache.Available)
+            return Results.NotFound(new { error = "Model not yet available" });
+
+        if (!version.Equals(cache.Version, StringComparison.OrdinalIgnoreCase) ||
+            !filename.Equals(cache.Filename, StringComparison.OrdinalIgnoreCase))
+            return Results.NotFound(new { error = "Model version or filename not found" });
+
+        var etag = $"\"{cache.Sha256}\"";
+
+        // Honour If-None-Match for browser/CDN cache revalidation
+        if (httpContext.Request.Headers.IfNoneMatch == etag)
+            return Results.StatusCode(StatusCodes.Status304NotModified);
+
+        var modelRoot = config["ModelPath"] ?? "models";
+        var modelFile = Path.GetFullPath(
+            Path.Combine(env.ContentRootPath, modelRoot, version, filename));
+
+        if (!File.Exists(modelFile))
+            return Results.NotFound(new { error = "Model file not found at expected path." });
+
+        httpContext.Response.Headers.ETag = etag;
+        httpContext.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+
+        return Results.File(modelFile, "application/octet-stream", filename, enableRangeProcessing: true);
     }
 }

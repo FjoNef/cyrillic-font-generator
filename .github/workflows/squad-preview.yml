@@ -14,17 +14,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and test
-        run: |
-          # TODO: Project type was not detected — add your build/test commands here
-          # Go:            go test ./...
-          # Python:        pip install -r requirements.txt && pytest
-          # .NET:          dotnet test
-          # Java (Maven):  mvn test
-          # Java (Gradle): ./gradlew test
-          echo "No build commands configured — update squad-preview.yml"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
 
-      - name: Validate
-        run: |
-          # TODO: Add pre-release validation commands here
-          echo "No validation commands configured — update squad-preview.yml"
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install frontend dependencies
+        working-directory: src/frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: src/frontend
+        run: npm run build
+
+      - name: Run frontend type check
+        working-directory: src/frontend
+        run: npx tsc --noEmit
+
+      - name: Run frontend tests
+        working-directory: src/frontend
+        run: npx vitest run
+
+      - name: Restore .NET dependencies
+        working-directory: src/backend
+        run: dotnet restore
+
+      - name: Build .NET backend
+        working-directory: src/backend
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run .NET tests
+        working-directory: src/backend
+        run: dotnet test --no-build --configuration Release --verbosity normal

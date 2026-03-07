@@ -1,4 +1,6 @@
+using System.IO.Compression;
 using CyrillicFontGen.Api.Endpoints;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,31 +17,54 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod());
 });
 
+// Response compression with Brotli for model delivery
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        new[] { "application/octet-stream" });
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Optimal;
+});
+
 // Model manifest cache (populated at startup, reused per-request)
 builder.Services.AddSingleton<ModelManifestCache>();
 
 var app = builder.Build();
 
+app.UseResponseCompression();
 app.UseCors();
 
 // -- Static model files: immutable cache + HTTP Range support --
 var modelPath = builder.Configuration["ModelPath"] ?? "models";
-var modelPhysicalPath = Path.GetFullPath(modelPath, AppContext.BaseDirectory);
+var modelPhysicalPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, modelPath));
 
-app.UseStaticFiles(new StaticFileOptions
+if (Directory.Exists(modelPhysicalPath))
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(modelPhysicalPath),
-    RequestPath = "/models",
-    OnPrepareResponse = ctx =>
+    app.UseStaticFiles(new StaticFileOptions
     {
-        ctx.Context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
-    }
-});
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(modelPhysicalPath),
+        RequestPath = "/models",
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+        }
+    });
+}
 
 // Enable HTTP Range requests for model streaming
 app.UseStaticFiles(); // wwwroot (React SPA)
 
 // -- API routes --
+app.MapGet("/health", (ModelManifestCache cache) => Results.Ok(new
+{
+    status = "healthy",
+    model  = cache.Available
+        ? new { version = cache.Version, filename = cache.Filename, sizeBytes = cache.SizeBytes, sha256Prefix = cache.Sha256[..16] }
+        : null
+}));
 app.MapFontEndpoints();
 app.MapModelEndpoints();
 
@@ -47,3 +72,6 @@ app.MapModelEndpoints();
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+// Expose for integration tests
+public partial class Program { }

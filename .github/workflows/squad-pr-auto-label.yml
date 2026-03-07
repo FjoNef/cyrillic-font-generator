@@ -1,0 +1,131 @@
+name: Squad PR Auto-Label
+
+on:
+  pull_request:
+    branches: [dev]
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Label PR and notify squad
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const pr = context.payload.pull_request;
+            const branch = pr.head.ref;
+
+            // Read team roster
+            let teamFile = '.squad/team.md';
+            if (!fs.existsSync(teamFile)) teamFile = '.ai-team/team.md';
+            if (!fs.existsSync(teamFile)) {
+              core.info('No team.md — skipping squad labeling');
+              return;
+            }
+
+            const content = fs.readFileSync(teamFile, 'utf8');
+            const lines = content.split('\n');
+
+            // Parse members
+            const members = [];
+            let inMembersTable = false;
+            for (const line of lines) {
+              if (line.match(/^##\s+(Members|Team Roster)/i)) { inMembersTable = true; continue; }
+              if (inMembersTable && line.startsWith('## ')) break;
+              if (inMembersTable && line.startsWith('|') && !line.includes('---') && !line.includes('Name')) {
+                const cells = line.split('|').map(c => c.trim()).filter(Boolean);
+                if (cells.length >= 2 && !['Scribe', 'Ralph'].includes(cells[0])) {
+                  members.push({ name: cells[0], role: cells[1] });
+                }
+              }
+            }
+
+            // Detect author from branch name
+            // Branch format: feat/togusa-inference-pipeline → togusa
+            // chore/scribe-branching-overhaul → scribe (skip squad label)
+            const branchParts = branch.split('/');
+            let authorMember = null;
+
+            if (branchParts.length >= 2) {
+              const slug = branchParts[1];
+              // e.g. "togusa-inference-pipeline" → try to match member name
+              for (const member of members) {
+                if (slug.toLowerCase().startsWith(member.name.toLowerCase())) {
+                  authorMember = member;
+                  break;
+                }
+              }
+            }
+
+            // Find Saito (QA/Tester) for review notification
+            const saito = members.find(m =>
+              m.role.toLowerCase().includes('qa') ||
+              m.role.toLowerCase().includes('test') ||
+              m.role.toLowerCase().includes('quality')
+            );
+
+            // Find Lead for architecture review
+            const lead = members.find(m =>
+              m.role.toLowerCase().includes('lead') ||
+              m.role.toLowerCase().includes('architect')
+            );
+
+            // Add squad label
+            const labelsToAdd = ['squad'];
+            if (authorMember) {
+              labelsToAdd.push(`squad:${authorMember.name.toLowerCase()}`);
+            }
+
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: labelsToAdd
+              });
+              core.info(`Added labels: ${labelsToAdd.join(', ')}`);
+            } catch (e) {
+              core.warning(`Could not add labels: ${e.message}`);
+            }
+
+            // Post review prompt comment
+            const authorLine = authorMember
+              ? `**Author:** ${authorMember.name} (${authorMember.role})`
+              : `**Branch:** \`${branch}\``;
+
+            const reviewers = [
+              saito ? `- **${saito.name}** (${saito.role}) — quality review: tests, edge cases, acceptance criteria` : null,
+              lead ? `- **${lead.name}** (${lead.role}) — architecture review: decisions respected, no regressions` : null,
+            ].filter(Boolean).join('\n');
+
+            const comment = [
+              `### 🔄 Squad PR — Ready for Review`,
+              '',
+              authorLine,
+              `**Target:** \`${pr.base.ref}\``,
+              '',
+              `**Reviewers notified:**`,
+              reviewers,
+              '',
+              `---`,
+              '',
+              `> To start a review session: \`Saito, review PR #${pr.number}\` or \`Aramaki, review PR #${pr.number}\``,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: comment
+            });
+
+            core.info(`PR #${pr.number} labeled and review prompt posted`);
