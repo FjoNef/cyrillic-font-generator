@@ -9,7 +9,28 @@
 ## Learnings
 <!-- Append new entries below -->
 
-### 2026-03-07: PR #38 APPROVED — Robust Model Path Resolution with Directory Walk-Up
+### 2026-03-07: PR #40 CODE REVIEW — SharedArrayBuffer Output Aliasing Fix — APPROVED & MERGED ✅
+
+**Task:** QA Code Review of PR #40 (Issue #39 — Fix style conditioning by copying ORT WASM output buffers).
+
+**Status:** ✅ APPROVED — All 114/114 tests pass, excellent regression test, fix is sound.
+
+**Changes Reviewed:**
+- `inferenceWorker.ts` line 117: `return new Float32Array(outputData)` — copies output before returning from worker
+- `ModelLoader.ts` line 60: `pending.resolve(new Float32Array(msg.output))` — defensive copy on main thread
+- New regression test: `integration.test.ts` lines 187-218 — validates each inference result is independent snapshot (not shared-buffer alias)
+- Added ImageData polyfill to test-setup.ts for style conditioning tests
+
+**Fix Validation:**
+- ✅ Fix applied in both required locations (worker + promise handler)
+- ✅ Regression test directly validates fix; excellent design (overwrites buffer values between responses, asserts each result independent)
+- ✅ All 114/114 tests passing (113 baseline + 1 new regression)
+- ✅ Edge cases covered (copy happens before postMessage/buffer reuse)
+- ⚠️ Minor note: OnnxInference.ts line 93 still has vulnerability (test-only code, non-blocking)
+
+**Merge:** ✅ PR #40 merged to dev (2026-03-07T20:34:24Z) by Aramaki. Follow-up: apply same fix to OnnxInference.ts for test code consistency.
+
+**Key Learning:** ORT WASM output tensors return Float32Array views into SharedArrayBuffer. Must copy defensively before storage/postMessage to avoid aliasing bugs. This is an architectural invariant for all future ORT inference code.
 
 **Task:** QA Code Review of PR #38 (Issue #37 — Replace environment-dependent path resolution with directory walk-up).
 
@@ -521,6 +542,53 @@ result = sess.run(None, {"style_glyphs": style_glyphs, "char_index": char_index}
 - `squad-heartbeat.yml` cron commented out (noise reduction)
 - Two model-load tests assert same condition (minor redundancy, acceptable for test harness)
 
+### 2026-03-08: PR #40 APPROVED — SharedArrayBuffer Output Aliasing Fix (Issue #39)
+
+**Task:** QA Code Review of PR #40 (branch `squad/39-style-conditioning-fix` → dev).
+
+**Status:** ✅ APPROVED — All 114/114 tests pass, fix is sound, regression test is excellent.
+
+**Root Cause (as found by Togusa):**
+ONNX Runtime Web's WASM backend returns `outputTensor.data` as a Float32Array **view** into WebAssembly.Memory. On cross-origin-isolated pages (required for WASM multi-threading), this memory is a SharedArrayBuffer. `postMessage()` does NOT clone SharedArrayBuffer views — the main thread receives an alias to the same physical memory. ORT reuses its output buffer between `session.run()` calls. Result: all 66 `rawGlyphs` entries stored in `App.tsx` point to the same memory region, which reflects only the **last** inference result. Every glyph in the assembled font is identical, regardless of character index or style input.
+
+**Fix Applied (two defensive layers):**
+1. **inferenceWorker.ts line 117** (primary): `return new Float32Array(outputData);` — copies buffer before returning from worker
+2. **ModelLoader.ts line 60** (belt-and-suspenders): `pending.resolve(new Float32Array(msg.output));` — defensive copy when resolving the inference promise
+
+Both copies are correctly placed **before** the buffer could be overwritten by the next inference call.
+
+**Regression Test Quality (integration.test.ts lines 187-218):**
+- Test name: `'each infer result is an independent copy — not a shared-buffer alias (regression: #39)'`
+- Simulates the exact aliasing scenario: same Float32Array reference returned for every call, with values overwritten between calls (sentinel values 1, 2, 3)
+- Asserts each stored result preserves its independent snapshot (`r1[0] === 1, r2[0] === 2, r3[0] === 3`)
+- Without the fix, all three would be `3` (last value). With the fix, all pass. ✅
+
+**Edge Cases Checked:**
+1. ✅ Copy happens in BOTH places Togusa mentioned (worker + ModelLoader)
+2. ✅ Copy happens BEFORE postMessage / before buffer could be reused
+3. ✅ Regression test correctly validates the fix
+4. ⚠️ **Minor note:** `OnnxInference.ts` line 93 still accesses `outputTensor.data` without copying, BUT this file is **test-only** (not used in production). Production uses `ModelLoader` + `inferenceWorker`, both now fixed. Not a blocker.
+
+**Test Results:**
+```
+Test Files  10 passed (10)
+     Tests  114 passed (114)
+  Duration  2.89s
+```
+
+**Verdict:** ✅ APPROVED
+
+**Architectural Notes:**
+- Two-layer defense (worker + ModelLoader) is good practice — guards against future refactors that might bypass one layer
+- postMessage SAB aliasing is a subtle JS/WASM interop edge case; Togusa's detailed commit message and regression test ensure future maintainers understand the root cause
+- OnnxInference.ts should eventually be fixed for consistency (copy at line 93 before denormalization loop), but it's not a merge blocker since it's unused in production
+
+**Key Learnings:**
+- SharedArrayBuffer views are NOT cloned by postMessage — only the view metadata is serialized, not the underlying buffer
+- ONNX Runtime reuses output buffers for performance; client code must copy if storing multiple results
+- Regression tests that simulate shared-memory aliasing (same reference, mutating values) are highly effective at validating buffer copy fixes
+- Test-only code paths (like OnnxInference.ts) can have bugs that don't surface in production but should still be fixed for test reliability
+
 ### 2026-03-07: Inference Test Suite Complete — 117 Total Tests, HIGH Risk Resolved
 
 **Task:** Write comprehensive test suite for inference integration (browser ONNX + backend model delivery).
@@ -653,3 +721,39 @@ result = sess.run(None, {"style_glyphs": style_glyphs, "char_index": char_index}
 - ppsettings.Development.json is only loaded when ASPNETCORE_ENVIRONMENT=Development; Release/Production builds are unaffected.
 - GitHub does not allow approving your own PR — approval must be posted as a review comment when the PR author and reviewer share an account.
 - When 404 tests depend on a path not existing, always make that dependency explicit (inject a known-bad path) rather than relying on environment accident.
+
+### 2026-03-08: Style Conditioning Test Suite
+
+**Task:** Write tests that verify style conditioning works — different input fonts produce different style tensor data and different model outputs.
+
+**Files written:**
+- src/frontend/src/font/__tests__/fontLoader.styleVariation.test.ts — 5 tests (all pass)
+  - Returns Float32Array of correct length (163 840 = 10 × 128 × 128)
+  - All values within [-1.0, 1.0]
+  - Different mock fonts (ink vs blank) produce non-identical style tensors ← KEY BUG DETECTION
+  - Blank font produces tensor dominated by -1.0 (background)
+  - Ink-rendering font produces tensor with +1.0 values (ink)
+- src/inference/__tests__/styleConditioning.test.ts — 6 tests (all pass)
+  - session.run receives tensor named "style_glyphs"
+  - style_glyphs tensor shape is [1, 10, 1, 128, 128]
+  - style_glyphs tensor type is float32
+  - Different style inputs reach session as different tensor data ← KEY BUG DETECTION
+  - Tensor data preserves caller-provided values exactly
+  - session also receives char_index
+- src/inference/__tests__/colorMapping.test.ts — 6 new tests added (11 total, all pass)
+  - FontLoader normalization: white (R=255) → -1.0, black (R=0) → +1.0, midtone → 0.0
+  - All R values [0..255] produce values within [-1.0, 1.0]
+  - Monotonically decreasing: darker pixel → higher tensor value
+  - Round-trip: pixel → tensor → pixel is identity for black pixel
+
+**Infrastructure fix:** Added ImageData polyfill to src/frontend/src/test-setup.ts (was missing, caused all styleConditioning tests to fail before fix).
+
+**Key findings / quality risks:**
+- test-setup.ts had canvas mocks but no ImageData mock — any test calling OnnxInference.generateGlyph() in a non-jsdom environment would fail.
+- The fontLoader.styleVariation tests correctly simulate two distinct fonts via controlled canvas mocks; without this mock, Path2D rendering in jsdom is a no-op so both fonts would silently produce identical white canvases, masking the bug.
+
+## Learnings
+- vitest node environment does not provide ImageData; must polyfill in test-setup.ts or use jsdom.
+- jsdom canvas (via test-setup.ts mock) renders all-white because Path2D.fill() is a no-op stub — style variation tests must mock at the canvas getImageData level, not rely on actual path rendering.
+- To detect "style ignored" bug in unit tests: spy on session.run and compare the style_glyphs.data values across two calls with different inputs.
+- // @vitest-environment jsdom directive works correctly when placed at line 1 of the test file AND the required APIs (ImageData) are present.

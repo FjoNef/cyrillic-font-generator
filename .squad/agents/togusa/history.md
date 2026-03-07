@@ -19,6 +19,25 @@
 
 ## Learnings
 
+### 2026-03-07: Issue #39 — Style Conditioning Fix (PR #40) — MERGED ✅
+
+- **Branch:** `squad/39-style-conditioning-fix` → dev (**PR #40**)
+- **Status:** ✅ COMPLETE — 114/114 tests passing (113 baseline + 1 new regression test)
+
+**Root cause:** `outputTensor.data` returned by ORT's WASM backend is a `Float32Array` view into `WebAssembly.Memory`. On cross-origin-isolated pages (where SharedArrayBuffer is available, required for ORT multi-threading), WASM memory IS a SharedArrayBuffer. `postMessage` does **not** copy SharedArrayBuffer views — the main thread receives an alias. ORT reuses its single output buffer between `session.run()` calls. Result: all 66 `rawGlyphs` entries alias the same memory region, reflecting only the **last** inference. Assembled font has 66 identical glyphs — style and char conditioning appear totally broken.
+
+**Fix (two places):**
+1. `inferenceWorker.ts` `runInference()`: `return new Float32Array(outputData)` — copies from WASM/SAB heap to regular ArrayBuffer before worker postMessage.
+2. `ModelLoader.ts` `onmessage` result handler: `pending.resolve(new Float32Array(msg.output))` — belt-and-suspenders copy on the main thread side.
+
+**Test added:** `integration.test.ts` — "each infer result is an independent copy (regression: #39)". Simulates the shared-buffer aliasing: mock worker sends same Float32Array reference with overwritten values; asserts each stored result snapshots its own value independently.
+
+**Key lesson:** ORT WASM output tensors must NEVER be stored as raw references. Always copy before storing. The symptom ("style conditioning broken") was misleading — the actual bug was all 66 chars rendered as the last char. Fixing the output buffer copy restores correct char AND style conditioning.
+
+**Merge:** ✅ PR #40 merged to dev (2026-03-07T20:34:24Z) by Aramaki. All 114/114 tests passing. Follow-up: OnnxInference.ts line 93 (test-only code consistency).
+
+
+
 ### 2026-03-07T14:31:04Z: Major exports ONNX model — Ready for Integration
 
 - **Status:** ✅ COMPLETE

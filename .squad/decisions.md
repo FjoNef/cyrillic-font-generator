@@ -1826,3 +1826,111 @@ Implement directory walk-up search for model files that works in all environment
 - 26/26 tests passing
 - Smoke test covers health, manifest, model download, versioned endpoint
 - Test isolation verified
+
+
+---
+
+# Decision: Style Conditioning Fix — ONNX Output Buffer Must Be Copied
+
+**Date:** 2026-03-07  
+**Author:** Togusa  
+**Issue:** #39  **PR:** #40
+
+## Root Cause
+
+ORT's WASM backend returns `outputTensor.data` as a `Float32Array` **view into `WebAssembly.Memory`**. On cross-origin-isolated deployments (required for SharedArrayBuffer and multi-threaded ORT), WASM memory is a `SharedArrayBuffer`. The structured-clone algorithm used by `postMessage` does **not** copy `SharedArrayBuffer` data — it shares the reference. ORT reuses its single output buffer between `session.run()` calls. Consequence: every `rawGlyphs.set(index, output)` in App.tsx stores an alias to the same WASM memory region. After 66 inferences, all 66 entries reflect only the last result, making the assembled font have 66 identical glyphs. The bug manifests as broken style AND character conditioning (all chars look like the last generated character).
+
+## Fix Approach
+
+Defensive `Float32Array` copy at two points:
+1. **`inferenceWorker.ts`** — `return new Float32Array(outputData)` before returning from `runInference()`. Copies WASM/SAB data to regular heap before the worker `postMessage`.
+2. **`ModelLoader.ts`** — `pending.resolve(new Float32Array(msg.output))` in the result handler. Guards against SAB pass-through in environments where the above copy may not be sufficient.
+
+## Invariant Going Forward
+
+> ORT WASM output tensor data **must always be explicitly copied** (`new Float32Array(outputData)`) before being stored or passed to callers. Never store a raw reference to `outputTensor.data`.
+
+This rule applies to any future code that reads from `session.run()` output tensors in the WASM backend.
+
+
+---
+
+# QA Review: PR #40 — SharedArrayBuffer Output Aliasing Fix
+
+**Reviewer:** Saito (Tester)  
+**Date:** 2026-03-08  
+**PR:** #40 (branch `squad/39-style-conditioning-fix`)  
+**Issue:** #39  
+**Author:** Togusa  
+**Verdict:** ✅ **APPROVED** — fix is sound, tests pass, regression coverage adequate
+
+---
+
+## Test Results
+
+```
+Test Files  10 passed (10)
+     Tests  114 passed (114)
+  Duration  2.89s
+```
+
+All tests passing, including the new regression test for issue #39.
+
+## Fix Validation
+
+### ✅ 1. Fix Applied in Both Locations
+
+- **inferenceWorker.ts line 117:** `return new Float32Array(outputData);`  
+  Primary fix — copies ORT output before returning from worker
+  
+- **ModelLoader.ts line 60:** `pending.resolve(new Float32Array(msg.output));`  
+  Belt-and-suspenders — defensive copy when resolving inference promise
+
+Both copies occur **before** the buffer could be overwritten by subsequent inference calls.
+
+### ✅ 2. Regression Test Quality
+
+Test: `integration.test.ts` lines 187-218  
+Name: `'each infer result is an independent copy — not a shared-buffer alias (regression: #39)'`
+
+**Test Design:**
+- Simulates exact failure scenario: same Float32Array reference returned for every inference call
+- Overwrites buffer values between responses (sentinel values: 1, 2, 3)
+- Asserts each stored result preserved its independent snapshot
+
+**Without fix:** All three results would be `3` (last value)  
+**With fix:** `r1[0] === 1, r2[0] === 2, r3[0] === 3` ✅
+
+Excellent test — directly validates the fix and will catch future regressions.
+
+### ✅ 3. Edge Case Coverage
+
+1. ✅ Copy happens in BOTH places Togusa specified
+2. ✅ Copy happens BEFORE postMessage / before buffer reuse
+3. ✅ Regression test correctly validates the fix
+4. ✅ Production code uses ModelLoader (fixed), not OnnxInference
+5. ⚠️ **Minor note:** OnnxInference.ts line 93 still has the vulnerability, BUT:
+   - Only used in tests (not in production App.tsx)
+   - Production uses ModelLoader + inferenceWorker (both fixed)
+   - Not a merge blocker
+
+### ✅ 4. Test Coverage
+
+- 114/114 tests pass (113 baseline + 1 new regression test)
+- Regression test exercises the ModelLoader copy path
+- Integration test suite covers 66-glyph generation flow
+- No test failures introduced by the change
+
+## Recommendation
+
+✅ **APPROVED for merge to dev**
+
+**Rationale:**
+- Fix is correct and in the right locations
+- Regression test is excellent and will prevent future issues
+- All tests passing
+- Minor issue in test-only code (OnnxInference.ts) can be addressed separately
+
+**Follow-up (non-blocking):**
+Apply the same fix to OnnxInference.ts line 93 for consistency, even though it's test-only code. This ensures test behavior matches production behavior.
+
