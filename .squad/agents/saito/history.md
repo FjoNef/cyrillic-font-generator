@@ -9,6 +9,30 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07: Playwright Harness — Issue #23 Complete
+
+**Task:** Add Playwright E2E harness to promote 13 vitest performance stubs to live browser assertions.
+
+**Status:** COMPLETE — PR #24 opened, 51 Playwright tests pass (17/browser × 3 browsers)
+
+**Approach:**
+- Inject `ort.wasm.min.js` UMD bundle via `page.addScriptTag()` — exposes `window.ort`
+- Intercept `/ort-wasm-dist/**` with `page.route()` to serve WASM files from `node_modules/onnxruntime-web/dist/`
+- `ort.env.wasm.numThreads = 1` disables SharedArrayBuffer COOP requirement for CI headless mode
+- Stub ONNX model (345 bytes, Slice + Reshape) generated via Python onnx library for CI isolation
+
+**Performance observed (stub model):**
+- Chromium: InferenceSession.create ~300ms, inference ~10ms, 66-glyph ~400ms total
+- Firefox: InferenceSession.create ~800ms, inference ~60ms, 66-glyph ~2500ms total
+- WebKit: ~1500ms load, ~350ms per-glyph × 66 = within 10s
+
+**Key learnings:**
+- `import.meta.url` does NOT work in Playwright tests — Playwright compiles TypeScript to CJS, so `__dirname` is available directly as a global
+- UMD bundle (`ort.wasm.min.js`) required for page injection — ESM variants don't expose `window.ort`
+- `page.evaluate()` requires serializable arguments: pass model bytes as `Array.from(Buffer)`, reconstruct as `new Uint8Array(arr).buffer` inside evaluate
+- Firefox WASM JIT compilation takes 5-10× longer than Chromium but still comfortably within 5s threshold
+- Skill written to `.squad/skills/playwright-onnx-testing/SKILL.md` for reuse
+
 ### 2026-03-05: INT8 Quantization Fix — PR #22 Ready for Review
 
 **Task:** Review PR #22 (INT8 quantization fix, issue #21).
