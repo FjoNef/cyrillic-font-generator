@@ -2045,3 +2045,198 @@ The identical-output bug is **NOT** inference-time or data-format related. It is
 
 **No Source Code Changed:** Diagnosis only.
 
+
+---
+
+## Decision: Style-Conditioning Fix Applied to Training Code
+
+# Decision: Style-Conditioning Fix Applied to Training Code
+
+**By:** Major (AI/ML Engineer)  
+**Date:** 2026-03-07  
+**Status:** ACCEPTED  
+**Related diagnosis:** `.squad/decisions/inbox/major-style-conditioning-diagnosis.md`
+
+---
+
+## Context
+
+The model produced identical output regardless of font style. Root-cause diagnosis (logged 2026-03-07)
+identified two compounding bugs in `src/model/train/model.py` and `src/model/train/train.py`.
+
+---
+
+## Changes Made
+
+### Bug 1 — UNetGenerator encoder input (`model.py`)
+
+**Before:** `UNetGenerator.forward()` fed `torch.zeros(B, 1, 128, 128, device=device)` into
+the encoder. All six U-Net skip connections (e1–e6) were therefore **constant across all inputs**
+(they depend only on model weights, not on font data). Style conditioning entered only at the 1×1
+bottleneck (`cond_spatial`), then was progressively diluted across 6 decoder stages.
+
+**After:** `UNetGenerator.forward()` now accepts a third argument `style_glyph_0: [B, 1, 128, 128]`
+(the first style reference glyph). This tensor is used as the encoder input. All 6 skip connections
+now carry real per-font spatial structure at 64×64, 32×32, 16×16, 8×8, 4×4, and 2×2 scales.
+
+**Callers updated:**
+- Training loop (`train.py`): passes `cond_glyph` (`style_glyphs[:, 0]`) as the third argument
+- ONNX wrapper (`export_onnx.py`): extracts `style_glyphs[:, 0]` and passes it to `generator()`
+- ONNX input contract unchanged: `style_glyphs [B, 10, 1, 128, 128]` is still the only image input
+
+### Bug 2 — Loss rebalancing (`model.py`, `train.py`, `train_config.yaml`)
+
+**Before:** `lambda_l1 = 100`, no feature matching. Generator rewarded for pixel-average shapes
+with no style differentiation incentive.
+
+**After:**
+- `lambda_l1`: 100 → **10** (in `train_config.yaml` and synthetic defaults in `train.py`)
+- `lambda_fm = 10` added (`train_config.yaml` + synthetic defaults)
+- `PatchDiscriminator` refactored: `self.model` (single `nn.Sequential`) split into named layers
+  `layer1`–`layer4` + `final`; new `forward_with_features()` method returns logits + 4 intermediate
+  feature maps
+- Generator loss now: `L_G = L_GAN + L_L1 * lambda_l1 + Σ L1(fake_feat_i, real_feat_i.detach()) * lambda_fm`
+
+---
+
+## Why These Values
+
+| Hyperparameter | Old | New | Rationale |
+|---|---|---|---|
+| `lambda_l1` | 100 | 10 | At 100, L1 dominated (~10× GAN loss). Reducing to 10 balances pixel fidelity with adversarial style pressure. |
+| `lambda_fm` | — | 10 | Feature matching at each discriminator scale forces the generator to match real-glyph intermediate representations, not just final pixel values. 10 is a standard pix2pix-HD starting value. |
+
+---
+
+## ONNX Export Impact
+
+No change to the ONNX input/output contract. The `FontGeneratorONNX` wrapper handles the
+`style_glyph_0` extraction internally: `style_glyphs[:, 0]` is sliced from the `style_glyphs`
+tensor that is already an ONNX input. Constant-folding during export will not collapse this path
+(it depends on the dynamic `style_glyphs` input).
+
+---
+
+## Action Required
+
+**Retrain from scratch.** The existing `models/v1/generator.onnx` (epoch_0200) was trained with
+the buggy architecture and L1-dominant loss. It cannot be fine-tuned — the encoder weights were
+trained on blank-canvas inputs and the skip connections were never style-conditioned.
+
+
+---
+
+## Decision: Training Performance Optimization Issue #42
+
+# Training Performance Optimization Issue
+
+**Created by:** Aramaki (Lead)  
+**Date:** 2024  
+**Issue:** https://github.com/FjoNef/cyrillic-font-generator/issues/42  
+**Issue Number:** #42
+
+## Summary
+Created GitHub issue to track training performance optimization for NVIDIA RTX 3070Ti GPU on developer's local machine.
+
+## Details
+- **Title:** perf(training): optimize training pipeline for NVIDIA RTX 3070Ti
+- **Repository:** FjoNef/cyrillic-font-generator
+- **Issue URL:** https://github.com/FjoNef/cyrillic-font-generator/issues/42
+
+## Investigation Areas Proposed
+1. Mixed precision training (torch.cuda.amp with FP16/BF16)
+2. CUDA optimization (cudnn.benchmark)
+3. Batch size optimization (currently [B, 10, 1, 128, 128])
+4. Data loading pipeline (num_workers, pin_memory)
+5. Profiling with torch.profiler
+
+## Hardware Target
+- GPU: NVIDIA RTX 3070Ti (8GB VRAM, 6144 CUDA cores)
+- Mixed precision and tensor core support available
+
+## Next Steps
+- Implement and test suggested optimizations
+- Benchmark training time before/after
+- Document improvements in training guide
+
+
+---
+
+## Decision: Saito → Style Conditioning Regression Tests
+
+# Saito → Style Conditioning Regression Tests
+
+**Date:** 2026-03-07  
+**Author:** Saito (Tester)  
+**Status:** COMPLETE — 9/9 tests passing  
+
+---
+
+## What Was Written
+
+`src/model/tests/test_style_conditioning.py` — 9 pytest tests across 5 test classes, guarding against regression of two bugs fixed by Major in commit `4d47ec5`.
+
+---
+
+## Bugs Guarded Against
+
+### Bug 1 — `UNetGenerator.forward()` fed `torch.zeros` to encoder
+
+The encoder skip connections (e1–e7) were computed from a blank zero canvas rather than the style reference glyph.  After the fix, `UNetGenerator.forward()` accepts a third argument `style_glyph_0 : [B, 1, H, W]` and passes it directly to `enc1`.
+
+**Guarded by:**
+- `TestEncoderInputNotZeros::test_enc1_input_is_not_all_zeros_for_nonzero_style_glyph` — hooks `enc1` and asserts captured input is not all-zero
+- `TestStyleVariationProducesDifferentSkipFeatures::test_different_style_glyphs_produce_different_enc1_outputs` — asserts `enc1` outputs are not `allclose` for ±0.8 style glyphs
+- `TestStyleVariationProducesDifferentOutput::test_zeros_vs_ones_style_glyphs_produce_different_outputs` — asserts final glyph output differs for ±1.0 style glyphs
+
+### Bug 2 — `lambda_l1=100` dominated loss; no feature-matching loss
+
+The L1 reconstruction weight of 100 suppressed adversarial learning.  After the fix it is 10, and a feature-matching loss term is added using `PatchDiscriminator.forward_with_features()`.
+
+**Guarded by:**
+- `TestLambdaL1Config::test_yaml_config_lambda_l1_is_within_range` — parses `configs/train_config.yaml` and asserts `lambda_l1 <= 20`
+- `TestLambdaL1Config::test_synthetic_mode_lambda_l1_is_within_range` — AST-walks `train.py` for `lambda_l1` dict literals and asserts each `<= 20`
+- `TestFeatureMatchingLoss::test_discriminator_exposes_intermediate_features` — asserts `PatchDiscriminator` has a feature-extraction path
+- `TestFeatureMatchingLoss::test_forward_with_features_returns_logits_and_feature_list` — calls `disc.forward_with_features()`, asserts return is `(Tensor[B,1,14,14], List[Tensor] with ≥1 item)`
+- `TestFeatureMatchingLoss::test_train_py_contains_feature_matching_loss_term` — searches `train.py` source text for feature-matching idiom keywords (`feat`, `feature_match`, etc.)
+
+---
+
+## Fixed Interface (as of commit `4d47ec5`)
+
+```python
+# UNetGenerator — 3rd arg now required
+generator(style_emb, char_index, style_glyph_0)   # style_glyph_0: [B, 1, H, W]
+
+# PatchDiscriminator — new method for feature-matching loss
+logits, [f1, f2, f3, f4] = discriminator.forward_with_features(image, style_glyph)
+
+# train_config.yaml
+lambda_l1: 10   # was 100
+```
+
+---
+
+## How to Run
+
+```bash
+cd src/model
+python -m pytest tests/test_style_conditioning.py -v
+# 9 passed in ~2.3s
+```
+
+---
+
+## Regression Trigger Conditions
+
+| Test | Breaks when… |
+|------|-------------|
+| `test_enc1_input_is_not_all_zeros` | `torch.zeros` reintroduced as encoder input |
+| `test_different_style_glyphs_produce_different_enc1_outputs` | Style glyph no longer reaches enc1 |
+| `test_zeros_vs_ones_style_glyphs_produce_different_outputs` | Style encoder output collapses / style ignored end-to-end |
+| `test_yaml_config_lambda_l1_is_within_range` | `lambda_l1` raised above 20 in YAML config |
+| `test_synthetic_mode_lambda_l1_is_within_range` | `lambda_l1` literal in `train.py` synthetic defaults raised above 20 |
+| `test_discriminator_exposes_intermediate_features` | `forward_with_features` removed from discriminator |
+| `test_forward_with_features_returns_logits_and_feature_list` | Return signature of `forward_with_features` changes |
+| `test_train_py_contains_feature_matching_loss_term` | Feature-matching loss removed from training loop |
+

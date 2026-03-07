@@ -9,6 +9,19 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07T21:06:51Z: Issue #42 Created — Training Performance Optimization for RTX 3070Ti
+- **Decision:** OPENED for team investigation and implementation.
+- **Issue:** https://github.com/FjoNef/cyrillic-font-generator/issues/42
+- **Title:** perf(training): optimize training pipeline for NVIDIA RTX 3070Ti
+- **Rationale:** Developer's local machine has RTX 3070Ti (8GB VRAM, 6144 CUDA cores). Style-conditioning fix requires retraining from scratch. Current pipeline (200 epochs, ~15 min/epoch) is unoptimized for this target GPU.
+- **Proposed optimizations:**
+  1. Mixed precision training (torch.cuda.amp with FP16/BF16)
+  2. CUDA optimization (cudnn.benchmark)
+  3. Batch size optimization (currently [B, 10, 1, 128, 128])
+  4. Data loading pipeline (num_workers, pin_memory)
+  5. Profiling with torch.profiler
+- **Next steps:** Team can pick up performance tuning as parallel effort while retraining begins.
+
 ### 2026-03-07T: PR #38 APPROVED — Robust Model Path Resolution (Walk-Up Pattern)
 - **Decision:** ✅ APPROVED for merge to dev. Issue #37 addressed.
 - **What changed:** Replaced environment-dependent relative path config with directory walk-up discovery.

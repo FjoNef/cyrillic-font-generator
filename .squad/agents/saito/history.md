@@ -9,6 +9,30 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07T21:06:51Z: Style Conditioning Regression Tests — 9/9 Passing ✅
+
+**Task:** Write regression tests guarding against reintroduction of style conditioning bugs fixed by Major.
+
+**Test suite:** `src/model/tests/test_style_conditioning.py` — 9 pytest tests across 5 test classes.
+
+**Bugs guarded against:**
+
+1. **Bug 1 — UNetGenerator encoder input (torch.zeros → style_glyph_0):**
+   - `test_enc1_input_is_not_all_zeros_for_nonzero_style_glyph` — hooks enc1, asserts input not all-zero
+   - `test_different_style_glyphs_produce_different_enc1_outputs` — asserts enc1 outputs differ for ±0.8 style glyphs
+   - `test_zeros_vs_ones_style_glyphs_produce_different_outputs` — asserts final output differs for ±1.0 style glyphs
+
+2. **Bug 2 — Loss rebalancing (lambda_l1=100→10, add feature-matching):**
+   - `test_yaml_config_lambda_l1_is_within_range` — parses train_config.yaml, asserts lambda_l1 ≤ 20
+   - `test_synthetic_mode_lambda_l1_is_within_range` — AST-walks train.py, asserts synthetic defaults lambda_l1 ≤ 20
+   - `test_discriminator_exposes_intermediate_features` — asserts PatchDiscriminator has feature extraction
+   - `test_forward_with_features_returns_logits_and_feature_list` — asserts return is (logits, [f1,f2,f3,f4])
+   - `test_train_py_contains_feature_matching_loss_term` — searches train.py for feature-matching keywords
+
+**Status:** All 9/9 tests passing. Run with: `cd src/model && python -m pytest tests/test_style_conditioning.py -v`
+
+**Key architecture pattern:** Each test targets a specific regression trigger — encoding input, style propagation through skip connections, loss weighting, or discriminator interface. Strong guardrails for next retraining cycle.
+
 ### 2026-03-07: PR #40 CODE REVIEW — SharedArrayBuffer Output Aliasing Fix — APPROVED & MERGED ✅
 
 **Task:** QA Code Review of PR #40 (Issue #39 — Fix style conditioning by copying ORT WASM output buffers).
@@ -757,3 +781,27 @@ result = sess.run(None, {"style_glyphs": style_glyphs, "char_index": char_index}
 - jsdom canvas (via test-setup.ts mock) renders all-white because Path2D.fill() is a no-op stub — style variation tests must mock at the canvas getImageData level, not rely on actual path rendering.
 - To detect "style ignored" bug in unit tests: spy on session.run and compare the style_glyphs.data values across two calls with different inputs.
 - // @vitest-environment jsdom directive works correctly when placed at line 1 of the test file AND the required APIs (ImageData) are present.
+
+### 2026-03-07: Style Conditioning Regression Tests Written
+
+**Task:** Write anticipatory Python regression tests for two model training bugs fixed by Major:
+  1. UNetGenerator encoder was fed torch.zeros (now uses style_glyphs[:, 0])
+  2. lambda_l1=100 dominated loss (now 10) — feature-matching loss added
+
+**File created:** src/model/tests/test_style_conditioning.py
+
+**Architecture discovered (post-fix state):**
+- UNetGenerator.forward(style_emb, char_index, style_glyph_0) — now takes 3rd arg [B, 1, H, W]
+- PatchDiscriminator.forward_with_features(image, style_glyph) → (patch_logits, [f1,f2,f3,f4])
+- lambda_l1: 10 in both 	rain_config.yaml and synthetic-mode defaults in 	rain.py
+- The fix was already committed in 4d47ec5 before tests were written
+
+**Test strategy:**
+- Tests 1-2: egister_forward_hook on generator.enc1 to capture enc1 input/output; verify non-zero and style-dependent
+- Test 3: E2E output differs for ±1.0 style glyphs (smoke test)
+- Test 4: Parse YAML config + AST-walk train.py to find lambda_l1 literals; assert ≤ 20
+- Test 5: Check discriminator has orward_with_features() method; verify it returns (logits, feature_list) tuple; check train.py source for "feat" keyword
+
+**All 9 tests pass (2.27s).** Tests would catch regression back to zeros/100/no-feature-matching.
+
+**Key pattern:** AST-walk with st.parse() is a clean way to test numeric literals in Python scripts without importing/executing them.

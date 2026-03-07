@@ -116,3 +116,5 @@ Three compounding causes:
 4. **`export_onnx.py` — ONNX wrapper updated:** `FontGeneratorONNX.forward()` now extracts `style_glyphs[:, 0]` and passes it as `style_glyph_0` to `generator()`. ONNX input contract unchanged: `style_glyphs [B, 10, 1, 128, 128]` and `char_index [B]` remain the two ONNX-visible inputs.
 
 **Key lesson:** The U-Net skip connections are the primary carrier of spatial structure across decoder scales. Feeding them with constant zeros (blank canvas) made the generator learn structure-independent decoding — style only entered at the 1×1 bottleneck and was diluted across 6 decoder stages before reaching output resolution.
+
+**Status:** Code committed 2026-03-07T21:06:51Z. Requires retraining from scratch (existing epoch_0200 incompatible with new architecture).

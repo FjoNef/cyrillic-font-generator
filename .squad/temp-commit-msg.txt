@@ -1,61 +1,9 @@
-feat: Browser-side ONNX inference + model delivery endpoint + test suite
+squad: Merge session log and decisions — PR #40 merged
 
-Parallel sprint (Mar 7) — Browser runtime integration with versioned model delivery and comprehensive test coverage.
-
-## Deliverables
-
-### Frontend (Togusa) — 92/92 tests passing
-- OnnxInference.ts: Fixed tensor shape to [1,10,1,128,128] (batch dim), output key to 'generated_glyph'
-- browserSupport.ts: New module for WASM/Workers/WebGL/SharedArrayBuffer detection
-- ModelLoader: Wired to backend /api/model/manifest endpoint for version discovery
-- Execution providers: ['webgl', 'wasm'] locked (WebGL preferred ~15-30ms/glyph, WASM fallback ~80-600ms)
-- Normalisation: White-on-black training space confirmed; FontLoader inversion correct
-
-### Backend (Batou) — 6/6 tests passing, clean build
-- Versioned API endpoint: GET /api/model/v1/generator.onnx with ETag + Cache-Control immutable
-- Health endpoint: Now includes model metadata (version, size, sha256) when model available
-- Manifest endpoint: Returns downloadUrl pointing to versioned API endpoint
-- Caching strategy: Immutable + versioned URL for zero re-download after first fetch
-- Issue #17 fix: Model path uses ContentRootPath (not AppContext.BaseDirectory)
-- Issue #20 fix: Brotli compression on application/octet-stream for ~16MB delivery
-
-### QA (Saito) — 117 total tests (73 passing + 14 stubs)
-- onnxContract.test.ts: 38 tests for tensor shapes, output keys, normalisation, providers
-- ModelEndpointTests.cs: 21 tests for health, versioned endpoint, ETag, caching, range requests
-- performance.test.ts: 14 stubs for latency targets (deferred Playwright E2E)
-- Risk flagging: HIGH risk contract bugs flagged → already fixed by Togusa (cross-validation working)
-- MEDIUM risk: Static caching headers need E2E smoke test (deferred)
-- LOW risks: Performance measurement and OOM handling (deferred)
-
-## Cross-Agent Integration
-
-- Togusa's ModelLoader uses /api/model/manifest → gets downloadUrl from Batou's versioned endpoint
-- Saito flagged batch dim + output key bugs → Togusa had already fixed them independently
-- Decision synchronization: Both Togusa + Batou histories locked on endpoint URL scheme
-- 117-test inference suite provides ground truth for production integration
-
-## Decisions Locked
-
-1. Browser inference: Execution providers ['webgl', 'wasm'], Web Worker architecture, tensor shapes [1,10,1,128,128]
-2. Model delivery: Versioned API URL /api/model/v1/generator.onnx as primary, manifest as entry point
-3. Test coverage: 38 contract tests, 21 backend tests, 14 performance stubs (deferred Playwright)
-
-## Files Changed
-
-.squad/orchestration-log/
-  - 2026-03-07T15-01-07Z-togusa.md: Frontend integration summary
-  - 2026-03-07T15-01-07Z-batou.md: Backend delivery summary
-  - 2026-03-07T15-01-07Z-saito.md: QA validation summary
-
-.squad/log/
-  - 2026-03-07T15-01-07Z-browser-inference-parallel.md: Session parallel sprint summary
-
-.squad/decisions.md
-  - Merged from inbox: togusa-browser-inference.md, batou-model-delivery.md, saito-test-coverage.md
-
-.squad/agents/*/history.md
-  - Updated with cross-agent validation notes + risk resolution
-
-(Inbox files deleted: all three decision docs merged)
+- Orchestration logs for Togusa, Saito, Aramaki (issue #39 fix session)
+- Session log: SharedArrayBuffer output aliasing fix merged to dev
+- Merged decisions/inbox to decisions.md (togusa + saito decisions)
+- Updated agent history: Togusa and Saito outcomes documented
+- PR #40 merged to dev: all 114/114 tests passing
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
