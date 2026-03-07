@@ -10,18 +10,21 @@ public sealed class ModelManifestCache
     public long SizeBytes { get; private set; }
     public string Sha256 { get; private set; } = string.Empty;
     public bool Available { get; private set; }
+    public string? ResolvedModelPath { get; private set; }
 
     public ModelManifestCache(IConfiguration config, IWebHostEnvironment env, ILogger<ModelManifestCache> logger)
     {
         var modelRoot = config["ModelPath"] ?? "models";
-        var modelFile = Path.GetFullPath(
-            Path.Combine(env.ContentRootPath, modelRoot, Version, Filename));
+        var modelFile = ResolveModelFile(env.ContentRootPath, modelRoot, Version, Filename, logger);
 
-        if (!File.Exists(modelFile))
+        if (modelFile == null)
         {
-            logger.LogWarning("Model file not found at {Path}. Manifest will return 404.", modelFile);
+            var expectedPath = Path.GetFullPath(Path.Combine(env.ContentRootPath, modelRoot, Version, Filename));
+            logger.LogError("✗ Model file not found — /api/model will return 404. Place generator.onnx at: {ExpectedPath}", expectedPath);
             return;
         }
+
+        ResolvedModelPath = modelFile;
 
         try
         {
@@ -33,13 +36,51 @@ public sealed class ModelManifestCache
             Sha256 = Convert.ToHexString(hash).ToLowerInvariant();
             Available = true;
 
-            logger.LogInformation("Model loaded: {File} ({Size} bytes, sha256={Hash})",
-                modelFile, SizeBytes, Sha256[..16] + "…");
+            logger.LogInformation("✓ Model serving ready: {File} ({Size} bytes)", modelFile, SizeBytes);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to read model file at {Path}", modelFile);
         }
+    }
+
+    private static string? ResolveModelFile(string contentRootPath, string modelPathConfig, string version, string filename, ILogger logger)
+    {
+        // 1. Try the configured path first (respects explicit config)
+        var configured = Path.GetFullPath(Path.Combine(contentRootPath, modelPathConfig, version, filename));
+        if (File.Exists(configured))
+        {
+            logger.LogInformation("Model found at configured path: {Path}", configured);
+            return configured;
+        }
+
+        // If the configured path is absolute and doesn't exist, don't walk up
+        // (respect explicit absolute path configuration)
+        if (Path.IsPathRooted(modelPathConfig))
+        {
+            logger.LogWarning(
+                "Model file not found at absolute configured path: {Configured}",
+                configured);
+            return null;
+        }
+
+        // 2. Walk up the directory tree looking for models/{version}/{filename}
+        var dir = new DirectoryInfo(contentRootPath);
+        while (dir != null)
+        {
+            var candidate = Path.Combine(dir.FullName, "models", version, filename);
+            if (File.Exists(candidate))
+            {
+                logger.LogInformation("Model found by directory walk at: {Path}", candidate);
+                return candidate;
+            }
+            dir = dir.Parent;
+        }
+
+        logger.LogWarning(
+            "Model file not found. Tried configured path: {Configured}. Also searched parent directories for models/{Version}/{Filename}",
+            configured, version, filename);
+        return null;
     }
 }
 
@@ -69,19 +110,15 @@ public static class ModelEndpoints
         });
     }
 
-    private static IResult HandleModelDownload(ModelManifestCache cache, IConfiguration config, IWebHostEnvironment env)
+    private static IResult HandleModelDownload(ModelManifestCache cache)
     {
-        if (!cache.Available)
+        if (!cache.Available || cache.ResolvedModelPath == null)
             return Results.NotFound(new { error = "Model not yet trained. Please train the model first." });
 
-        var modelRoot = config["ModelPath"] ?? "models";
-        var modelFile = Path.GetFullPath(
-            Path.Combine(env.ContentRootPath, modelRoot, cache.Version, cache.Filename));
-
-        if (!File.Exists(modelFile))
+        if (!File.Exists(cache.ResolvedModelPath))
             return Results.NotFound(new { error = "Model file not found at expected path." });
 
-        return Results.File(modelFile, "application/octet-stream", cache.Filename, enableRangeProcessing: true);
+        return Results.File(cache.ResolvedModelPath, "application/octet-stream", cache.Filename, enableRangeProcessing: true);
     }
 
     /// <summary>
@@ -91,10 +128,10 @@ public static class ModelEndpoints
     /// </summary>
     private static IResult HandleVersionedModelDownload(
         string version, string filename,
-        ModelManifestCache cache, IConfiguration config, IWebHostEnvironment env,
+        ModelManifestCache cache,
         HttpContext httpContext)
     {
-        if (!cache.Available)
+        if (!cache.Available || cache.ResolvedModelPath == null)
             return Results.NotFound(new { error = "Model not yet available" });
 
         if (!version.Equals(cache.Version, StringComparison.OrdinalIgnoreCase) ||
@@ -107,16 +144,12 @@ public static class ModelEndpoints
         if (httpContext.Request.Headers.IfNoneMatch == etag)
             return Results.StatusCode(StatusCodes.Status304NotModified);
 
-        var modelRoot = config["ModelPath"] ?? "models";
-        var modelFile = Path.GetFullPath(
-            Path.Combine(env.ContentRootPath, modelRoot, version, filename));
-
-        if (!File.Exists(modelFile))
+        if (!File.Exists(cache.ResolvedModelPath))
             return Results.NotFound(new { error = "Model file not found at expected path." });
 
         httpContext.Response.Headers.ETag = etag;
         httpContext.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
 
-        return Results.File(modelFile, "application/octet-stream", filename, enableRangeProcessing: true);
+        return Results.File(cache.ResolvedModelPath, "application/octet-stream", filename, enableRangeProcessing: true);
     }
 }

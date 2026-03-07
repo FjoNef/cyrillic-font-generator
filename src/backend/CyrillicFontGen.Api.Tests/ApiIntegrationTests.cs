@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 
@@ -20,11 +21,16 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
 
         _noModelFactory = factory.WithWebHostBuilder(builder =>
         {
+            // Create a temporary empty directory to isolate from repo models
+            var tempRoot = Path.Combine(Path.GetTempPath(), $"cyrillic-nomodel-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempRoot);
+            
+            builder.UseContentRoot(tempRoot);
             builder.ConfigureAppConfiguration((_, config) =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["ModelPath"] = "/nonexistent/path/that/does/not/exist"
+                    ["ModelPath"] = "models" // relative path that doesn't exist
                 });
             });
         });
