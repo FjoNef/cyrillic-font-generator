@@ -1632,3 +1632,124 @@ px playwright install --with-deps\.
 - 51 Playwright E2E tests (17/browser × 3) now run on every CI push.
 - Performance regression detection active for WASM load and inference targets.
 - \	est:e2e\ is the canonical command for the harness.
+
+
+---
+
+### 2026-03-07: User Directive — Create GitHub Issues Before Tasks
+
+**By:** FjoNef (via Copilot)  
+**Date:** 2026-03-07  
+**Status:** ACCEPTED
+
+From now on, make a GitHub issue for every new task, bug, or feature before work begins. This ensures all work is tracked and visible to the team.
+
+---
+
+### 2026-03-07: E2E Glyph Generation UI — Browser Support Gate Pattern
+
+**Author:** Togusa  
+**Date:** 2026-03-07  
+**Issue:** #27  
+**PR:** #31
+
+#### Decision 1: Browser support detected at module load, not in a React effect
+
+`detectBrowserSupport()` is called once at the top level of `App.tsx` (outside the component), not inside `useEffect`. The result is a module-level constant `browserSupport`.
+
+**Why:** The check is synchronous and cheap. Running it in an effect would add a render cycle before gating the model load. Module-level evaluation means the gate is in place before the first render with zero runtime overhead.
+
+#### Decision 2: Model load skipped (not error-state) on unsupported browsers
+
+When `browserSupport.supported === false`, the model load `useEffect` returns early. Model status stays at `'idle'`, not `'error'`. The `BrowserUnsupported` banner explains the situation without triggering a "failed to load model" error state.
+
+**Why:** An unsupported browser is not a load failure — it's a capability mismatch. Showing "model load failed" would be misleading. The banner gives actionable guidance (upgrade browser) rather than a generic error.
+
+#### Decision 3: Model endpoint confirmed as `/api/model`
+
+The frontend fetches the ONNX model at `GET /api/model`. The backend `ModelEndpoints.HandleModelDownload` serves the binary at this route. The static file path `models/v1/generator.onnx` is an implementation detail of the backend, not part of the public API surface.
+
+#### Decision 4: No browser support check in worker
+
+`browserSupport.ts` gates the entire app in `App.tsx`. The inference worker (`inferenceWorker.ts`) does not independently check browser capabilities.
+
+---
+
+### 2026-03-07: Browser Support Check Location and Pattern
+
+**Author:** Togusa  
+**Date:** 2026-03-07  
+**Issue:** #26
+
+`detectBrowserSupport()` is called **at module load time** (top-level constant in App.tsx), not inside a `useEffect`. The check is synchronous and cheap. Module-load timing ensures the error UI appears immediately with no flash of unsupported content.
+
+**Consequence:** Tests must mock `detectBrowserSupport` export from `browserSupport.ts` using `vi.spyOn` or `vi.mock`. The `BrowserUnsupported` component is pure display.
+
+---
+
+### 2026-03-07: E2E Glyph Generation Flow — Integration Test Pattern
+
+**Date:** 2026-03-07  
+**Author:** Togusa  
+**Issue:** #27
+
+**Decision:** Replace placeholder integration tests with real pipeline tests that mock at the Worker boundary.
+
+**Pattern:**
+```typescript
+// Mock Web Worker — intercept 'infer' messages
+const worker = { postMessage: vi.fn(msg => { ... }), ... };
+global.Worker = vi.fn(() => worker);
+
+// Load model, run 66-char loop, verify OTF assembly
+```
+
+**Why Worker boundary:** Web Workers cannot run in jsdom/Vitest. Tests ModelLoader multiplexing, which is the main risk point. Lower-level ONNX contract tests stay in `onnxContract.test.ts`.
+
+**Consequence:** 7 placeholder tests → 7 real tests (96 tests total, no regressions).
+
+---
+
+### 2026-03-07: Playwright Harness for ONNX Inference Performance Tests
+
+**Author:** Saito  
+**Date:** 2026-03-07  
+**Issue:** #23  
+**PR:** #24
+
+Use Playwright E2E with Vite dev server. Inject `ort.wasm.min.js` via `page.addScriptTag()`, intercept requests with `page.route()` to serve 345-byte stub ONNX model.
+
+**Rationale:**
+- No app modification required
+- Vite dev server fast (no build step)
+- Stub model isolates WASM overhead
+- WASM interception works offline in CI
+- Single-thread WASM avoids COOP/COEP headers
+
+**Results:** Chromium 17/17 5.1s, Firefox 17/17 18s, WebKit 17/17 1.7s. Per-glyph ~10–60ms, 66-glyph ~400–2500ms (all within targets).
+
+---
+
+### 2026-03-07: Team Directives — .squad Identity & Governance
+
+**By:** FjoNef (via Scribe)  
+**Date:** 2026-03-07  
+**Status:** ENFORCED
+
+#### Directive 1: All squad PRs must target `dev`, not `main`
+
+- **Reason:** `.squad/` identity files belong on dev only. Main is clean product code.
+- **Enforcement:** Aramaki checks PR target during merge reviews.
+
+#### Directive 2: Create GitHub issue before every task/bug/feature
+
+- **Reason:** Ensures all work is tracked and linked to PRs.
+
+#### Directive 3: .squad/ identity files belong on dev only
+
+**Root Cause:** Commit cd8a8ee ("chore: remove .squad/ from main") accidentally deleted .squad/ from dev, removing 14 files (team.md, routing.md, 7 charter.md files, casting/).
+
+**Fix:** Aramaki restored all files from init commit 0c822db.
+
+**Prevention:** Enforce "All squad PRs must target dev" directive.
+
