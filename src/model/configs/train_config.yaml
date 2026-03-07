@@ -27,7 +27,7 @@ model:
 
 # --- Training ---
 training:
-  batch_size: 32
+  batch_size: 32                   # RTX 3070Ti Laptop (8GB VRAM): try 16–64; increase for higher GPU util, decrease on OOM
   epochs: 200
   lr_generator: 0.0002
   lr_discriminator: 0.0002
