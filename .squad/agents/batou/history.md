@@ -9,6 +9,26 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07: Fix ModelPath 404 in Development (Issue #35)
+
+**Status:** COMPLETE — PR #36 targeting dev
+
+**Root cause:** `ModelPath: "models"` resolves relative to `ContentRootPath` (`src/backend/CyrillicFontGen.Api/`).
+The actual model is at repo root `models/v1/generator.onnx`, so the backend was searching in the wrong directory.
+
+**Fix:** Added `"ModelPath": "../../../models"` to `appsettings.Development.json`.
+`Path.GetFullPath(Path.Combine(ContentRootPath, "../../../models"))` walks 3 levels up to the repo root.
+Both `/api/model` and `/api/model/v1/generator.onnx` now resolve and serve the model correctly in dev.
+
+**Production note:** `appsettings.json` keeps `"ModelPath": "models"` — for production, `models/v1/generator.onnx`
+must be placed alongside the published binary (same dir as `CyrillicFontGen.Api.dll`).
+
+**Tests:** Updated 2 integration tests that checked 404 "when model not exists" — they now use a
+`WebApplicationFactory` config override pointing to a non-existent path, instead of relying on the
+broken path as a side-effect. All 25 backend tests pass.
+
+**Reminder for deployment pipeline:** Copy `models/v1/generator.onnx` into the publish output directory.
+
 ### 2026-03-07: Versioned Endpoint & Frontend Integration Verified
 
 **Status:** COMPLETE — Cross-validated with Togusa and Saito

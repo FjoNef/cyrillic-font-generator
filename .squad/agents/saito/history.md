@@ -9,6 +9,32 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07: PR #36 APPROVED & MERGED — Model Path Fix (Development Configuration)
+
+**Task:** QA Code Review of PR #36 (Backend model endpoint 404 fix).
+
+**Status:** ✅ APPROVED — Merged to dev by Coordinator. Issue #35 closed.
+
+**Path resolution verified:**
+- Development override in `appsettings.Development.json`: `"ModelPath": "../../../models"`
+- Path.GetFullPath(Path.Combine(ContentRootPath, "../../../models")) correctly walks from API project directory (3 levels) to repo root
+- GET /api/model and GET /api/model/v1/generator.onnx both serving 200 with ONNX stream in dev
+
+**Test coverage (25 total):**
+- All passing, CI workflows green
+- WebApplicationFactory now explicitly injects non-existent path for 404 test cases (intentional validation, not side-effect)
+- Test hygiene improved: clarifies that 404 is expected behavior, not a bug
+
+**Production story:**
+- `appsettings.json` unchanged: `"ModelPath": "models"`
+- When published: ContentRootPath = publish output dir, so default path resolves correctly
+- Deployment pipeline responsibility: place `models/v1/generator.onnx` alongside `CyrillicFontGen.Api.dll`
+- Backend README documents this clearly
+
+**Cross-agent notes:**
+- Aramaki approved architecture: `appsettings.Development.json` override is idiomatic .NET pattern
+- Future team can reuse this pattern for other dev/prod config divergences
+
 ### 2026-03-07: Playwright Harness — Issue #23 Complete
 
 **Task:** Add Playwright E2E harness to promote 13 vitest performance stubs to live browser assertions.
@@ -570,3 +596,23 @@ result = sess.run(None, {"style_glyphs": style_glyphs, "char_index": char_index}
 - To test static file caching headers in integration tests: deploy to a real server or add a thin test-only middleware that adds cache headers to the response.
 - Results.File(..., enableRangeProcessing: true) in ASP.NET Core Minimal APIs DOES respond to Range headers with 206 Partial Content — tested and confirmed.
 - OnnxInference.ts pre-dates the official contract; inferenceWorker.ts was written after and is correct. The discrepancy is a latent bug.
+
+
+### 2026-03-07: PR #36 Review — ModelPath Dev Override
+
+**Task:** Review PR #36 "fix: resolve ModelPath to repo-root models dir in development (#35)"
+**Verdict:** APPROVED (posted as comment — GitHub blocks self-approval)
+
+**What was fixed:**
+- ppsettings.Development.json now contains "ModelPath": "../../../models" so the .NET backend resolves the ONNX model correctly during dotnet run from src/backend/CyrillicFontGen.Api/ → 3 levels up → repo root models/.
+- Production ppsettings.json unchanged: "ModelPath": "models" (relative to published binary dir).
+
+**Test improvements verified:**
+- Integration tests refactored: 404 tests moved from the default _client (which relied on model *accidentally* missing) to explicit _noModelFactory with ModelPath=/nonexistent/path. Strictly better isolation.
+- All CI checks green.
+
+**Key learnings:**
+- Path.GetFullPath(Path.Combine(contentRoot, "../../../models")) works correctly on both Windows and Unix — no OS-specific path risk.
+- ppsettings.Development.json is only loaded when ASPNETCORE_ENVIRONMENT=Development; Release/Production builds are unaffected.
+- GitHub does not allow approving your own PR — approval must be posted as a review comment when the PR author and reviewer share an account.
+- When 404 tests depend on a path not existing, always make that dependency explicit (inject a known-bad path) rather than relying on environment accident.
