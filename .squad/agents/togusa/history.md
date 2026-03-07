@@ -42,6 +42,20 @@
 - **Dependency resolved**: inference pipeline is now fully wired to the actual exported model. ModelLoader fetches from `/api/model/manifest` → gets `downloadUrl` from Batou's versioned API endpoint.
 - **Cross-agent sync**: Batou's `/api/model/v1/generator.onnx` endpoint matches Togusa's fetch URL exactly. Decision locked in both histories.
 
+### Issue #27: E2E Glyph Generation Flow — Integration Tests Added
+
+- **Branch**: `squad/27-e2e-glyph-generation-ui` (existing), **PR #31** (open, targeting dev)
+- **Status**: ✅ COMPLETE — 96/96 tests passing
+- **What was done**: Branch `squad/27-e2e-glyph-generation-ui` already contained the full E2E UI flow (App.tsx orchestrates FontUpload → ModelLoader.infer × 66 → assembleFontFromGlyphs → downloadFont). Added real integration tests replacing all placeholders in `inference/__tests__/integration.test.ts`.
+- **Integration tests cover**:
+  - Full 66-glyph inference loop: all char indices 0–65 requested exactly once, style_glyphs tensor size asserted
+  - Valid OTF output: magic-byte check (OTTO / 0x00010000) after assembleFontFromGlyphs
+  - Monotonic progress: 1→66 increments verified
+  - Error propagation: mid-loop inference failure surfaces to caller
+  - Guard: inference rejects before model loaded
+  - downloadFont: correct MIME type (font/otf), filename, URL.revokeObjectURL cleanup
+- **Key note**: When creating a feature branch, check for existing branches/PRs for the same issue first. `squad/27-e2e-glyph-generation-ui` pre-existed with the implementation; duplicate branch avoided.
+
 
 - **Branch:** fix/togusa-ci-ts-errors
 - **PR:** #13 → dev
