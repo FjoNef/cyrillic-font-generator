@@ -11,12 +11,11 @@ public sealed class ModelManifestCache
     public string Sha256 { get; private set; } = string.Empty;
     public bool Available { get; private set; }
 
-    public ModelManifestCache(IConfiguration config, ILogger<ModelManifestCache> logger)
+    public ModelManifestCache(IConfiguration config, IWebHostEnvironment env, ILogger<ModelManifestCache> logger)
     {
         var modelRoot = config["ModelPath"] ?? "models";
         var modelFile = Path.GetFullPath(
-            Path.Combine(modelRoot, Version, Filename),
-            AppContext.BaseDirectory);
+            Path.Combine(env.ContentRootPath, modelRoot, Version, Filename));
 
         if (!File.Exists(modelFile))
         {
@@ -49,6 +48,7 @@ public static class ModelEndpoints
     public static void MapModelEndpoints(this WebApplication app)
     {
         app.MapGet("/api/model/manifest", HandleManifest);
+        app.MapGet("/api/model", HandleModelDownload);
     }
 
     private static IResult HandleManifest(ModelManifestCache cache, HttpRequest request)
@@ -65,5 +65,20 @@ public static class ModelEndpoints
             sha256      = cache.Sha256,
             downloadUrl = $"{baseUrl}/models/{cache.Version}/{cache.Filename}"
         });
+    }
+
+    private static IResult HandleModelDownload(ModelManifestCache cache, IConfiguration config, IWebHostEnvironment env)
+    {
+        if (!cache.Available)
+            return Results.NotFound(new { error = "Model not yet trained. Please train the model first." });
+
+        var modelRoot = config["ModelPath"] ?? "models";
+        var modelFile = Path.GetFullPath(
+            Path.Combine(env.ContentRootPath, modelRoot, cache.Version, cache.Filename));
+
+        if (!File.Exists(modelFile))
+            return Results.NotFound(new { error = "Model file not found at expected path." });
+
+        return Results.File(modelFile, "application/octet-stream", cache.Filename, enableRangeProcessing: true);
     }
 }

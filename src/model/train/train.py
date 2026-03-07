@@ -3,8 +3,25 @@ train.py — GAN training loop for the Cyrillic font generator.
 
 Usage
 -----
+    # Train with real fonts from config
     python train/train.py --config configs/train_config.yaml
+    
+    # Resume from checkpoint
     python train/train.py --config configs/train_config.yaml --resume models/checkpoints/epoch_50.pth
+    
+    # Train with synthetic data (no fonts required)
+    python train/train.py --synthetic --batch_size 16 --num_epochs 50
+    
+    # Override config parameters
+    python train/train.py --config configs/train_config.yaml --batch_size 64 --num_epochs 100
+
+Flags
+-----
+    --config PATH           Path to training config YAML (optional with --synthetic)
+    --resume PATH           Path to checkpoint .pth file to resume training
+    --synthetic             Use synthetic random data instead of real fonts
+    --batch_size N          Override batch_size from config
+    --num_epochs N          Override epochs from config
 
 Losses
 ------
@@ -38,7 +55,7 @@ import yaml
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from data.dataset import CyrillicFontDataset
+from data.dataset import CyrillicFontDataset, SyntheticFontDataset
 from train.model import StyleEncoder, UNetGenerator, PatchDiscriminator
 
 
@@ -47,7 +64,7 @@ from train.model import StyleEncoder, UNetGenerator, PatchDiscriminator
 # ---------------------------------------------------------------------------
 
 def load_config(path: str) -> dict:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -86,7 +103,7 @@ def save_checkpoint(
         },
         path,
     )
-    print(f"  💾 Checkpoint saved → {path}")
+    print(f"  [SAVED] Checkpoint saved -> {path}")
 
 
 def load_checkpoint(
@@ -104,7 +121,7 @@ def load_checkpoint(
     discriminator.load_state_dict(ckpt["discriminator_state"])
     opt_g.load_state_dict(ckpt["opt_g_state"])
     opt_d.load_state_dict(ckpt["opt_d_state"])
-    print(f"  ✅ Resumed from {path} (epoch {ckpt['epoch']})")
+    print(f"  [OK] Resumed from {path} (epoch {ckpt['epoch']})")
     return ckpt["epoch"]
 
 
@@ -112,22 +129,80 @@ def load_checkpoint(
 # Training
 # ---------------------------------------------------------------------------
 
-def train(config_path: str, resume: str | None = None) -> None:
-    cfg = load_config(config_path)
+def train(
+    config_path: str | None = None,
+    resume: str | None = None,
+    use_synthetic: bool = False,
+    batch_size_override: int | None = None,
+    num_epochs_override: int | None = None,
+) -> None:
+    # Load config or use defaults for synthetic mode.
+    if config_path:
+        cfg = load_config(config_path)
+    elif use_synthetic:
+        # Sensible defaults for synthetic mode (no config required).
+        cfg = {
+            "data": {
+                "fonts_dir": "",  # Not used in synthetic mode.
+                "style_latin_chars": ["A", "B", "C", "D", "E", "H", "I", "O", "R", "X"],
+                "image_size": 128,
+            },
+            "model": {
+                "style_embedding_dim": 256,
+                "char_embedding_dim": 64,
+                "unet_base_filters": 32,
+                "patch_discriminator_ndf": 64,
+            },
+            "training": {
+                "batch_size": 32,
+                "epochs": 50,
+                "lr_generator": 0.0002,
+                "lr_discriminator": 0.0002,
+                "beta1": 0.5,
+                "beta2": 0.999,
+                "lambda_l1": 100,
+                "checkpoint_interval": 10,
+                "log_interval": 100,
+            },
+            "output": {
+                "checkpoint_dir": "../../models/checkpoints/",
+            },
+        }
+    else:
+        raise ValueError("Either --config must be provided or --synthetic must be set.")
+    
+    # Apply CLI overrides to config.
+    if batch_size_override is not None:
+        cfg["training"]["batch_size"] = batch_size_override
+    if num_epochs_override is not None:
+        cfg["training"]["epochs"] = num_epochs_override
+    
     data_cfg = cfg["data"]
     model_cfg = cfg["model"]
     train_cfg = cfg["training"]
     out_cfg = cfg["output"]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Training on: {device}")
+    print(f"[*] Training device: {device}")
+    if torch.cuda.is_available():
+        print(f"    GPU: {torch.cuda.get_device_name(0)}")
+        print(f"    CUDA version: {torch.version.cuda}")
+        print(f"    cuDNN version: {torch.backends.cudnn.version()}")
 
     # --- Dataset ---
-    dataset = CyrillicFontDataset(
-        fonts_dir=data_cfg["fonts_dir"],
-        style_chars=data_cfg["style_latin_chars"],
-        image_size=data_cfg["image_size"],
-    )
+    if use_synthetic:
+        print("Using synthetic dataset (random noise tensors)")
+        dataset = SyntheticFontDataset(
+            num_samples=1000,
+            num_style_glyphs=len(data_cfg["style_latin_chars"]),
+            image_size=data_cfg["image_size"],
+        )
+    else:
+        dataset = CyrillicFontDataset(
+            fonts_dir=data_cfg["fonts_dir"],
+            style_chars=data_cfg["style_latin_chars"],
+            image_size=data_cfg["image_size"],
+        )
     val_size = max(1, int(0.05 * len(dataset)))
     train_size = len(dataset) - val_size
     train_ds, val_ds = random_split(dataset, [train_size, val_size])
@@ -153,6 +228,8 @@ def train(config_path: str, resume: str | None = None) -> None:
     discriminator = PatchDiscriminator(
         ndf=model_cfg["patch_discriminator_ndf"]
     ).to(device)
+    
+    print(f"[+] Models loaded on {device}")
 
     # --- Optimisers ---
     opt_g = torch.optim.Adam(
@@ -191,6 +268,13 @@ def train(config_path: str, resume: str | None = None) -> None:
         epoch_loss_g = 0.0
         epoch_loss_d = 0.0
         epoch_loss_l1 = 0.0
+        
+        # Log GPU memory at start of epoch
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+            mem_allocated = torch.cuda.memory_allocated(0) / (1024**3)
+            mem_reserved = torch.cuda.memory_reserved(0) / (1024**3)
+            print(f"   GPU memory: {mem_allocated:.2f}GB allocated / {mem_reserved:.2f}GB reserved")
 
         pbar = tqdm(train_loader, desc=f"Epoch {epoch:04d}/{total_epochs}", leave=False)
         for batch_idx, (style_glyphs, target_glyph, char_index) in enumerate(pbar):
@@ -261,7 +345,7 @@ def train(config_path: str, resume: str | None = None) -> None:
         total_epochs, style_encoder, generator, discriminator,
         opt_g, opt_d, checkpoint_dir
     )
-    print(f"\n✅ Training complete. Final checkpoint in {checkpoint_dir}/")
+    print(f"\n[DONE] Training complete. Final checkpoint in {checkpoint_dir}/")
 
 
 # ---------------------------------------------------------------------------
@@ -272,13 +356,37 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train the Cyrillic font generator GAN.")
     parser.add_argument(
         "--config",
-        default="configs/train_config.yaml",
-        help="Path to training config YAML.",
+        default=None,
+        help="Path to training config YAML (optional with --synthetic).",
     )
     parser.add_argument(
         "--resume",
         default=None,
         help="Path to a checkpoint .pth file to resume from.",
     )
+    parser.add_argument(
+        "--synthetic",
+        action="store_true",
+        help="Use synthetic random data instead of real fonts (no fonts_dir required).",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Override batch size from config.",
+    )
+    parser.add_argument(
+        "--num_epochs",
+        type=int,
+        default=None,
+        help="Override number of epochs from config.",
+    )
     args = parser.parse_args()
-    train(args.config, args.resume)
+    
+    train(
+        config_path=args.config,
+        resume=args.resume,
+        use_synthetic=args.synthetic,
+        batch_size_override=args.batch_size,
+        num_epochs_override=args.num_epochs,
+    )

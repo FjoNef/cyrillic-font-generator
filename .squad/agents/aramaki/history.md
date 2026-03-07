@@ -1,0 +1,59 @@
+# Aramaki — History
+
+## Project Context
+- **Project:** Cyrillic Font Generator
+- **User:** FjoNef
+- **Description:** Web app that generates Cyrillic font symbols for non-Cyrillic fonts using AI. Pre-trained model ships to client; all generative work runs in browser. .NET backend.
+- **Key constraint:** Client-side inference only — no server-side generation calls.
+
+## Learnings
+<!-- Append new entries below -->
+
+### 2026-02-26T: PR #12 lockout revision — Aramaki stepping in for Togusa
+- **Context:** Saito issued REQUEST CHANGES on PR #12 (feat/togusa-font-assembly); Togusa locked out under Reviewer Rejection Lockout Protocol. Aramaki stepped in to apply targeted fixes.
+- **Fix 1 — cyrillicCharset.ts indices:** Ё was at index 32 (end of uppercase block), ё at 65 (end of lowercase). LOCKED tensor contract requires Ё=6, ё=39. Rebuilt both arrays to interleave Ё/ё at correct alphabetical positions within each block.
+- **Fix 2 — Test API surface:** Tests used class instantiation style (`new GlyphVectorizer()`, `vectorizer.vectorize()`); implementations export plain functions. Per team decision: aligned tests to the function API (`vectorizeGlyph()`, `assembleFontFromGlyphs()`). Did NOT touch implementation files.
+- **Fix 3 — Map key type:** `makeGlyphImages()` test helper built `Map<string, Float32Array>` with char-string keys; `assembleFontFromGlyphs` expects `Map<number, Float32Array>`. Changed helper to emit numeric model indices 0-65 as keys.
+- **Commit:** 6681fcd — all 3 fixes in one commit
+- **Lesson:** When a charset file defines model indices, always cross-check against decisions.md tensor contract immediately — index positioning bugs are silent until inference produces wrong glyphs.
+
+
+### 2026-02-25T165444: PR #8 & PR #9 merged to dev — critical foundation complete
+- **Status:** Two foundational layers merged. Training and backend integration live; frontend (PR #4) awaiting model.
+- **PR #8 Merge (Major — cGAN Training):**
+  - Tensor contract LOCKED: StyleEncoder (mean-pooling) + UNetGenerator (bottleneck conditioning) + PatchDiscriminator
+  - Loss: Adversarial (BCE) + L1 (lambda=100); ONNX opset 17, INT8 quantization
+  - Character mapping: 66 Russian Cyrillic (0-32 uppercase А–Я with Ё, 33-65 lowercase а–я with ё)
+  - **Note:** Saito flagged doc conflict (decisions.md wrong Latin chars); Togusa applied fix under Reviewer Rejection Lockout Protocol
+  - **Architectural milestone:** Training pipeline complete, no coupling to frontend (contract enforces decoupling)
+  - **Issue #6 resolved:** All acceptance criteria validated; merged with doc fix
+- **PR #9 Merge (Batou — Backend Integration):**
+  - Endpoints: GET /health (200 + "healthy"), GET /api/model (200 + ONNX stream OR 404 if absent)
+  - Range support, CORS validation, safety wrap (Directory.Exists()), 4 xUnit integration tests
+  - **Architectural strength:** Stable /api/model abstraction future-proofs model versioning; frontend has no hardcoded paths
+  - **Issue #7 resolved:** Backend ready for Major's trained model export
+- **Cross-agent handoff:**
+  - Major: Trains on Google Fonts, exports to models/v1/generator.onnx
+  - Batou: Backend awaits model export; /api/model endpoint will serve it
+  - Togusa: Frontend (PR #4) awaits model; Web Worker protocol ready, no code changes needed
+  - Saito: Ready to validate trained model quality (tensor shapes, ONNX structure, inference output range)
+
+### 2026-02-25T145755: CI automation live, inference pipeline PR open
+- **CI/CD Automation:** Batou configured GitHub Actions workflows (squad-ci.yml, squad-release.yml, squad-preview.yml, squad-pr-auto-label.yml). PR #5 open to dev for review. Workflows automate frontend + backend builds, release creation with auto-generated notes, preview validation, and zero-touch PR labeling + reviewer notification. Labels synced successfully (squad:*, go:, release:, type:, priority:).
+- **Inference Pipeline:** Togusa wired end-to-end inference (inferenceWorker.ts, ModelLoader.ts, assembleCyrillicFont, GeneratorPanel.tsx, appStore.ts). PR #4 open to dev for QA review. Web Worker runs model inference off main thread; UI shows progress and glyph preview.
+- **Next phase:** Saito QA review → merge both PRs to dev → backend server + frontend dev server coordination.
+
+### 2026-02-25: Architecture Kickoff
+- **AI Model:** Chose conditional GAN (pix2pix-style) over diffusion/VAE/transformer. Reasoning: font glyph generation is image-to-image style transfer; pix2pix is proven, compact (~20MB target), ONNX-exportable. Diffusion models are too large/slow for browser. VAEs produce blurry output. Transformers (e.g. SVG-generating) are interesting but less mature.
+- **Runtime:** ONNX Runtime Web over TensorFlow.js — smaller runtime, no framework translation from PyTorch.
+- **Frontend:** React+TypeScript over Blazor WASM — Blazor WASM runtime adds ~5MB+ on top of the ML model. React has better Canvas/SVG ecosystem for glyph rendering.
+- **Backend:** ASP.NET Core Minimal API — just serves static model files + SPA + font validation. No server-side inference.
+- **Training data:** Google Fonts corpus (~400 fonts with paired Latin+Cyrillic). PyTorch for training.
+- **Output pipeline:** Model → raster glyph → vectorize (potrace) → OpenType font assembly (opentype.js) → downloadable OTF.
+- **Open questions identified:** Cyrillic scope (Russian-only vs Extended), quality bar for v1, hosting target, model/data licensing.
+
+### 2026-02-25: Branching policy overhaul
+- **Decision:** Main branch is releases-only; dev is integration branch. All feature work via feature branches from dev.
+- **Implementation:** Removed .squad/ from main via .gitignore. PR #2 targets dev with branching policy changes.
+- **Workflow impact:** All squad tooling lives on dev/feature branches, not main. Preserves clean release history on main.
+PR #5 approved after Batou added missing test steps.

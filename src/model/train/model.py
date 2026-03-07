@@ -188,17 +188,13 @@ class UNetGenerator(nn.Module):
         self.dec2 = _deconv_block(nf * 8 * 2,   nf * 8, dropout=True)   # → [nf*8, 4, 4]  (+skip enc6)
         self.dec3 = _deconv_block(nf * 8 * 2,   nf * 8, dropout=True)   # → [nf*8, 8, 8]  (+skip enc5)
         self.dec4 = _deconv_block(nf * 8 * 2,   nf * 8)                  # → [nf*8,16,16]  (+skip enc4)
-        self.dec5 = _deconv_block(nf * 8 * 2,   nf * 4)                  # → [nf*4,32,32]  (+skip enc3)
-        self.dec6 = _deconv_block(nf * 4 * 2,   nf * 2)                  # → [nf*2,64,64]  (+skip enc2)
-        self.dec7 = _deconv_block(nf * 2 * 2,   nf)                      # → [nf, 128,128] (+skip enc1)
+        self.dec5 = _deconv_block(nf * 8 + nf * 4,   nf * 4)                  # → [nf*4,32,32]  (+skip enc3)
+        self.dec6 = _deconv_block(nf * 4 + nf * 2,   nf * 2)                  # → [nf*2,64,64]  (+skip enc2)
+        self.dec7 = _deconv_block(nf * 2 + nf,       nf)                      # → [nf, 128,128] (+skip enc1)
 
-        self.final = nn.Sequential(
-            nn.ConvTranspose2d(nf * 2, 1, kernel_size=4, stride=2, padding=1),  # shouldn't upsample here
-            nn.Tanh(),
-        )
         # Correct final layer: no upsampling needed after dec7 (already 128×128).
         self.final = nn.Sequential(
-            nn.Conv2d(nf * 2, 1, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(nf, 1, kernel_size=3, stride=1, padding=1),
             nn.Tanh(),
         )
 
@@ -242,8 +238,7 @@ class UNetGenerator(nn.Module):
         d = self.dec7(torch.cat([d, e1], dim=1))               # [B, nf,  128,128]
 
         # Final output conv (no upsampling — we're already at 128×128).
-        # Skip connection from enc1 doubles the channel count again.
-        glyph = self.final(torch.cat([d, e1], dim=1))          # [B, 1, 128, 128]
+        glyph = self.final(d)                                           # [B, 1, 128, 128]
         return glyph
 
 

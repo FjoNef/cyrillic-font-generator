@@ -1,4 +1,5 @@
 import * as opentype from 'opentype.js';
+import { CYRILLIC_CHARS } from './cyrillicCharset';
 
 /** Latin reference glyphs used for style conditioning (10 characters). */
 const STYLE_CHARS = ['A', 'B', 'C', 'D', 'E', 'H', 'I', 'O', 'R', 'X'] as const;
@@ -34,14 +35,12 @@ export class FontLoader {
       ctx.fillRect(0, 0, RENDER_SIZE, RENDER_SIZE);
 
       const glyph = font.charToGlyph(STYLE_CHARS[i]);
-      const unitsPerEm = font.unitsPerEm;
-      const scale = (RENDER_SIZE - RENDER_PADDING * 2) / unitsPerEm;
       const baseline = RENDER_SIZE - RENDER_PADDING;
 
       const path = glyph.getPath(RENDER_PADDING, baseline, RENDER_SIZE - RENDER_PADDING * 2);
       path.fill = 'black';
 
-      const path2d = new Path2D(path.toSVG()!);
+      const path2d = new Path2D(path.toSVG(2));
       ctx.fillStyle = 'black';
       ctx.fill(path2d);
 
@@ -60,25 +59,114 @@ export class FontLoader {
   }
 
   /**
-   * Assemble a new OTF font by injecting vectorized Cyrillic glyphs into the source font.
-   *
-   * @param sourceFont     The user's original font (provides metrics, Latin glyphs, metadata)
-   * @param generatedGlyphs  Map of Cyrillic char → 128×128 ImageData from model inference
-   * @returns              ArrayBuffer of the assembled .otf file, ready for download
-   *
-   * TODO: implement potrace vectorization (ImageData → SVG path) and glyph injection.
-   *       Steps:
-   *       1. For each entry in generatedGlyphs, binarize ImageData
-   *       2. Run potrace (JS port) to get SVG path string
-   *       3. Scale SVG path from 128px → font units (sourceFont.unitsPerEm)
-   *       4. Create opentype.Glyph with path + advance width from sourceFont metrics
-   *       5. Clone sourceFont glyphs array, append/replace Cyrillic glyphs
-   *       6. Serialize with font.download() or font.arrayBuffer()
+   * Assemble a new OTF font with generated Cyrillic glyphs.
+   * 
+   * @param _styleGlyphs    The 10 Latin style glyphs as Float32Array [10, 1, 128, 128] (unused, kept for API compatibility)
+   * @param inferFn         Async function (charIndex: number) => Float32Array output [128*128]
+   * @returns               ArrayBuffer of the assembled .otf file
    */
-  assembleCyrillicFont(
-    _sourceFont: opentype.Font,
-    _generatedGlyphs: Map<string, ImageData>
-  ): ArrayBuffer {
-    throw new Error('TODO: assembleCyrillicFont not yet implemented — waiting for potrace integration');
+  async assembleCyrillicFont(
+    _styleGlyphs: Float32Array,
+    inferFn: (charIndex: number) => Promise<Float32Array>
+  ): Promise<ArrayBuffer> {
+    // Generate all 66 Cyrillic glyphs
+    const glyphImages = new Map<string, Float32Array>();
+
+    for (const { char, index } of CYRILLIC_CHARS) {
+      const output = await inferFn(index);
+      glyphImages.set(char, output);
+    }
+
+    // Create a new font with basic metrics
+    const unitsPerEm = 1000;
+    const ascender = 800;
+    const descender = -200;
+    const advanceWidth = 600;
+
+    const notdefGlyph = new opentype.Glyph({
+      name: '.notdef',
+      unicode: undefined,
+      advanceWidth: advanceWidth,
+      path: new opentype.Path(),
+    });
+
+    const glyphs: opentype.Glyph[] = [notdefGlyph];
+
+    // Add Cyrillic glyphs
+    for (const { char, unicode } of CYRILLIC_CHARS) {
+      const imageData = glyphImages.get(char)!;
+      const path = this.vectorizeGlyph(imageData, unitsPerEm);
+
+      const glyph = new opentype.Glyph({
+        name: `uni${unicode.toString(16).toUpperCase().padStart(4, '0')}`,
+        unicode: unicode,
+        advanceWidth: advanceWidth,
+        path: path,
+      });
+
+      glyphs.push(glyph);
+    }
+
+    const font = new opentype.Font({
+      familyName: 'Generated Cyrillic',
+      styleName: 'Regular',
+      unitsPerEm: unitsPerEm,
+      ascender: ascender,
+      descender: descender,
+      glyphs: glyphs,
+    });
+
+    return font.toArrayBuffer();
+  }
+
+  /**
+   * Vectorize a 128×128 float32 glyph image to an opentype.Path.
+   * Uses threshold-based contour extraction.
+   * 
+   * @param data  Float32Array [128*128], values in [-1, 1] (1=ink, -1=background)
+   * @param upm   Target units per em for scaling
+   * @returns     opentype.Path in font coordinate space
+   */
+  private vectorizeGlyph(data: Float32Array, upm: number): opentype.Path {
+    const size = 128;
+    const threshold = 0.0; // Values > 0 are considered ink
+
+    // Binarize to boolean array
+    const binary = new Array(size * size);
+    for (let i = 0; i < size * size; i++) {
+      binary[i] = data[i] > threshold;
+    }
+
+    const path = new opentype.Path();
+    const scale = upm / size;
+
+    // Simple scanline-based path generation
+    // For each row, find runs of ink pixels and draw rectangles
+    for (let y = 0; y < size; y++) {
+      let startX = -1;
+      for (let x = 0; x <= size; x++) {
+        const isInk = x < size && binary[y * size + x];
+        
+        if (isInk && startX === -1) {
+          startX = x;
+        } else if (!isInk && startX !== -1) {
+          // Draw horizontal segment from startX to x-1
+          const x0 = startX * scale;
+          const x1 = x * scale;
+          const y0 = (size - y - 1) * scale; // Flip Y for font coords
+          const y1 = (size - y) * scale;
+
+          path.moveTo(x0, y0);
+          path.lineTo(x1, y0);
+          path.lineTo(x1, y1);
+          path.lineTo(x0, y1);
+          path.close();
+
+          startX = -1;
+        }
+      }
+    }
+
+    return path;
   }
 }
