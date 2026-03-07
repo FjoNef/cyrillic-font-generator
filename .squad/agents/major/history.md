@@ -178,3 +178,18 @@ Wrote 9 regression tests in `src/model/tests/test_style_conditioning.py` to guar
 ### 2026-03-07: GPU Training Optimizations (Issue #42) [Orchestrated]
 
 Decision: Two independent GradScalers (one per G/D optimizer) for AMP training. Batch size remains 32; VRAM envelope 16–64 documented for user tuning. Decision merged to decisions.md. PR #43 ready for merge.
+
+---
+
+### 2026-03-07T21:44:55Z: PR #43 Restructure & PR #45 Creation
+
+**By:** Batou (ML engineer)
+
+**Actions:**
+- **Closed PR #43** — Wrong branch target (dev→main instead of dev feature) and wrong parent (mixed style-conditioning with training perf)
+- **Reverted commit 171c92d from dev** — Training perf changes removed, dev restored to clean state
+- **Created squad/42-training-perf branch** — Isolated feature branch for training optimizations
+- **Applied Saito's review fixes** — persistent_workers conditional, 6 AMP smoke tests, torch.amp import, TRAINING.md alignment
+- **Opened PR #45** — squad/42-training-perf → dev (all training optimizations + all review fixes included)
+
+**Outcome:** PR #45 ready for merge (supersedes PR #43). dev branch clean. Training perf changes properly isolated.

@@ -2337,3 +2337,9 @@ const safeStyleGlyphs = styleGlyphs.buffer instanceof SharedArrayBuffer
 
 This pattern is consistent with the spirit of PR #40's output copy fix (`return new Float32Array(outputData)` in `inferenceWorker.ts`). The output fix is unconditional because output buffers are always ORT-owned WASM memory (always SAB in cross-origin-isolated context); the input fix is conditional because callers in normal test code pass plain ArrayBuffer-backed Float32Arrays.
 
+
+
+### 2026-03-07: PR #43 restructure
+**By:** Batou (via Copilot)
+**What:** PR #43 closed. Training perf changes moved to squad/42-training-perf → dev. 171c92d reverted from dev. Saito's fixes applied: persistent_workers conditional, AMP smoke test added.
+**Why:** Major committed directly to dev instead of feature branch. PR targeted main instead of dev.
