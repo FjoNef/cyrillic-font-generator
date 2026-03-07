@@ -143,3 +143,32 @@ Wrote 9 regression tests in `src/model/tests/test_style_conditioning.py` to guar
 - Feature matching tensor shapes
 
 **Result:** All 9 tests pass in 2.3s. Test suite now prevents regression when retraining begins.
+
+---
+
+### 2026-03-08: Training Pipeline GPU Optimizations (Issue #42)
+
+**Task:** Optimize training for NVIDIA RTX 3070Ti Laptop GPU (8GB VRAM).
+
+**Changes made:**
+
+1. **AMP (Automatic Mixed Precision)** — Added `torch.cuda.amp.GradScaler` + `autocast` context manager around all forward + loss computation in both D and G training steps. Used two separate scalers (`scaler_g`, `scaler_d`) — one per optimizer — to handle independent backward passes cleanly. `GradScaler(enabled=use_amp)` is a no-op on CPU so training remains compatible.
+
+2. **cudnn.benchmark = True** — Added immediately after CUDA device detection. Lets cuDNN auto-benchmark and cache the fastest convolution algorithm for our fixed 128×128 spatial dims. Adds ~30 s on first epoch; pays off over 200 epochs.
+
+3. **DataLoader `persistent_workers=True`** — Prevents Python worker processes from being destroyed and respawned at epoch boundaries. Especially valuable on Windows where process creation is expensive. Already had `num_workers=min(4, cpu_count)` and `pin_memory=True`.
+
+4. **Epoch timing** — Added `import time` and `epoch_start = time.time()` at top of each epoch loop; prints `Epoch N completed in X.Xs` after each epoch for before/after benchmarking.
+
+5. **TRAINING.md** — New file at `src/model/TRAINING.md` documenting: how to run training on RTX 3070Ti Laptop, power mode setup (Windows + Linux), `nvidia-smi dmon` monitoring, AMP rationale, batch size VRAM table, expected epoch time benchmarks.
+
+6. **Config comment** — Added VRAM guidance comment to `batch_size` in `train_config.yaml`.
+
+**Key files changed:**
+- `src/model/train/train.py` — AMP, cudnn.benchmark, persistent_workers, epoch timing
+- `src/model/configs/train_config.yaml` — batch_size comment
+- `src/model/TRAINING.md` — new training guide
+
+**All 9 regression tests pass** after changes.
+
+**PR:** #43 (dev → main), closes #42.

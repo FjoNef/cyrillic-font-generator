@@ -1,9 +1,19 @@
-squad: Merge session log and decisions — PR #40 merged
+Session: style conditioning fixes applied and regression tests added
 
-- Orchestration logs for Togusa, Saito, Aramaki (issue #39 fix session)
-- Session log: SharedArrayBuffer output aliasing fix merged to dev
-- Merged decisions/inbox to decisions.md (togusa + saito decisions)
-- Updated agent history: Togusa and Saito outcomes documented
-- PR #40 merged to dev: all 114/114 tests passing
+Agents completed:
+- Major (ML Engineer): Fixed UNetGenerator encoder input bug and loss rebalancing
+  * Changed blank-canvas encoder input to style_glyph_0 (first style reference glyph)
+  * Refactored PatchDiscriminator with forward_with_features() for feature-matching loss
+  * Reduced lambda_l1 from 100→10, added lambda_fm=10
+  * ONNX export contract unchanged
+  
+- Aramaki (Lead): Created GitHub issue #42 for training performance optimization
+  * Proposed optimizations: mixed precision, CUDA tuning, batch size, data loading, profiling
+  
+- Saito (Tester): Wrote regression tests (9/9 passing)
+  * Guards against reintroduction of style conditioning bugs
+  * Tests cover encoder input, skip connections, loss values, discriminator interface
+
+Session logs and decisions merged to decisions.md
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
