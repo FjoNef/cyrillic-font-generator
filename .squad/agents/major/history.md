@@ -96,3 +96,23 @@ Three compounding causes:
 
 **Blocking Issue:** Model must be retrained. No inference-time changes can fix trained-out style conditioning.
 
+---
+
+### 2026-03-07: Style-Conditioning Fix Applied
+
+**Task:** Fix the two compounding bugs that caused style-invariant output.
+
+**Changes made:**
+
+1. **`UNetGenerator.forward()` — Bug 1 fixed:** Replaced `torch.zeros(B, 1, 128, 128)` encoder input with `style_glyph_0` (the first style reference glyph, shape `[B, 1, 128, 128]`). The method now takes a third parameter `style_glyph_0`. All 6 U-Net skip connections (e1–e6) now carry real per-font structure at every spatial scale instead of being constant zeros.
+
+2. **`PatchDiscriminator` — Refactored for feature matching:** Split `self.model` (a single `nn.Sequential`) into named layers `layer1`–`layer4` + `final`. Added `forward_with_features()` method returning logits + a list of 4 intermediate feature tensors for use in discriminator feature-matching loss.
+
+3. **Loss rebalancing — Bug 2 fixed:** 
+   - `lambda_l1`: 100 → 10 (in `train_config.yaml`, synthetic defaults in `train.py`)
+   - `lambda_fm = 10.0` added: feature-matching loss `Σ L1(D_feat(G(z)), D_feat(y))` applied across all 4 discriminator layers, multiplied by `lambda_fm`. Added `lambda_fm` key to `train_config.yaml`.
+   - `torch.nn.functional as F` added to `train.py` imports.
+
+4. **`export_onnx.py` — ONNX wrapper updated:** `FontGeneratorONNX.forward()` now extracts `style_glyphs[:, 0]` and passes it as `style_glyph_0` to `generator()`. ONNX input contract unchanged: `style_glyphs [B, 10, 1, 128, 128]` and `char_index [B]` remain the two ONNX-visible inputs.
+
+**Key lesson:** The U-Net skip connections are the primary carrier of spatial structure across decoder scales. Feeding them with constant zeros (blank canvas) made the generator learn structure-independent decoding — style only entered at the 1×1 bottleneck and was diluted across 6 decoder stages before reaching output resolution.

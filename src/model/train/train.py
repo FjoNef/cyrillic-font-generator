@@ -26,9 +26,10 @@ Flags
 Losses
 ------
   Generator loss:
-    L_GAN  = BCE(D(G(z)), real)          — fool the discriminator
-    L_L1   = L1(G(z), y) * lambda_l1    — pixel-level reconstruction
-    L_G    = L_GAN + L_L1
+    L_GAN  = BCE(D(G(z)), real)                          — fool the discriminator
+    L_L1   = L1(G(z), y) * lambda_l1                    — pixel-level reconstruction
+    L_FM   = Σ L1(D_feat(G(z)), D_feat(y)) * lambda_fm  — discriminator feature matching
+    L_G    = L_GAN + L_L1 + L_FM
 
   Discriminator loss:
     L_D    = 0.5 * [BCE(D(y), real) + BCE(D(G(z)), fake)]
@@ -47,6 +48,7 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 import yaml
@@ -160,7 +162,8 @@ def train(
                 "lr_discriminator": 0.0002,
                 "beta1": 0.5,
                 "beta2": 0.999,
-                "lambda_l1": 100,
+                "lambda_l1": 10,
+                "lambda_fm": 10,
                 "checkpoint_interval": 10,
                 "log_interval": 100,
             },
@@ -246,6 +249,7 @@ def train(
     criterion_gan = nn.BCEWithLogitsLoss()
     criterion_l1 = nn.L1Loss()
     lambda_l1 = train_cfg["lambda_l1"]
+    lambda_fm = train_cfg.get("lambda_fm", 10.0)
 
     # --- Resume ---
     start_epoch = 0
@@ -268,6 +272,7 @@ def train(
         epoch_loss_g = 0.0
         epoch_loss_d = 0.0
         epoch_loss_l1 = 0.0
+        epoch_loss_fm = 0.0
         
         # Log GPU memory at start of epoch
         if device.type == "cuda":
@@ -293,7 +298,7 @@ def train(
 
             # -------- Train Discriminator --------
             opt_d.zero_grad()
-            fake_glyph = generator(style_emb.detach(), char_index).detach()
+            fake_glyph = generator(style_emb.detach(), char_index, cond_glyph).detach()
 
             real_logits = discriminator(target_glyph, cond_glyph)
             fake_logits = discriminator(fake_glyph, cond_glyph)
@@ -306,24 +311,31 @@ def train(
 
             # -------- Train Generator --------
             opt_g.zero_grad()
-            fake_glyph = generator(style_emb, char_index)
-            fake_logits_g = discriminator(fake_glyph, cond_glyph)
+            fake_glyph = generator(style_emb, char_index, cond_glyph)
+            fake_logits_g, fake_features = discriminator.forward_with_features(fake_glyph, cond_glyph)
+            _, real_features = discriminator.forward_with_features(target_glyph, cond_glyph)
 
             loss_gan = _gan_loss(fake_logits_g, True, criterion_gan)
             loss_l1  = criterion_l1(fake_glyph, target_glyph) * lambda_l1
-            loss_g   = loss_gan + loss_l1
+            loss_fm  = sum(
+                F.l1_loss(ff, rf.detach())
+                for ff, rf in zip(fake_features, real_features)
+            ) * lambda_fm
+            loss_g   = loss_gan + loss_l1 + loss_fm
             loss_g.backward()
             opt_g.step()
 
             epoch_loss_g  += loss_g.item()
             epoch_loss_d  += loss_d.item()
             epoch_loss_l1 += loss_l1.item()
+            epoch_loss_fm += loss_fm.item()
 
             if batch_idx % log_interval == 0:
                 pbar.set_postfix(
                     G=f"{loss_g.item():.4f}",
                     D=f"{loss_d.item():.4f}",
                     L1=f"{loss_l1.item():.4f}",
+                    FM=f"{loss_fm.item():.4f}",
                 )
 
         n_batches = len(train_loader)
@@ -331,7 +343,8 @@ def train(
             f"Epoch {epoch:04d} | "
             f"G={epoch_loss_g/n_batches:.4f}  "
             f"D={epoch_loss_d/n_batches:.4f}  "
-            f"L1={epoch_loss_l1/n_batches:.4f}"
+            f"L1={epoch_loss_l1/n_batches:.4f}  "
+            f"FM={epoch_loss_fm/n_batches:.4f}"
         )
 
         if epoch % checkpoint_interval == 0:

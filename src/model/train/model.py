@@ -139,8 +139,11 @@ class UNetGenerator(nn.Module):
     concatenation before the first decoder block.
 
     Input:
-        style_emb  : [B, style_dim]   float32
-        char_index : [B]              int64   (values 0–65)
+        style_emb     : [B, style_dim]   float32
+        char_index    : [B]              int64   (values 0–65)
+        style_glyph_0 : [B, 1, 128, 128] float32 — first reference glyph used as
+                        encoder input so all 6 skip connections carry per-font
+                        structure (rather than constant zeros).
     Output:
         glyph      : [B, 1, 128, 128] float32  values in [-1, 1]
 
@@ -170,10 +173,10 @@ class UNetGenerator(nn.Module):
         )
 
         # --- Encoder (image input path) ---
-        # Input: blank 128×128 canvas (zeros) + spatially-tiled conditioning.
-        # We inject conditioning at the very first conv so the network learns
-        # to generate from scratch rather than transform an existing image.
-        # Encoder expects 1 input channel (grayscale skeleton / blank canvas).
+        # Input: first style reference glyph [B, 1, 128, 128].
+        # Running a real per-font image through the encoder ensures that all
+        # 6 skip connections carry style-specific structure at every spatial
+        # scale, rather than being constant zeros.
         self.enc1 = _conv_block(1,      nf,       norm=False)  # 64  → [nf,   64, 64]
         self.enc2 = _conv_block(nf,     nf * 2)               # 64  → [nf*2, 32, 32]
         self.enc3 = _conv_block(nf * 2, nf * 4)               # 32  → [nf*4, 16, 16]
@@ -200,8 +203,9 @@ class UNetGenerator(nn.Module):
 
     def forward(
         self,
-        style_emb: torch.Tensor,   # [B, style_dim]
-        char_index: torch.Tensor,  # [B] int64
+        style_emb: torch.Tensor,      # [B, style_dim]
+        char_index: torch.Tensor,     # [B] int64
+        style_glyph_0: torch.Tensor,  # [B, 1, 128, 128] — first reference glyph
     ) -> torch.Tensor:
         """
         Returns
@@ -209,7 +213,6 @@ class UNetGenerator(nn.Module):
         glyph : [B, 1, 128, 128]  float32  values in [-1, 1]
         """
         B = style_emb.shape[0]
-        device = style_emb.device
 
         # Build conditioning vector.
         char_emb = self.char_embedding(char_index)              # [B, char_emb_dim]
@@ -217,8 +220,9 @@ class UNetGenerator(nn.Module):
         cond_feat = self.cond_proj(cond)                        # [B, 512]
         cond_spatial = cond_feat.view(B, 512, 1, 1)            # [B, 512, 1, 1]
 
-        # Encoder: blank canvas input.
-        x = torch.zeros(B, 1, 128, 128, device=device)
+        # Encoder: use the first style reference glyph so all skip connections
+        # carry per-font structure at every spatial scale.
+        x = style_glyph_0                                       # [B, 1, 128, 128]
         e1 = self.enc1(x)    # [B, nf,   64, 64]
         e2 = self.enc2(e1)   # [B, nf*2, 32, 32]
         e3 = self.enc3(e2)   # [B, nf*4, 16, 16]
@@ -259,18 +263,20 @@ class PatchDiscriminator(nn.Module):
         style_glyph : [B, 1, 128, 128]  — one Latin reference glyph (conditioning)
     Output:
         patch_logits : [B, 1, 14, 14]   — real/fake score per 70×70 patch
+
+    The four intermediate feature maps (layer1–layer4 outputs) are exposed via
+    forward_with_features() for discriminator feature-matching loss.
     """
 
     def __init__(self, in_channels: int = 2, ndf: int = 64) -> None:
         super().__init__()
-        # Standard PatchGAN architecture (from pix2pix paper).
-        self.model = nn.Sequential(
-            _conv_block(in_channels, ndf,       norm=False),   # [B, ndf,   64, 64]
-            _conv_block(ndf,         ndf * 2),                  # [B, ndf*2, 32, 32]
-            _conv_block(ndf * 2,     ndf * 4),                  # [B, ndf*4, 16, 16]
-            _conv_block(ndf * 4,     ndf * 8, stride=1),        # [B, ndf*8, 15, 15]
-            nn.Conv2d(ndf * 8, 1, kernel_size=4, stride=1, padding=1),  # [B, 1, 14, 14]
-        )
+        # Standard PatchGAN architecture (from pix2pix paper) split into named
+        # layers so intermediate features can be extracted for feature matching.
+        self.layer1 = _conv_block(in_channels, ndf,       norm=False)   # [B, ndf,   64, 64]
+        self.layer2 = _conv_block(ndf,         ndf * 2)                  # [B, ndf*2, 32, 32]
+        self.layer3 = _conv_block(ndf * 2,     ndf * 4)                  # [B, ndf*4, 16, 16]
+        self.layer4 = _conv_block(ndf * 4,     ndf * 8, stride=1)        # [B, ndf*8, 15, 15]
+        self.final  = nn.Conv2d(ndf * 8, 1, kernel_size=4, stride=1, padding=1)  # [B, 1, 14, 14]
 
     def forward(
         self,
@@ -283,4 +289,25 @@ class PatchDiscriminator(nn.Module):
         patch_logits : [B, 1, 14, 14]  (raw logits, no sigmoid)
         """
         x = torch.cat([image, style_glyph], dim=1)   # [B, 2, 128, 128]
-        return self.model(x)
+        return self.final(self.layer4(self.layer3(self.layer2(self.layer1(x)))))
+
+    def forward_with_features(
+        self,
+        image: torch.Tensor,        # [B, 1, 128, 128]
+        style_glyph: torch.Tensor,  # [B, 1, 128, 128]
+    ) -> tuple[torch.Tensor, list[torch.Tensor]]:
+        """
+        Returns patch logits and a list of intermediate feature maps for use in
+        discriminator feature-matching loss.
+
+        Returns
+        -------
+        patch_logits : [B, 1, 14, 14]
+        features     : list of 4 tensors — layer1..layer4 activations
+        """
+        x  = torch.cat([image, style_glyph], dim=1)
+        f1 = self.layer1(x)
+        f2 = self.layer2(f1)
+        f3 = self.layer3(f2)
+        f4 = self.layer4(f3)
+        return self.final(f4), [f1, f2, f3, f4]

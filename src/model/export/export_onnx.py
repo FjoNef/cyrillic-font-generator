@@ -90,8 +90,9 @@ class FontGeneratorONNX(torch.nn.Module):
         style_glyphs: torch.Tensor,   # [B, N, 1, 128, 128]
         char_index: torch.Tensor,     # [B]
     ) -> torch.Tensor:
-        style_emb = self.style_encoder(style_glyphs)         # [B, 256]
-        return self.generator(style_emb, char_index)          # [B, 1, 128, 128]
+        style_emb = self.style_encoder(style_glyphs)                       # [B, 256]
+        style_glyph_0 = style_glyphs[:, 0]                                 # [B, 1, 128, 128]
+        return self.generator(style_emb, char_index, style_glyph_0)        # [B, 1, 128, 128]
 
 
 # ---------------------------------------------------------------------------

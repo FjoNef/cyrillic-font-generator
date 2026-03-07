@@ -33,7 +33,8 @@ training:
   lr_discriminator: 0.0002
   beta1: 0.5                       # Adam beta1 (standard for GANs)
   beta2: 0.999                     # Adam beta2
-  lambda_l1: 100                   # pix2pix L1 reconstruction loss weight
+  lambda_l1: 10                    # pix2pix L1 reconstruction loss weight (reduced from 100 to cut average-shape bias)
+  lambda_fm: 10                    # discriminator feature-matching loss weight
   checkpoint_interval: 10          # Save checkpoint every N epochs
   log_interval: 100                # Log losses every N batches
 
