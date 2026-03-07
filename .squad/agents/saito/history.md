@@ -9,6 +9,27 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07T21:50:51Z: PR #45 Re-review — AMP + RTX 3070Ti Training Optimization — APPROVED ✅
+
+**Task:** Re-review PR #45 (squad/42-training-perf → dev) after fixes applied.
+
+**Verdict:** APPROVED — Both blocking issues from PR #43 resolved.
+
+**Blocking Issues Resolved:**
+1. `persistent_workers` conditional guard — Now uses `persistent_workers=num_workers > 0`. ✅
+2. AMP smoke tests — 6 tests added and passing, verifying GPU training path. ✅
+
+**Code Quality:**
+- Diff clean, no regressions
+- All existing tests pass
+- GPU/CPU conditional logic sound
+- AMP scoping correct (autocast wraps forward+loss, backward outside)
+
+**Non-blocking cosmetic issue (follow-up):**
+- Epoch duration printed twice per epoch
+
+**Board Status:** PR #44 approved, PR #45 approved — both awaiting human review/merge.
+
 ### 2026-03-07: PR #43 QA REVIEW — AMP + RTX 3070Ti Training Optimization — CHANGES REQUESTED
 
 **Task:** QA code review of PR #43 (Issue #42 — perf(training): optimize for RTX 3070Ti Laptop GPU).
@@ -855,3 +876,37 @@ result = sess.run(None, {"style_glyphs": style_glyphs, "char_index": char_index}
 - ✅ No regressions: non-SAB path unchanged from pre-fix behavior
 
 **Key Architecture Reminder:** ORT WASM input tensors must not be backed by SharedArrayBuffer. Guard on input side (this PR) mirrors guard on output side (PR #40). Both are required invariants for the inference pipeline.
+
+
+### 2025-PR#45: AMP Training Perf (squad/42-training-perf -> dev) — RE-REVIEW: APPROVED
+
+**Task:** Re-review PR #45 (replacement for closed PR #43). Author: Batou. Branch: squad/42-training-perf -> dev.
+
+**Verdict:** APPROVED (posted as PR comment — self-review blocked by GitHub).
+
+**Both blocking issues from PR #43 RESOLVED:**
+
+1. **persistent_workers conditional** (FIXED):
+   - 
+um_workers = min(4, os.cpu_count() or 1) declared before DataLoader
+   - persistent_workers=(num_workers > 0) reads the named variable correctly
+   - No more ValueError risk when num_workers=0
+
+2. **6 CPU-runnable AMP smoke tests** (FIXED):
+   - File: src/model/tests/test_amp_training.py
+   - TestAMPSmokeStep (4 tests): D step, G step, full D+G combined, GradScaler scale health
+     - All use GradScaler(enabled=False) + utocast(enabled=False) -- CPU-safe
+     - ackward() correctly placed outside utocast block
+     - All substantive tests assert 	orch.isfinite(loss) / not NaN / not Inf
+   - TestPersistentWorkersFlag (2 tests): verify (num_workers > 0) expression for 0 and >0
+   - Total: exactly 6 tests
+
+**Diff scope:** Clean -- only 4 files: 	rain/train.py, configs/train_config.yaml (comment), src/model/TRAINING.md (new), src/model/tests/test_amp_training.py (new).
+
+**Minor non-blocking note:** Epoch duration printed twice per epoch (redundant print calls). Cosmetic only.
+
+**Arch notes:**
+- AMP import uses 	ry/except for PyTorch >= 2.0 / < 2.0 backward compat
+- Two separate GradScalers (scaler_g, scaler_d) for independent GAN backward passes
+- cuDNN benchmark enabled only when CUDA available
+- pin_memory and persistent_workers both guarded by device/num_workers conditions

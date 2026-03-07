@@ -9,6 +9,16 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07T21:50:51Z: Saito Approved PR #45 (squad/42-training-perf)
+
+**Status:** Cross-agent notification
+
+Saito completed re-review of PR #45 and approved. Both blocking issues from initial PR #43 review have been resolved:
+- persistent_workers conditional guard implemented
+- 6 AMP smoke tests added and passing
+
+This unblocks PR #45 for human review/merge. Your revision is locked in as approved by QA.
+
 ### 2026-03-07: Fix ModelPath 404 in Development (Issue #35)
 
 **Status:** COMPLETE — PR #36 targeting dev
