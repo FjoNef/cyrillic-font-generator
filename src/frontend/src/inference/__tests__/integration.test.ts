@@ -183,4 +183,37 @@ describe('Inference Pipeline Integration', () => {
 
     expect(revoke).toHaveBeenCalledWith('blob:test-url');
   });
+
+  it('each infer result is an independent copy — not a shared-buffer alias (regression: #39)', async () => {
+    // Simulate the ORT WASM SharedArrayBuffer reuse scenario:
+    // The "worker" sends the SAME Float32Array reference every call and
+    // overwrites its values before each response.  Without a defensive copy in
+    // ModelLoader.resolve (or in the worker), all stored results would reflect
+    // only the last inference, making every assembled glyph identical.
+    const sharedOutput = new Float32Array(128 * 128);
+    let seq = 0;
+
+    mockWorker.postMessage = vi.fn((msg: any) => {
+      if (msg.type === 'infer') {
+        Promise.resolve().then(() => {
+          sharedOutput.fill(++seq); // overwrite buffer with incrementing sentinel
+          mockWorker.onmessage?.({ data: { type: 'result', output: sharedOutput, requestId: msg.requestId } });
+        });
+      }
+    });
+
+    await loadModel();
+
+    const styleGlyphs = new Float32Array(10 * 128 * 128).fill(0.5);
+    const r1 = await modelLoader.infer(styleGlyphs, 0);
+    const r2 = await modelLoader.infer(styleGlyphs, 1);
+    const r3 = await modelLoader.infer(styleGlyphs, 2);
+
+    // Each result must snapshot the value it had at the moment of inference.
+    // Without defensive copy: r1[0] === r2[0] === r3[0] === 3 (all overwritten).
+    // With copy in ModelLoader.resolve: r1[0] === 1, r2[0] === 2, r3[0] === 3.
+    expect(r1[0]).toBe(1);
+    expect(r2[0]).toBe(2);
+    expect(r3[0]).toBe(3);
+  });
 });

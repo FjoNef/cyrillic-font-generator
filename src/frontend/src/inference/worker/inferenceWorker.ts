@@ -105,6 +105,14 @@ async function runInference(
   const outputTensor = results['generated_glyph'] ?? results['output'] ?? Object.values(results)[0];
   const outputData = outputTensor.data as Float32Array;
 
-  // Return raw float32 data [1, 1, 128, 128] → flatten to [16384]
-  return outputData;
+  // ⚠️ Critical: copy output before returning.
+  //
+  // ORT's WASM backend returns a Float32Array that is a *view* into
+  // WebAssembly.Memory. On cross-origin-isolated pages SharedArrayBuffer is
+  // used for WASM memory; postMessage does NOT clone SAB views — the receiver
+  // gets an alias into the same physical memory. ORT reuses its output buffer
+  // between session.run() calls, so without an explicit copy every result stored
+  // in App.tsx rawGlyphs would reflect only the *last* inference, making all 66
+  // assembled glyphs identical regardless of char_index or style input.
+  return new Float32Array(outputData);
 }
