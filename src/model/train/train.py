@@ -44,11 +44,13 @@ from __future__ import annotations
 
 import argparse
 import os
+import time
 from pathlib import Path
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 import yaml
@@ -191,6 +193,9 @@ def train(
         print(f"    GPU: {torch.cuda.get_device_name(0)}")
         print(f"    CUDA version: {torch.version.cuda}")
         print(f"    cuDNN version: {torch.backends.cudnn.version()}")
+        # Lets cuDNN auto-tune the fastest convolution algorithms for fixed input sizes.
+        torch.backends.cudnn.benchmark = True
+        print("    cuDNN benchmark: enabled")
 
     # --- Dataset ---
     if use_synthetic:
@@ -210,12 +215,19 @@ def train(
     train_size = len(dataset) - val_size
     train_ds, val_ds = random_split(dataset, [train_size, val_size])
 
+    use_pin_memory = device.type == "cuda"
+    use_persistent_workers = True  # Eliminates worker respawn overhead each epoch.
+    # batch_size tuning: default is 32. With 8GB VRAM (RTX 3070Ti Laptop) and
+    # style_glyphs shape [B, 10, 1, 128, 128] (~20 MB at FP32 for B=32), you can
+    # experiment with batch_size 16–64. Increase for higher GPU utilisation;
+    # decrease if you hit OOM errors. Override via --batch_size CLI flag.
     train_loader = DataLoader(
         train_ds,
         batch_size=train_cfg["batch_size"],
         shuffle=True,
         num_workers=min(4, os.cpu_count() or 1),
-        pin_memory=device.type == "cuda",
+        pin_memory=use_pin_memory,
+        persistent_workers=use_persistent_workers,
     )
     print(f"Dataset: {len(train_ds)} train / {len(val_ds)} val samples")
 
@@ -251,6 +263,15 @@ def train(
     lambda_l1 = train_cfg["lambda_l1"]
     lambda_fm = train_cfg.get("lambda_fm", 10.0)
 
+    # Automatic Mixed Precision scalers — one per optimizer to handle separate
+    # backward passes for generator and discriminator independently.
+    # GradScaler is a no-op when CUDA is unavailable (CPU training stays FP32).
+    use_amp = device.type == "cuda"
+    scaler_g = GradScaler(enabled=use_amp)
+    scaler_d = GradScaler(enabled=use_amp)
+    if use_amp:
+        print("[*] AMP (FP16 mixed precision) enabled")
+
     # --- Resume ---
     start_epoch = 0
     if resume:
@@ -273,7 +294,8 @@ def train(
         epoch_loss_d = 0.0
         epoch_loss_l1 = 0.0
         epoch_loss_fm = 0.0
-        
+        epoch_start = time.time()
+
         # Log GPU memory at start of epoch
         if device.type == "cuda":
             torch.cuda.synchronize()
@@ -293,37 +315,43 @@ def train(
             # Pick first style glyph as discriminator conditioning image.
             cond_glyph = style_glyphs[:, 0]   # [B, 1, H, W]
 
-            # -------- Encode style --------
-            style_emb = style_encoder(style_glyphs)   # [B, style_dim]
-
             # -------- Train Discriminator --------
             opt_d.zero_grad()
-            fake_glyph = generator(style_emb.detach(), char_index, cond_glyph).detach()
+            with autocast(enabled=use_amp):
+                # Encode style — reused for both D and G steps.
+                style_emb = style_encoder(style_glyphs)   # [B, style_dim]
+                fake_glyph = generator(style_emb.detach(), char_index, cond_glyph).detach()
 
-            real_logits = discriminator(target_glyph, cond_glyph)
-            fake_logits = discriminator(fake_glyph, cond_glyph)
+                real_logits = discriminator(target_glyph, cond_glyph)
+                fake_logits = discriminator(fake_glyph, cond_glyph)
 
-            loss_d_real = _gan_loss(real_logits, True, criterion_gan)
-            loss_d_fake = _gan_loss(fake_logits, False, criterion_gan)
-            loss_d = 0.5 * (loss_d_real + loss_d_fake)
-            loss_d.backward()
-            opt_d.step()
+                loss_d_real = _gan_loss(real_logits, True, criterion_gan)
+                loss_d_fake = _gan_loss(fake_logits, False, criterion_gan)
+                loss_d = 0.5 * (loss_d_real + loss_d_fake)
+
+            scaler_d.scale(loss_d).backward()
+            scaler_d.step(opt_d)
+            scaler_d.update()
 
             # -------- Train Generator --------
             opt_g.zero_grad()
-            fake_glyph = generator(style_emb, char_index, cond_glyph)
-            fake_logits_g, fake_features = discriminator.forward_with_features(fake_glyph, cond_glyph)
-            _, real_features = discriminator.forward_with_features(target_glyph, cond_glyph)
+            with autocast(enabled=use_amp):
+                style_emb = style_encoder(style_glyphs)   # [B, style_dim]
+                fake_glyph = generator(style_emb, char_index, cond_glyph)
+                fake_logits_g, fake_features = discriminator.forward_with_features(fake_glyph, cond_glyph)
+                _, real_features = discriminator.forward_with_features(target_glyph, cond_glyph)
 
-            loss_gan = _gan_loss(fake_logits_g, True, criterion_gan)
-            loss_l1  = criterion_l1(fake_glyph, target_glyph) * lambda_l1
-            loss_fm  = sum(
-                F.l1_loss(ff, rf.detach())
-                for ff, rf in zip(fake_features, real_features)
-            ) * lambda_fm
-            loss_g   = loss_gan + loss_l1 + loss_fm
-            loss_g.backward()
-            opt_g.step()
+                loss_gan = _gan_loss(fake_logits_g, True, criterion_gan)
+                loss_l1  = criterion_l1(fake_glyph, target_glyph) * lambda_l1
+                loss_fm  = sum(
+                    F.l1_loss(ff, rf.detach())
+                    for ff, rf in zip(fake_features, real_features)
+                ) * lambda_fm
+                loss_g   = loss_gan + loss_l1 + loss_fm
+
+            scaler_g.scale(loss_g).backward()
+            scaler_g.step(opt_g)
+            scaler_g.update()
 
             epoch_loss_g  += loss_g.item()
             epoch_loss_d  += loss_d.item()
@@ -338,14 +366,17 @@ def train(
                     FM=f"{loss_fm.item():.4f}",
                 )
 
+        epoch_duration = time.time() - epoch_start
         n_batches = len(train_loader)
         print(
             f"Epoch {epoch:04d} | "
             f"G={epoch_loss_g/n_batches:.4f}  "
             f"D={epoch_loss_d/n_batches:.4f}  "
             f"L1={epoch_loss_l1/n_batches:.4f}  "
-            f"FM={epoch_loss_fm/n_batches:.4f}"
+            f"FM={epoch_loss_fm/n_batches:.4f}  "
+            f"[{epoch_duration:.1f}s]"
         )
+        print(f"Epoch {epoch} completed in {epoch_duration:.1f}s")
 
         if epoch % checkpoint_interval == 0:
             save_checkpoint(
