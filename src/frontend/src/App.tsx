@@ -7,6 +7,11 @@ import { downloadFont } from './FontDownloader';
 import FontUpload from './components/FontUpload';
 import ModelLoadingBar from './components/ModelLoadingBar';
 import GlyphPreview from './components/GlyphPreview';
+import BrowserUnsupported from './components/BrowserUnsupported';
+import { detectBrowserSupport } from './inference/browserSupport';
+
+// Evaluated once at module load — synchronous, no React overhead.
+const browserSupport = detectBrowserSupport();
 
 export default function App() {
   const { 
@@ -26,8 +31,10 @@ export default function App() {
     reset,
   } = useAppStore();
 
-  // Load model on mount
+  // Load model on mount — skipped entirely if browser is unsupported.
   useEffect(() => {
+    if (!browserSupport.supported) return;
+
     const loadModel = async () => {
       setModelStatus('loading', 0);
       try {
@@ -111,6 +118,11 @@ export default function App() {
 
       <main className="max-w-4xl mx-auto px-6 py-8 space-y-8">
 
+        {/* Browser capability gate — shown on unsupported browsers */}
+        {!browserSupport.supported && (
+          <BrowserUnsupported support={browserSupport} />
+        )}
+
         {/* Step 1 — Font Upload */}
         <section>
           <h2 className="text-lg font-semibold mb-3">
@@ -139,7 +151,7 @@ export default function App() {
                        hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed
                        transition-colors"
           >
-            {generationStatus === 'running' ? `Generating… (${generationProgress}/66)` : 'Generate'}
+            {generationStatus === 'running' ? `Generating Cyrillic glyphs: ${generationProgress}/66…` : 'Generate'}
           </button>
           {!canGenerate && !uploadedFont && (
             <p className="mt-2 text-sm text-gray-400">Upload a font to enable generation.</p>

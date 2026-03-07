@@ -6,36 +6,55 @@
 - **Description:** Web app that generates Cyrillic font symbols for non-Cyrillic fonts using AI. Pre-trained model ships to client; all generative work runs in browser. .NET backend.
 - **My focus:** Web UI + browser-side inference integration.
 
+## Core Context
+
+### Prior Work Completed (Feb 26 – Mar 5)
+- ✅ PR #15: Fixed opentype.js CJS/ESM interop in Vitest (resolved TypeError on module load; added vitest.config.ts with resolve.alias)
+- ✅ PR #14: Fixed CI test failures (jsdom install, ModelLoader singleton, async Promise semantics)
+- ✅ PR #13: Fixed build TS errors by excluding test files from tsconfig
+- ✅ PR #4: Font assembly pipeline (GlyphVectorizer, FontAssembler, FontDownloader) with OFL metadata
+- ✅ Issue #16: Fixed model fetch URL (/api/models/v1/generator.onnx → /api/model), all 41 tests passing
+- ✅ Frontend inference end-to-end: Web Worker + ModelLoader singleton + vectorization + font assembly complete
+- **Dependency:** Waiting for Major's ONNX model at models/v1/generator.onnx — once available, inference pipeline fully functional
+
 ## Learnings
-<!-- Append new entries below -->
 
-### 2026-02-26: Fixed opentype.js CJS/ESM interop in Vitest (PR #15 MERGED)
+### 2026-03-07T14:31:04Z: Major exports ONNX model — Ready for Integration
 
-- **Branch:** fix/togusa-opentype-vitest-interop
-- **PR:** #15 → dev ✅ MERGED
-- **Problem:** `fontPipeline.test.ts` and `FontLoader.test.ts` crashed at suite load time with `TypeError: Cannot assign to read only property 'load'`. 0 tests ran in either suite; the other 3 suites and their 20 tests were unaffected.
-- **Root cause:** opentype.js ships a CJS/UMD bundle (`dist/opentype.js`) and a native ESM build (`dist/opentype.module.js`). Vitest resolved `opentype.js` to the CJS bundle. Its UMD factory does `exports.load = load` at module-evaluation time, but Vitest's ESM strict mode seals the `exports` object, making that assignment throw. Neither `server.deps.inline`, `deps.inline`, nor `deps.optimizer.web.include` prevented the issue in practice with Vitest 1.6.
-- **Fix (vitest.config.ts):** Created `src/frontend/vitest.config.ts` with `resolve.alias: { 'opentype.js': '.../dist/opentype.module.js' }`. This forces Vitest to always resolve the ESM build, bypassing the CJS bundle entirely.
-- **Secondary fixes revealed by the above:**
-  1. `FontLoader.test.ts` was missing `// @vitest-environment jsdom` — `extractStyleGlyphs` calls `document.createElement('canvas')`, which requires a browser env.
-  2. jsdom doesn't implement `URL.createObjectURL/revokeObjectURL`, `HTMLCanvasElement.getContext('2d')`, or `Path2D`. Added `src/frontend/src/test-setup.ts` to stub all of these, guarded with `typeof` checks so node-env inference tests are unaffected.
-- **Result:** All 41 tests across all 5 suites pass (up from 20 passing with 2 suites crashing).
-- **Key lesson:** When a CJS/UMD package has a `module` field pointing to a native ESM build, the most reliable Vitest fix is `resolve.alias` to force the ESM file — not `deps.inline`/`server.deps.inline`, which in practice didn't intercept the load in Vitest 1.x jsdom pool. Also: always add `@vitest-environment jsdom` to any test file that touches `document`, `canvas`, or other DOM APIs.
+- **Status:** ✅ COMPLETE
+- **Model file:** models/v1/generator.onnx
+- **Size:** 53.1 MB (INT8 quantized)
+- **Compressed delivery:** ~15.9 MB (meets ≤20 MB browser target)
+- **Output shape:** (1, 1, 128, 128)
+- **Output dtype:** float32
+- **Value range:** [-1.0, 1.0]
+- **Validation:** CPU inference SUCCESS
+- **Implementation:** INT8 dynamic quantization; ConvTranspose FP32 fallback
+- **Key note:** Model ready for onnxruntime-web integration with ModelLoader singleton pattern
 
-### 2026-02-26: Fixed CI test failures — jsdom + ModelLoader singleton/async pattern
+### 2026-03-07: ONNX Browser Integration Complete — Cross-Validated by Saito
 
-- **Branch:** fix/togusa-ci-test-failures
-- **PR:** #14 → dev
-- **Problem 1:** `Cannot find package 'jsdom'` — `fontPipeline.test.ts` uses `// @vitest-environment jsdom` but jsdom was absent from devDependencies.
-- **Fix 1:** `npm install --save-dev jsdom` added jsdom to package.json devDependencies.
-- **Problem 2:** `mockWorker.onmessage is not a function` at lines 85, 94, 102, 138, 174 in ModelLoader.test.ts — three interrelated root causes:
-  1. `modelLoader` singleton retained `loadPromise`/`worker` across tests; subsequent tests got fresh `mockWorker` from `beforeEach` but `onmessage` handler was set on the OLD worker.
-  2. `load()` was `async`, so every call returned a new Promise wrapper — the `toBe` same-reference assertion in "same promise for concurrent loads" always failed.
-  3. `infer()` internally `await this.loadPromise` before calling `postMessage`; even when resolved, `await` defers to microtask queue — tests reading `mock.calls` synchronously right after `infer()` saw empty arrays.
-- **Fix 2a:** Exported `ModelLoader` class; test uses `new ModelLoader()` in `beforeEach` for a clean instance.
-- **Fix 2b:** Removed `async` from `load()` — it already builds and returns a `Promise<void>` manually, so returning `this.loadPromise` directly gives same object reference.
-- **Fix 2c:** Added `await Promise.resolve()` microtask flush in 3 tests after calling `infer()` before reading `mockWorker.postMessage.mock.calls`.
-- **Key lesson:** Never export a stateful singleton as the only test surface — export the class too. And `async` on a function that manually returns a Promise wraps it in a second Promise, breaking reference equality. Finally, `await resolvedPromise` still defers to the microtask queue; synchronous mock reads after `infer()` must flush first.
+- **OnnxInference.ts**: Updated to match confirmed contract — `style_glyphs` tensor shape `[1, 10, 1, 128, 128]` (batch dim required), output from `generated_glyph` key. All TODO placeholders resolved.
+- **Normalisation convention confirmed**: Training data renders white glyphs on black background (`glyph=255 → +1.0`, `bg=0 → -1.0`). FontLoader's `1 - brightness * 2` formula is correct (inverts rendered black-glyph-on-white to match training). Postprocessing `((1 - output) / 2) * 255` is correct.
+- **Style chars confirmed**: Model trained on `["A","B","C","D","E","H","I","O","R","X"]` (see `dataset.py` DEFAULT_STYLE_CHARS). FontLoader was already correct. Inference contract doc had wrong chars — not a code issue.
+- **browserSupport.ts created**: Detects WASM / Workers / WebGL / SharedArrayBuffer; returns recommended execution providers and human-readable error for unsupported browsers.
+- **Tests**: 92/92 passing. Saito flagged HIGH risk (batch dim + output key bugs) **independently** → Togusa had **already fixed** these before Saito filed the risk. Cross-validation successful.
+- **Dependency resolved**: inference pipeline is now fully wired to the actual exported model. ModelLoader fetches from `/api/model/manifest` → gets `downloadUrl` from Batou's versioned API endpoint.
+- **Cross-agent sync**: Batou's `/api/model/v1/generator.onnx` endpoint matches Togusa's fetch URL exactly. Decision locked in both histories.
+
+### Issue #27: E2E Glyph Generation Flow — Integration Tests Added
+
+- **Branch**: `squad/27-e2e-glyph-generation-ui` (existing), **PR #31** (open, targeting dev)
+- **Status**: ✅ COMPLETE — 96/96 tests passing
+- **What was done**: Branch `squad/27-e2e-glyph-generation-ui` already contained the full E2E UI flow (App.tsx orchestrates FontUpload → ModelLoader.infer × 66 → assembleFontFromGlyphs → downloadFont). Added real integration tests replacing all placeholders in `inference/__tests__/integration.test.ts`.
+- **Integration tests cover**:
+  - Full 66-glyph inference loop: all char indices 0–65 requested exactly once, style_glyphs tensor size asserted
+  - Valid OTF output: magic-byte check (OTTO / 0x00010000) after assembleFontFromGlyphs
+  - Monotonic progress: 1→66 increments verified
+  - Error propagation: mid-loop inference failure surfaces to caller
+  - Guard: inference rejects before model loaded
+  - downloadFont: correct MIME type (font/otf), filename, URL.revokeObjectURL cleanup
+- **Key note**: When creating a feature branch, check for existing branches/PRs for the same issue first. `squad/27-e2e-glyph-generation-ui` pre-existed with the implementation; duplicate branch avoided.
 
 
 - **Branch:** fix/togusa-ci-ts-errors
@@ -148,15 +167,26 @@
 - **Result:** Model loading will now succeed in production; frontend correctly calls Batou's `/api/model` endpoint
 
 
-### 2026-03-05: Sprint Complete --- #16 Closed
-**Issue:** #16 (Model fetch URL fix)  
-**Status:** OK IMPLEMENTATION COMPLETE  
-**Dependencies:** Batou's #17 (backend model path fix)
+### 2026-03-07: E2E Glyph Generation UI Wired (Issue #27, PR #31)
 
-**Change:** App.tsx model fetch endpoint  
-- Old: /api/models/v1/generator.onnx  
-- New: /api/model
+- **Branch:** squad/27-e2e-glyph-generation-ui → dev (PR #31)
+- **Status:** ✅ COMPLETE — 96/96 tests passing
 
-Updated test file to match new endpoint. All 41 frontend tests passing.
+**What was done:**
+- Added `BrowserUnsupported.tsx` component: amber alert shown when WASM or Web Workers are absent, listing missing capabilities and recommending modern browsers
+- Updated `App.tsx` with `detectBrowserSupport()` at module load; model fetch skipped on unsupported browsers; `BrowserUnsupported` banner rendered in `<main>` when gate fails
+- Updated generation progress label to `Generating Cyrillic glyphs: X/66…` (per issue spec)
 
-Backend now exposes /api/model endpoint (Batou's fix resolves actual model file via ContentRootPath).
+**E2E flow (all wired since PR #4, gate added this PR):**
+1. Upload TTF/OTF → `FontLoader.extractStyleGlyphs()` → `Float32Array [10×1×128×128]`
+2. `ModelLoader.load('/api/model')` once at mount; singleton reused for all 66 inferences
+3. Loop over `CYRILLIC_CHARS`: `modelLoader.infer(styleGlyphs, index)` → raw `Float32Array [-1,1]`
+4. Pixel denorm: `((1 - output[i]) / 2) * 255` → `ImageData` for preview
+5. `assembleFontFromGlyphs(rawGlyphs, fontName)` → `ArrayBuffer`
+6. `downloadFont(buffer, '*.otf')` on button click
+
+**Key notes:**
+- `BrowserUnsupported.test.tsx` (4 tests) already existed as untracked from prior branch work — committed here with the component
+- Model URL confirmed as `/api/model` — backend `HandleModelDownload` at that route
+- `detectBrowserSupport()` called synchronously at module load (zero React overhead)
+

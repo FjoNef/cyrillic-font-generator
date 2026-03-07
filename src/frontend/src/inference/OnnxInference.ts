@@ -2,21 +2,33 @@ import * as ort from 'onnxruntime-web';
 
 /**
  * Thin wrapper around an ONNX Runtime Web InferenceSession.
- * Tensor shapes are placeholders — Major will provide exact contract.
+ *
+ * Inference contract (v1, models/v1/generator.onnx):
+ *   Inputs:
+ *     style_glyphs  [1, 10, 1, 128, 128]  float32  in [-1, 1]
+ *                   10 Latin reference glyphs (A B C D E H I O R X),
+ *                   rendered white-on-black then normalised: black bg → -1, white glyph → +1
+ *     char_index    [1]                   int64    in [0, 65]
+ *   Output:
+ *     generated_glyph  [1, 1, 128, 128]  float32  in [-1, 1]
+ *                      +1 = glyph ink, -1 = background
+ *
+ * Execution providers: WebGL preferred, WASM fallback.
  */
 export class OnnxInference {
   private session: ort.InferenceSession | null = null;
 
   /**
    * Fetch the model with progress tracking, then create an InferenceSession.
-   * @param modelUrl  URL to the .onnx model file (served by Vite or ASP.NET backend)
-   * @param onProgress  Optional callback receiving load percentage 0-100
+   * Uses WebGL backend when available, falls back to WASM.
+   *
+   * @param modelUrl    URL to the .onnx model file
+   * @param onProgress  Optional callback receiving load percentage 0–100
    */
   async loadModel(
     modelUrl: string,
     onProgress?: (pct: number) => void
   ): Promise<void> {
-    // TODO: fetch with ReadableStream progress, then pass ArrayBuffer to ort
     const response = await fetch(modelUrl);
     if (!response.ok) {
       throw new Error(`Failed to fetch model: ${response.statusText}`);
@@ -54,11 +66,10 @@ export class OnnxInference {
   /**
    * Run inference for a single Cyrillic glyph.
    *
-   * @param styleGlyphs  Flattened [10 × 1 × 128 × 128] Float32Array of Latin reference glyphs
-   * @param charIndex    0-65: index into CYRILLIC_CHARS (0-32 upper, 33-65 lower)
-   * @returns            128×128 ImageData of the generated glyph (grayscale, RGBA)
-   *
-   * TODO: confirm input/output tensor names and shapes with Major.
+   * @param styleGlyphs  Flattened [10 × 1 × 128 × 128] = 163840 float32 values in [-1, 1]
+   *                     Latin reference glyphs (A B C D E H I O R X)
+   * @param charIndex    0–65 Cyrillic character index (0=А … 32=Я, 33=а … 65=я)
+   * @returns            128×128 RGBA ImageData for display (white background, black glyph)
    */
   async generateGlyph(
     styleGlyphs: Float32Array,
@@ -68,26 +79,24 @@ export class OnnxInference {
       throw new Error('Model not loaded. Call loadModel() first.');
     }
 
-    // TODO: replace tensor names / shapes once Major publishes the ONNX contract
-    const styleTensor = new ort.Tensor('float32', styleGlyphs, [10, 1, 128, 128]);
+    // style_glyphs: [1, 10, 1, 128, 128] — batch dimension required
+    const styleTensor = new ort.Tensor('float32', styleGlyphs, [1, 10, 1, 128, 128]);
     const indexTensor = new ort.Tensor('int64', BigInt64Array.from([BigInt(charIndex)]), [1]);
 
-    const feeds: Record<string, ort.Tensor> = {
-      style_glyphs: styleTensor,  // TODO: confirm input name with Major
-      char_index: indexTensor,    // TODO: confirm input name with Major
-    };
+    const results = await this.session.run({
+      style_glyphs: styleTensor,
+      char_index: indexTensor,
+    });
 
-    const results = await this.session.run(feeds);
-
-    // TODO: confirm output tensor name with Major
-    const outputTensor = results['output'] ?? Object.values(results)[0];
+    // Output tensor name per contract; fall back to first output if renamed
+    const outputTensor = results['generated_glyph'] ?? Object.values(results)[0];
     const outputData = outputTensor.data as Float32Array;
 
-    // Convert single-channel float [-1,1] → RGBA ImageData
+    // Denormalise: +1 (glyph ink) → 0 (black pixel), -1 (background) → 255 (white pixel)
     const size = 128;
     const pixels = new Uint8ClampedArray(size * size * 4);
     for (let i = 0; i < size * size; i++) {
-      const val = Math.round(((1 - outputData[i]) / 2) * 255); // [-1,1] → [0,255], +1=black, -1=white
+      const val = Math.max(0, Math.min(255, Math.round(((1 - outputData[i]) / 2) * 255)));
       pixels[i * 4 + 0] = val; // R
       pixels[i * 4 + 1] = val; // G
       pixels[i * 4 + 2] = val; // B

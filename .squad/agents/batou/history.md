@@ -9,6 +9,64 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07: Versioned Endpoint & Frontend Integration Verified
+
+**Status:** COMPLETE — Cross-validated with Togusa and Saito
+
+**Integration verified:**
+- Togusa's ModelLoader now uses `/api/model/manifest` → gets `downloadUrl` pointing to `/api/model/v1/generator.onnx`
+- This is Batou's versioned endpoint. Frontend decision locked: call manifest first, then download via returned URL
+- Saito identified MEDIUM risk: static file caching headers need E2E smoke test (not just source assertion)
+- Versioned API endpoint (`/api/model/v1/generator.onnx`) now the primary delivery mechanism; static `/models/v1/generator.onnx` remains as fallback
+
+**Test coverage:**
+- 6 backend tests pass (health check, versioned endpoint, 404 on unknown version, caching headers)
+- Saito's 21 backend tests in ModelEndpointTests.cs validate the full contract
+- Combined with Togusa's 92 frontend tests = 117-test inference suite
+
+**Decisions locked:**
+- Versioned URL scheme: `/api/model/v1/generator.onnx` is primary, ETag + Cache-Control immutable
+- Manifest as entry point: Frontend calls `GET /api/model/manifest` for current `downloadUrl`
+- Health includes model metadata: `GET /health` returns model version/size/sha256 when available
+
+### 2026-03-05: Versioned model delivery endpoint + enhanced health check
+
+**Status:** COMPLETE — Build clean, all 6 tests pass
+
+**What was already there:**
+- Brotli compression middleware for `application/octet-stream`
+- Static file middleware at `/models/v1/generator.onnx` with `Cache-Control: public, max-age=31536000, immutable`
+- `GET /api/model` — dynamic file delivery, Range support
+- `GET /api/model/manifest` — version/sha256/size/downloadUrl
+- `ModelManifestCache` singleton: SHA-256 computed once at startup
+
+**New work:**
+
+**1. Versioned API endpoint: `GET /api/model/{version}/{filename}`**
+- URL: `/api/model/v1/generator.onnx`
+- Sets `ETag: "{sha256}"` and `Cache-Control: public, max-age=31536000, immutable` on every 200 response
+- Honours `If-None-Match` → 304 Not Modified (browser/CDN revalidation)
+- Range requests: `enableRangeProcessing: true` (chunked delivery)
+- Validates version + filename against `ModelManifestCache`; returns 404 for unknown versions
+- Updated manifest `downloadUrl` to point to versioned API URL (was pointing to `/models/...` static path)
+
+**2. Health endpoint now returns model metadata**
+- `GET /health` → `{ status: "healthy", model: { version, filename, sizeBytes, sha256Prefix } | null }`
+- `model` is `null` when model file absent; frontend can check this to know if model is ready
+
+**Files changed:**
+- `Endpoints/ModelEndpoints.cs`: Added `HandleVersionedModelDownload`, updated manifest `downloadUrl`
+- `Program.cs`: Updated `/health` handler to inject `ModelManifestCache` and return model metadata
+- `CyrillicFontGen.Api.Tests/ApiIntegrationTests.cs`: Added 2 new tests (health model field, versioned 404)
+
+**Test count:** 4 → 6, all passing
+
+**URL scheme finalized:**
+- Static: `/models/v1/generator.onnx` (StaticFiles middleware, same immutable cache)
+- API versioned: `/api/model/v1/generator.onnx` (preferred for frontend — has ETag + If-None-Match)
+- Unversioned alias: `/api/model` (kept for compatibility)
+- Manifest: `/api/model/manifest` (frontend version check before download)
+
 ### 2026-02-25: Backend model path resolution fix + Brotli compression (Issues #17, #20)
 
 **Status:** COMPLETE — Both issues resolved and verified
