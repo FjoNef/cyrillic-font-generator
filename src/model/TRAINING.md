@@ -102,7 +102,11 @@ average epochs 2–5.
 **File:** `train/train.py`
 
 ```python
-from torch.cuda.amp import GradScaler, autocast
+try:
+    from torch.amp import GradScaler, autocast as _autocast_fn  # PyTorch ≥ 2.0
+    def autocast(enabled=True): return _autocast_fn("cuda", enabled=enabled)
+except ImportError:
+    from torch.cuda.amp import GradScaler, autocast  # PyTorch < 2.0
 
 use_amp = device.type == "cuda"
 scaler_g = GradScaler(enabled=use_amp)
@@ -143,22 +147,24 @@ torch.backends.cudnn.benchmark = True
 **File:** `train/train.py`
 
 ```python
+num_workers = min(4, os.cpu_count() or 1)
 train_loader = DataLoader(
     train_ds,
     batch_size=train_cfg["batch_size"],
     shuffle=True,
-    num_workers=min(4, os.cpu_count() or 1),
-    pin_memory=True,          # Pinned (page-locked) host memory for faster H→D transfer
-    persistent_workers=True,  # Workers stay alive between epochs (no respawn overhead)
+    num_workers=num_workers,
+    pin_memory=(device.type == "cuda"),  # Pinned memory only when CUDA is available
+    persistent_workers=(num_workers > 0),  # Workers stay alive between epochs; requires num_workers > 0
 )
 ```
 
-- **`pin_memory=True`:** Allocates CPU tensors in page-locked memory so CUDA DMA can
-  transfer them to GPU asynchronously, overlapping with the GPU compute of the previous
-  batch.
-- **`persistent_workers=True`:** Prevents Python DataLoader workers from being destroyed
-  and respawned at the end of each epoch. On Windows this is especially impactful because
-  process creation is expensive.
+- **`pin_memory`:** Enabled only when training on CUDA. Allocates CPU tensors in
+  page-locked memory so CUDA DMA can transfer them to GPU asynchronously, overlapping
+  with the GPU compute of the previous batch. Disabled on CPU to avoid unnecessary overhead.
+- **`persistent_workers`:** Set to `num_workers > 0` — prevents Python DataLoader workers
+  from being destroyed and respawned at the end of each epoch. On Windows this is especially
+  impactful because process creation is expensive. Guarded against `num_workers=0` to avoid
+  a `ValueError` at DataLoader construction.
 - **`num_workers`:** Capped at `min(4, cpu_count)`. The RTX 3070Ti Laptop is paired
   with an 8–16 core CPU — 4 workers is typically optimal. If loading is still a
   bottleneck, try increasing to 6–8.

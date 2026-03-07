@@ -50,7 +50,14 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.cuda.amp import GradScaler, autocast
+try:
+    from torch.amp import GradScaler, autocast as _autocast_fn  # PyTorch ≥ 2.0
+
+    def autocast(enabled: bool = True):  # type: ignore[misc]
+        """Thin wrapper so call sites use autocast(enabled=...) regardless of torch version."""
+        return _autocast_fn("cuda", enabled=enabled)
+except ImportError:  # pragma: no cover
+    from torch.cuda.amp import GradScaler, autocast  # type: ignore[assignment]
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 import yaml
@@ -216,7 +223,7 @@ def train(
     train_ds, val_ds = random_split(dataset, [train_size, val_size])
 
     use_pin_memory = device.type == "cuda"
-    use_persistent_workers = True  # Eliminates worker respawn overhead each epoch.
+    num_workers = min(4, os.cpu_count() or 1)
     # batch_size tuning: default is 32. With 8GB VRAM (RTX 3070Ti Laptop) and
     # style_glyphs shape [B, 10, 1, 128, 128] (~20 MB at FP32 for B=32), you can
     # experiment with batch_size 16–64. Increase for higher GPU utilisation;
@@ -225,9 +232,9 @@ def train(
         train_ds,
         batch_size=train_cfg["batch_size"],
         shuffle=True,
-        num_workers=min(4, os.cpu_count() or 1),
+        num_workers=num_workers,
         pin_memory=use_pin_memory,
-        persistent_workers=use_persistent_workers,
+        persistent_workers=(num_workers > 0),  # requires num_workers > 0
     )
     print(f"Dataset: {len(train_ds)} train / {len(val_ds)} val samples")
 
