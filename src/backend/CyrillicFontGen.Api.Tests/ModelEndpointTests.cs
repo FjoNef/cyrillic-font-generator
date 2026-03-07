@@ -103,6 +103,19 @@ public class ModelEndpointTests : IClassFixture<ModelEndpointTests.ModelWebFacto
     }
 
     [Fact]
+    public async Task Manifest_WhenModelAvailable_ModelWasFoundByWalkUp()
+    {
+        // This test verifies that the walk-up logic successfully found the model
+        // even when ContentRootPath != repo root. The factory places the model at
+        // TempRoot/models/v1/generator.onnx and ModelManifestCache should find it.
+        var response = await _client.GetAsync("/api/model/manifest");
+        
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"version\"", body);
+    }
+
+    [Fact]
     public async Task Manifest_WhenModelAvailable_ReportedSizeMatchesFileSize()
     {
         var response = await _client.GetAsync("/api/model/manifest");
@@ -317,13 +330,17 @@ public class ModelEndpointNoModelTests : IClassFixture<ModelEndpointNoModelTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            // Create an empty root; no models/v1/ directory so manifest returns 404.
+            // Create an empty root with no models directory
             Directory.CreateDirectory(_emptyRoot);
+            
+            // Set ContentRootPath to the empty directory so walk-up doesn't find repo models
+            builder.UseContentRoot(_emptyRoot);
+            
             builder.ConfigureAppConfiguration(config =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["ModelPath"] = _emptyRoot,
+                    ["ModelPath"] = "models", // relative path in empty directory
                 });
             });
         }

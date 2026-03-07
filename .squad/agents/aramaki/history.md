@@ -9,6 +9,25 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07T: PR #36 APPROVED & MERGED — Model Path Resolution (Development Fix + Cross-Agent Coordination)
+- **Decision:** ✅ APPROVED & MERGED to dev. Issue #35 closed.
+- **Issue #35 Fixed:** Backend 404 on GET /api/model and GET /api/model/v1/generator.onnx.
+- **Root cause:** ContentRootPath = `src/backend/CyrillicFontGen.Api/`, but model lives at repo root `models/v1/generator.onnx`.
+- **Fix rationale:**
+  - Added `"ModelPath": "../../../models"` to `appsettings.Development.json` only.
+  - Path.GetFullPath(Path.Combine(ContentRootPath, "../../../models")) walks from API dir → 3 levels up → repo root.
+  - Correct pattern: environment-specific config overrides (not env vars, not absolute paths, not copying binaries).
+- **Alternatives evaluated:**
+  - ❌ Copy model to backend dir: bloats repo history, violates artifact separation.
+  - ❌ Environment variable: overkill for dev-only workaround.
+  - ❌ Absolute path: non-portable across dev machines.
+  - ✅ Relative path in appsettings: portable, .NET idiomatic, dev-focused.
+- **Production deployment:** When published, ContentRootPath = publish output dir. Default `"ModelPath": "models"` resolves to publish dir. Operator must place `models/v1/generator.onnx` alongside published binary. Backend README clarified this clearly.
+- **Test coverage improvement:** WebApplicationFactory now explicitly injects non-existent ModelPath for 404 tests (intentional), vs coincidental side-effect before. All 25 tests pass.
+- **Pattern established:** Development-specific config in `appsettings.Development.json`, production-ready defaults in `appsettings.json`. Future team can apply this pattern for other dev/prod divergences.
+- **Cross-agent coordination:** Saito performed parallel QA pass (path resolution, endpoint validation, test hygiene verified). Coordinator merged after both approvals.
+- **Why approved:** Minimal, focused, production-ready. Architectural decision (config-based path resolution) is maintainable and aligns with .NET conventions.
+
 ### 2026-03-07T: PR #24 APPROVED & MERGED — Playwright Performance Harness (Saito)
 - **Decision:** APPROVED. PR #24 merged to dev. Issue #23 closed.
 - **What passed review:**

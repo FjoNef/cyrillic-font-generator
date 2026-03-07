@@ -9,6 +9,26 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-07: Fix ModelPath 404 in Development (Issue #35)
+
+**Status:** COMPLETE — PR #36 targeting dev
+
+**Root cause:** `ModelPath: "models"` resolves relative to `ContentRootPath` (`src/backend/CyrillicFontGen.Api/`).
+The actual model is at repo root `models/v1/generator.onnx`, so the backend was searching in the wrong directory.
+
+**Fix:** Added `"ModelPath": "../../../models"` to `appsettings.Development.json`.
+`Path.GetFullPath(Path.Combine(ContentRootPath, "../../../models"))` walks 3 levels up to the repo root.
+Both `/api/model` and `/api/model/v1/generator.onnx` now resolve and serve the model correctly in dev.
+
+**Production note:** `appsettings.json` keeps `"ModelPath": "models"` — for production, `models/v1/generator.onnx`
+must be placed alongside the published binary (same dir as `CyrillicFontGen.Api.dll`).
+
+**Tests:** Updated 2 integration tests that checked 404 "when model not exists" — they now use a
+`WebApplicationFactory` config override pointing to a non-existent path, instead of relying on the
+broken path as a side-effect. All 25 backend tests pass.
+
+**Reminder for deployment pipeline:** Copy `models/v1/generator.onnx` into the publish output directory.
+
 ### 2026-03-07: Versioned Endpoint & Frontend Integration Verified
 
 **Status:** COMPLETE — Cross-validated with Togusa and Saito
@@ -217,5 +237,63 @@ src/backend/
 - Added brotli middleware to Program.cs
 - Configured for application/octet-stream (ONNX binary delivery)
 - Combined with Major's INT8 model (~23 MB) -> ~17-20 MB delivered (OK <=20 MB target)
-
+
 All 4 backend tests passing.
+
+### 2026-03-07: Robust model path resolution with directory walk-up (Issue #37, PR #38)
+
+**Status:** COMPLETE — PR #38 targeting dev
+
+**Problem:** Model 404 persists when `ASPNETCORE_ENVIRONMENT` is not explicitly set to Development. PR #36 added `"ModelPath": "../../../models"` to `appsettings.Development.json`, but this only works in Development environment. In other environments, the app uses `appsettings.json` with `ModelPath: "models"` which resolves relative to `ContentRootPath` (src/backend/CyrillicFontGen.Api/) — the wrong directory.
+
+**Root cause:** Path resolution was environment-dependent. No fallback mechanism for finding the model when the configured path doesn't exist.
+
+**Solution:** Implemented robust directory walk-up search in both `ModelManifestCache` and `Program.cs` static file setup:
+1. Try the configured path first (respects explicit configuration)
+2. For relative paths: if not found, walk up directory tree looking for `models/v1/generator.onnx`
+3. For absolute paths: don't walk up (respects explicit operator intent)
+
+**Implementation details:**
+- Added `ResolveModelFile` static method in `ModelManifestCache` that walks up from `ContentRootPath`
+- Added `ResolveModelsDirectory` static method in `Program.cs` for static file middleware
+- ModelManifestCache now stores `ResolvedModelPath` property for reuse in endpoints
+- Updated `HandleModelDownload` and `HandleVersionedModelDownload` to use cached resolved path
+- Both methods check `Path.IsPathRooted()` to detect absolute paths and skip walk-up
+
+**Startup diagnostics:**
+- Success: `LogInformation("✓ Model serving ready: {File} ({Size} bytes)")`
+- Failure: `LogError("✗ Model file not found — /api/model will return 404. Place generator.onnx at: {ExpectedPath}")`
+- Walk-up found: `LogInformation("Model found by directory walk at: {Path}")`
+- Configured found: `LogInformation("Model found at configured path: {Path}")`
+
+**Tests updated:**
+- Fixed `NoModelFactory` in `ModelEndpointTests.cs` — now uses `builder.UseContentRoot(_emptyRoot)` to properly isolate from repo models
+- Fixed `ApiIntegrationTests._noModelFactory` — creates temp directory and uses `UseContentRoot()` 
+- Added test `Manifest_WhenModelAvailable_ModelWasFoundByWalkUp` to verify walk-up behavior
+- All 26 backend tests pass (was 26 before, stayed at 26 — no test count change, just behavior fixes)
+
+**Smoke test script:**
+- New file: `src/backend/smoke-test.ps1`
+- Tests: health check, model manifest (200 + fields), model download headers, versioned endpoint with ETag
+- Exit code 0 on success, non-zero on failure
+- Usage: `.\smoke-test.ps1 [-BaseUrl http://localhost:5000]`
+
+**Production notes:**
+- `appsettings.json` still has `"ModelPath": "models"` — unchanged (operator hint)
+- For production deployments, place `models/v1/generator.onnx` alongside the published binary OR let walk-up find it in parent directories
+- Absolute paths in config disable walk-up (respects explicit configuration)
+
+**Why this works everywhere:**
+- Dev (working dir = repo root): walk-up finds models immediately
+- Dev (working dir = src/backend/CyrillicFontGen.Api): walks up 3 levels to repo root, finds models
+- Production (models in publish dir): configured path works immediately
+- Production (models in parent dir): walk-up finds it
+- CI: same as dev — ContentRootPath varies but walk-up finds repo root
+
+**Files changed:**
+- `src/backend/CyrillicFontGen.Api/Endpoints/ModelEndpoints.cs` — added walk-up logic to ModelManifestCache
+- `src/backend/CyrillicFontGen.Api/Program.cs` — added walk-up logic to static file setup
+- `src/backend/CyrillicFontGen.Api.Tests/ModelEndpointTests.cs` — fixed NoModelFactory isolation
+- `src/backend/CyrillicFontGen.Api.Tests/ApiIntegrationTests.cs` — fixed _noModelFactory isolation, added using directive
+- `src/backend/smoke-test.ps1` — new smoke test script
+

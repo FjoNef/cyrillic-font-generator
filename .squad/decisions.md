@@ -4,6 +4,43 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+### 2026-03-07: ModelPath Resolution — Dev vs Production
+
+**By:** Batou (Backend Dev)  
+**Date:** 2026-03-07  
+**Status:** ACCEPTED  
+**Issue:** #35  
+
+---
+
+#### Context
+
+`appsettings.json` carries `"ModelPath": "models"`. The backend resolves this via
+`Path.GetFullPath(Path.Combine(ContentRootPath, modelPath))`. In development, `ContentRootPath` is
+`src/backend/CyrillicFontGen.Api/`, so the resolved path was inside the project directory — not the
+repo-root `models/` folder where the ONNX file actually lives.
+
+#### Decision
+
+**Development:** `appsettings.Development.json` overrides `ModelPath` with `"../../../models"`.  
+This walks three directories up from the project root to the repo root, resolving correctly to
+`models/v1/generator.onnx`.
+
+**Production (published):** `ModelPath` stays `"models"` in `appsettings.json`. When publishing with
+`dotnet publish`, the `models/v1/generator.onnx` file must be placed **alongside the published binary**
+(in the same directory as `CyrillicFontGen.Api.dll`). This matches `ContentRootPath` at runtime.
+
+#### Impact
+
+- Both `/api/model` (unversioned alias) and `/api/model/v1/generator.onnx` (versioned) now serve
+  the model correctly in development.
+- No changes to production `appsettings.json`; deployment pipeline must copy model artefact next to
+  the binary.
+- Integration tests updated: "model absent" 404 tests now inject an explicit non-existent path via
+  `WebApplicationFactory` configuration override instead of relying on the wrong path as a side-effect.
+
+---
+
 ### 2026-03-07: Browser Inference Integration (Togusa)
 
 **By:** Togusa (Frontend Dev)  
