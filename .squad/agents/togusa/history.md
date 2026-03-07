@@ -73,3 +73,34 @@ Major's investigation revealed the root cause is **NOT** a frontend tensor path 
 
 **Current Status:** Debug logging in place, awaiting browser validation. Actual fix requires model retraining by Major.
 
+### 2026-03-07: SAB Alias Fix — OnnxInference.ts (Issue #41)
+
+- **Task:** Fix SharedArrayBuffer aliasing vulnerability in `OnnxInference.ts` (test-only inference path).
+- **Status:** ✅ Fixed. PR #44 opened against `dev`.
+
+**What was found:**
+- `OnnxInference.generateGlyph()` at line 83 passed `styleGlyphs` directly to `new ort.Tensor('float32', styleGlyphs, ...)` without checking if it was SAB-backed.
+- PR #40 had already fixed the output-side aliasing in `inferenceWorker.ts` (line 131: `return new Float32Array(outputData)`), but the input path in `OnnxInference.ts` was missed.
+- The `inferenceWorker.ts` input tensor construction at line 98 also lacks an explicit SAB guard — but that path receives data via `postMessage` (which structurally clones non-SAB arrays), so it is lower risk.
+
+**What was fixed:**
+- Added SAB detection before creating `styleTensor` in `OnnxInference.ts`:
+  ```ts
+  const safeStyleGlyphs = styleGlyphs.buffer instanceof SharedArrayBuffer
+    ? new Float32Array(styleGlyphs.buffer.slice(styleGlyphs.byteOffset, styleGlyphs.byteOffset + styleGlyphs.byteLength))
+    : styleGlyphs;
+  ```
+- 38 existing onnxContract tests all pass with the fix.
+- Branch: `fix/sab-alias-onnxinference-41`, PR #44.
+
+**Key file paths:**
+- Bug site: `src/frontend/src/inference/OnnxInference.ts` (line 83)
+- Reference pattern: `src/frontend/src/inference/worker/inferenceWorker.ts` (line 131)
+- Tests: `src/frontend/src/inference/__tests__/onnxContract.test.ts`
+
+---
+
+### 2026-03-07: SAB Alias Fix in OnnxInference.ts (Issue #41) [Orchestrated]
+
+Decision: Conditional SAB copy strategy (not unconditional) to avoid 640 KB unnecessary allocation on normal test paths. Consistent with PR #40 output fix. Decision merged to decisions.md. PR #44 ready for review.
+

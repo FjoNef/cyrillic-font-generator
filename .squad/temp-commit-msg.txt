@@ -1,19 +1,9 @@
-Session: style conditioning fixes applied and regression tests added
+squad(orchestration): log major #42 & togusa #41, merge inbox decisions
 
-Agents completed:
-- Major (ML Engineer): Fixed UNetGenerator encoder input bug and loss rebalancing
-  * Changed blank-canvas encoder input to style_glyph_0 (first style reference glyph)
-  * Refactored PatchDiscriminator with forward_with_features() for feature-matching loss
-  * Reduced lambda_l1 from 100→10, added lambda_fm=10
-  * ONNX export contract unchanged
-  
-- Aramaki (Lead): Created GitHub issue #42 for training performance optimization
-  * Proposed optimizations: mixed precision, CUDA tuning, batch size, data loading, profiling
-  
-- Saito (Tester): Wrote regression tests (9/9 passing)
-  * Guards against reintroduction of style conditioning bugs
-  * Tests cover encoder input, skip connections, loss values, discriminator interface
-
-Session logs and decisions merged to decisions.md
+- Orchestration logs: major (GPU training perf opts), togusa (SAB alias fix)
+- Session log: ralph round 2
+- Merged decisions: AMP strategy, SAB conditional-copy pattern
+- Deleted inbox files after merge
+- Updated major/history.md, togusa/history.md with completion notes
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

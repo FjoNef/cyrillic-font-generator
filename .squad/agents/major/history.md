@@ -172,3 +172,9 @@ Wrote 9 regression tests in `src/model/tests/test_style_conditioning.py` to guar
 **All 9 regression tests pass** after changes.
 
 **PR:** #43 (dev → main), closes #42.
+
+---
+
+### 2026-03-07: GPU Training Optimizations (Issue #42) [Orchestrated]
+
+Decision: Two independent GradScalers (one per G/D optimizer) for AMP training. Batch size remains 32; VRAM envelope 16–64 documented for user tuning. Decision merged to decisions.md. PR #43 ready for merge.

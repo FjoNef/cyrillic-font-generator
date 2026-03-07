@@ -2240,3 +2240,100 @@ python -m pytest tests/test_style_conditioning.py -v
 | `test_forward_with_features_returns_logits_and_feature_list` | Return signature of `forward_with_features` changes |
 | `test_train_py_contains_feature_matching_loss_term` | Feature-matching loss removed from training loop |
 
+
+
+---
+
+# Decision: AMP Strategy & DataLoader Config for GPU Training
+
+**Date:** 2026-03-08  
+**Author:** Major  
+**Issue:** #42 — perf(training): optimize training pipeline for NVIDIA RTX 3070Ti Laptop GPU  
+**PR:** #43
+
+---
+
+## Decisions Made
+
+### 1. Two GradScalers (one per optimizer) for GAN AMP training
+
+**Decision:** Use separate `GradScaler` instances (`scaler_g`, `scaler_d`) — one for the generator optimizer, one for the discriminator optimizer.
+
+**Rationale:** GAN training has two fully independent backward passes per iteration. A single shared scaler would require careful ordering of `.step()` and `.update()` calls and can cause incorrect scale updates if one loss overflows but the other doesn't. Two scalers make the independence explicit and are the canonical pattern for multi-optimizer AMP training.
+
+**Implementation:**
+```python
+use_amp = device.type == "cuda"
+scaler_g = GradScaler(enabled=use_amp)
+scaler_d = GradScaler(enabled=use_amp)
+```
+
+### 2. `GradScaler(enabled=use_amp)` — CPU-compatible AMP
+
+**Decision:** Always instantiate `GradScaler` with `enabled=use_amp` flag (False on CPU).
+
+**Rationale:** Makes the training script run correctly on CPU (no CUDA) without code branches. `GradScaler(enabled=False)` is a pass-through no-op.
+
+### 3. DataLoader `persistent_workers=True` — always on (when num_workers > 0)
+
+**Decision:** `persistent_workers=True` unconditionally alongside `num_workers=min(4, cpu_count)`.
+
+**Rationale:** On Windows, Python subprocess creation is expensive. Keeping workers alive between epochs eliminates per-epoch respawn latency (~1–3 s on Windows per epoch). No downside for training workloads with fixed datasets.
+
+### 4. `torch.backends.cudnn.benchmark = True` — always on when CUDA present
+
+**Decision:** Set `cudnn.benchmark = True` unconditionally after detecting CUDA.
+
+**Rationale:** All convolutions in this model operate on fixed spatial dims (128×128). cuDNN benchmark mode auto-selects the fastest algorithm on first run and caches it. The ~30 s profiling cost on epoch 1 is justified over 200-epoch training runs. Would need to be disabled if input shapes varied between batches (they don't here).
+
+### 5. Default batch_size stays at 32
+
+**Decision:** Do not change the default batch_size. Add a comment documenting the VRAM envelope (16–64 safe range for 8GB).
+
+**Rationale:** 32 is a well-tested default. With AMP enabled, 48–64 becomes viable, but we leave this as a user tuning decision documented in both TRAINING.md and train_config.yaml. Forcing a higher default could cause OOM on constrained systems.
+
+---
+
+## Impact on Other Agents
+
+- **Togusa:** No impact — inference pipeline unchanged.
+- **Batou:** No impact — model delivery format unchanged.
+- **Saito:** All 9 existing tests pass. AMP doesn't require new unit tests (the training step contract is the same).
+
+
+
+---
+
+# Decision: SAB Copy Strategy for OnnxInference.ts Input Tensors
+
+**Author:** Togusa  
+**Date:** 2026-03-07  
+**Issue:** #41  
+**PR:** #44  
+
+## Decision
+
+Use conditional `buffer.slice()` copy rather than an unconditional copy for `styleGlyphs` in `OnnxInference.generateGlyph()`.
+
+```ts
+const safeStyleGlyphs = styleGlyphs.buffer instanceof SharedArrayBuffer
+  ? new Float32Array(styleGlyphs.buffer.slice(styleGlyphs.byteOffset, styleGlyphs.byteOffset + styleGlyphs.byteLength))
+  : styleGlyphs;
+```
+
+## Alternatives Considered
+
+| Option | Pro | Con |
+|--------|-----|-----|
+| `Float32Array.from(styleGlyphs)` | Simple, always copies | Unnecessary copy on non-SAB input (163 840 floats = 640 KB allocation per call) |
+| `new Float32Array(styleGlyphs)` | Typed-array copy constructor | Same unnecessary-copy concern |
+| Conditional SAB check + `buffer.slice()` (**chosen**) | Zero overhead on non-SAB path; explicit and readable | Slightly more verbose |
+
+## Rationale
+
+`OnnxInference.ts` is the test/direct path (not the production Worker path), but tests may pass SAB-backed arrays when testing SharedArrayBuffer environments or cross-origin-isolated fixtures. The conditional approach avoids a 640 KB allocation on the normal (non-SAB) path while being fully safe on the SAB path. `buffer.slice()` returns a plain `ArrayBuffer`, guaranteeing ORT receives a non-SAB view.
+
+## Consistency
+
+This pattern is consistent with the spirit of PR #40's output copy fix (`return new Float32Array(outputData)` in `inferenceWorker.ts`). The output fix is unconditional because output buffers are always ORT-owned WASM memory (always SAB in cross-origin-isolated context); the input fix is conditional because callers in normal test code pass plain ArrayBuffer-backed Float32Arrays.
+
