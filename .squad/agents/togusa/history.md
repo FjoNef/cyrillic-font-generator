@@ -148,15 +148,26 @@
 - **Result:** Model loading will now succeed in production; frontend correctly calls Batou's `/api/model` endpoint
 
 
-### 2026-03-05: Sprint Complete --- #16 Closed
-**Issue:** #16 (Model fetch URL fix)  
-**Status:** OK IMPLEMENTATION COMPLETE  
-**Dependencies:** Batou's #17 (backend model path fix)
+### 2026-03-07: E2E Glyph Generation UI Wired (Issue #27, PR #31)
 
-**Change:** App.tsx model fetch endpoint  
-- Old: /api/models/v1/generator.onnx  
-- New: /api/model
+- **Branch:** squad/27-e2e-glyph-generation-ui → dev (PR #31)
+- **Status:** ✅ COMPLETE — 96/96 tests passing
 
-Updated test file to match new endpoint. All 41 frontend tests passing.
+**What was done:**
+- Added `BrowserUnsupported.tsx` component: amber alert shown when WASM or Web Workers are absent, listing missing capabilities and recommending modern browsers
+- Updated `App.tsx` with `detectBrowserSupport()` at module load; model fetch skipped on unsupported browsers; `BrowserUnsupported` banner rendered in `<main>` when gate fails
+- Updated generation progress label to `Generating Cyrillic glyphs: X/66…` (per issue spec)
 
-Backend now exposes /api/model endpoint (Batou's fix resolves actual model file via ContentRootPath).
+**E2E flow (all wired since PR #4, gate added this PR):**
+1. Upload TTF/OTF → `FontLoader.extractStyleGlyphs()` → `Float32Array [10×1×128×128]`
+2. `ModelLoader.load('/api/model')` once at mount; singleton reused for all 66 inferences
+3. Loop over `CYRILLIC_CHARS`: `modelLoader.infer(styleGlyphs, index)` → raw `Float32Array [-1,1]`
+4. Pixel denorm: `((1 - output[i]) / 2) * 255` → `ImageData` for preview
+5. `assembleFontFromGlyphs(rawGlyphs, fontName)` → `ArrayBuffer`
+6. `downloadFont(buffer, '*.otf')` on button click
+
+**Key notes:**
+- `BrowserUnsupported.test.tsx` (4 tests) already existed as untracked from prior branch work — committed here with the component
+- Model URL confirmed as `/api/model` — backend `HandleModelDownload` at that route
+- `detectBrowserSupport()` called synchronously at module load (zero React overhead)
+
