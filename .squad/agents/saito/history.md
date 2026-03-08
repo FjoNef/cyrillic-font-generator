@@ -9,6 +9,45 @@
 ## Learnings
 <!-- Append new entries below -->
 
+### 2026-03-08: PR #47 Review — torch.compile + num_fonts — CHANGES REQUESTED ❌
+
+**Task:** QA code review of PR #47 (Issue #46 — feat(training): Triton/torch.compile support + configurable font count).
+
+**Verdict:** CHANGES REQUESTED — 1 blocking issue (missing test coverage).
+
+**Changes Reviewed:**
+- `src/model/train/train.py`: torch.compile support with 3-tier graceful fallback (PyTorch version, device type, exception handling)
+- `src/model/configs/train_config.yaml`: New `use_compile` (default: false) and `num_fonts` config keys
+- `src/model/data/dataset.py`: `num_fonts` parameter wired through CyrillicFontDataset and CachedFontDataset
+- `src/model/TRAINING.md`: Benchmark results table (124s compile overhead, 1.08× speedup)
+- `src/model/train/benchmark_compile.py`: Manual profiling tool (not a pytest test)
+
+**Implementation Quality: ✅ EXCELLENT**
+- torch.compile graceful degradation: checks PyTorch < 2.0, CPU mode, catches compile exceptions
+- num_fonts edge cases handled safely: 0/negative → uses all fonts, exceeds available → uses all available
+- Alphabetical sorting for deterministic font order
+- Config defaults conservative (use_compile: false) — appropriate for marginal 8% speedup
+- Documentation clear: compilation overhead and recommendation prominently shown
+- All 15/15 existing tests pass
+
+**Findings (Blocking):**
+1. **No test coverage for new features** — Precedent from PR #45: "For a GPU-perf PR, at least one test verifying a training step completes with finite losses is needed." Same standard applies. Required tests:
+   - torch.compile smoke test (doesn't crash, CPU-safe with fallback)
+   - num_fonts edge cases: 0, negative, exceeds available, valid limit (5 tests total)
+   - Pattern: follow `test_amp_training.py` — minimal, CPU-safe, fast execution
+
+**Findings (Non-blocking):**
+2. num_fonts=0/negative behavior (silent ignore) is acceptable but should be documented in docstring
+3. benchmark_compile.py is a manual tool, not a CI test — could be converted to pytest with CUDA skip marker
+
+**Review Status:**
+- Comment posted to PR #47: https://github.com/FjoNef/cyrillic-font-generator/pull/47#issuecomment-4017811453
+- GitHub API restriction: can't formally request changes on own PR — posted as comment instead
+- Decision document: `.squad/decisions/inbox/saito-pr47-review.md`
+
+**Key Pattern:**
+New training config options and performance features require minimal test coverage before approval. Test gap is the only blocker — implementation itself is production-quality.
+
 ### 2026-03-07T21:50:51Z: PR #45 Re-review — AMP + RTX 3070Ti Training Optimization — APPROVED ✅
 
 **Task:** Re-review PR #45 (squad/42-training-perf → dev) after fixes applied.
@@ -910,3 +949,12 @@ um_workers = min(4, os.cpu_count() or 1) declared before DataLoader
 - Two separate GradScalers (scaler_g, scaler_d) for independent GAN backward passes
 - cuDNN benchmark enabled only when CUDA available
 - pin_memory and persistent_workers both guarded by device/num_workers conditions
+
+---
+
+## 2026-03-08: PR #47 Review Complete
+
+**Verdict:** REQUEST CHANGES  
+**Issue:** Missing test file src/model/tests/test_compile_and_num_fonts.py (5 tests required)  
+**Status:** Review posted to GitHub, awaiting author response  
+

@@ -1,18 +1,14 @@
-Training speed optimization: achieve 5.47s/epoch on synthetic benchmark
+squad: Log Saito PR #47 review (REQUEST CHANGES)
 
-Major findings:
-- Target already achieved: 5.47s/epoch on 1000-sample synthetic (11× under 60s goal)
-- Primary bottleneck: G_backward (58% GPU time), not data loading
-- Optimal config: batch_size=64, num_workers=4, prefetch_factor=2, AMP, cudnn.benchmark
-- Real dataset: ~12 min/epoch (compute-bound, pipeline already GPU-limited)
+Orchestration: 2026-03-08T01-02-41Z-saito.md  
+Session: 2026-03-08T01-02-41Z-saito-pr47-review.md  
+Decision: Merged from inbox (PR #47 test coverage blocker)  
+Agent history: Saito updated with PR #47 verdict
 
-Changes:
-- Updated batch_size 32 → 64 in train_config.yaml
-- Implemented CachedFontDataset + build_cache.py for CPU thermal relief & CI
-- Added training profiling scripts (profile_training.py, profile_real_data.py)
-- Added "## Performance Tuning" section to TRAINING.md
-- torch.compile fails on Windows (Triton missing); graceful fallback in place
+Blocking issue: Missing src/model/tests/test_compile_and_num_fonts.py  
+  - 5 required tests: compile smoke, num_fonts edge cases (0, negative, exceeds, valid)  
+  - Precedent: PR #45 required AMP smoke tests
 
-Closes #42
+Awaiting author response with test implementation.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

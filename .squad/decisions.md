@@ -2676,3 +2676,149 @@ training:
 - `src/model/TRAINING.md` — added "## Performance Tuning" section with all findings
 - `train/profile_training.py` — profiling script (not production code, for reference)
 - `train/profile_real_data.py` — real-data I/O profiling script (reference)
+
+
+---
+
+# PR #47 Review: torch.compile + num_fonts — REQUEST CHANGES
+
+**Reviewer:** Saito (Tester)  
+**Date:** 2026-03-08  
+**Branch:** `squad/46-training-triton-fonts` → `dev`  
+**Verdict:** ❌ REQUEST CHANGES — 1 blocking issue (missing test coverage)
+
+---
+
+## Summary
+
+PR #47 adds two training features:
+1. **torch.compile support** — opt-in via `use_compile: false` config flag, ~8% speedup with 124s first-epoch overhead
+2. **num_fonts config option** — limits dataset to first N fonts (alphabetically), useful for quick experiments
+
+Implementation is **functionally sound** with proper error handling and documentation. However, it **lacks test coverage** for the new features, violating the precedent set in PR #45 where AMP smoke tests were required as a blocker.
+
+---
+
+## Code Quality Assessment
+
+### ✅ What's Good
+
+**1. torch.compile implementation (train.py lines ~140-160):**
+- Proper graceful degradation with 3-tier fallback:
+  - PyTorch < 2.0 → disable compile
+  - CPU mode → disable compile (Triton requires CUDA)
+  - Exception during compile → catch and fallback to eager mode
+- Applies to both Generator and Discriminator
+- Clear user messaging about compilation overhead
+- Config defaults to `false` (conservative, appropriate for marginal 8% speedup)
+
+**2. num_fonts implementation (dataset.py):**
+- Correctly wired through both `CyrillicFontDataset` and `CachedFontDataset`
+- Alphabetical sorting ensures deterministic behavior (`sorted(all_font_paths)[:num_fonts]`)
+- Safe handling when `num_fonts > available` (silently uses all available)
+- Safe handling when `num_fonts ≤ 0` (silently ignores, uses all fonts)
+- Docstring clearly documents the parameter
+
+**3. Config schema (configs/train_config.yaml):**
+- Inline comments for both flags are clear and informative
+- `use_compile` documents the compilation overhead and recommendation
+- `num_fonts` example commented out (good default = None)
+
+**4. Documentation (TRAINING.md):**
+- Benchmark table is clear: compilation overhead and speedup prominently shown
+- Recommendation is sensible: default off, enable for long runs (200+ epochs)
+
+**5. Existing tests:**
+- All 15/15 tests pass
+- No regressions introduced
+
+---
+
+## Findings
+
+### ❌ BLOCKING ISSUE #1: Missing Test Coverage for New Features
+
+**Precedent from PR #45 review:**
+> "**No AMP smoke test** — 9 existing tests cover style conditioning and loss weights, none exercise the `autocast`+`GradScaler` path. For a GPU-perf PR, at least one test verifying a training step completes with finite losses is needed."
+
+The same standard applies here. New config options and training features must have minimal test coverage.
+
+**Missing tests:**
+
+1. **torch.compile smoke test:**
+   - No test verifies that `use_compile=True` can be enabled without crashing
+   - `benchmark_compile.py` exists but is a manual benchmark script, not a pytest test
+   - **Required:** Minimal test that compiles Generator+Discriminator and runs one forward pass (can be CPU-only with `enabled=False` fallback, similar to AMP tests)
+
+2. **num_fonts edge case tests:**
+   - No test verifies `num_fonts=0` behavior (currently silently ignored → uses all fonts)
+   - No test verifies `num_fonts` negative behavior (currently silently ignored)
+   - No test verifies `num_fonts > available` behavior (currently works correctly but untested)
+   - No test verifies `num_fonts=10` correctly limits to 10 fonts
+   - **Required:** Test class covering edge cases (0, negative, exceeds available, valid limit)
+
+**Recommendation:**
+Add `src/model/tests/test_compile_and_num_fonts.py` with:
+- `test_compile_can_be_enabled_without_error()` — instantiate models, call `torch.compile()` (wrapped in try/except on CPU), assert no crash
+- `test_num_fonts_zero_uses_all_fonts()` — verifies behavior when `num_fonts=0`
+- `test_num_fonts_negative_uses_all_fonts()` — verifies behavior when `num_fonts < 0`
+- `test_num_fonts_exceeds_available_uses_all_fonts()` — verifies truncation works
+- `test_num_fonts_limits_dataset_size()` — verifies `num_fonts=3` results in dataset with 3 fonts
+
+These tests should follow the same pattern as `test_amp_training.py`: minimal, CPU-safe, fast execution.
+
+---
+
+## Non-Blocking Notes
+
+### Note 1: num_fonts=0 and negative values are silently ignored
+
+**Current behavior:**
+```python
+if num_fonts is not None and num_fonts > 0:
+    all_font_paths = sorted(all_font_paths)[:num_fonts]
+```
+
+When `num_fonts=0` or `num_fonts < 0`, the guard `num_fonts > 0` prevents the slice, so all fonts are used.
+
+**Is this correct?** Debatable. Options:
+- **Current:** Silent ignore (permissive, follows Python convention of "explicit is better than implicit")
+- **Alternative:** Raise `ValueError` for invalid values
+
+**Decision:** Current behavior is acceptable (silent ignore is Pythonic), but should be **documented in the docstring** and **covered by tests**.
+
+### Note 2: benchmark_compile.py is not a test
+
+`benchmark_compile.py` is a manual profiling tool, not a pytest test. It's valuable for documentation but doesn't provide automated regression coverage.
+
+**Recommendation (non-blocking):** Convert `benchmark_compile.py` into a pytest test that runs in CI (with CUDA check: `@pytest.mark.skipif(not torch.cuda.is_available(), reason="Requires CUDA")`). This would catch compile regressions automatically.
+
+---
+
+## Verdict
+
+**REQUEST CHANGES** — Blocking issue:
+1. Missing test coverage for `use_compile` and `num_fonts` features
+
+**Required for approval:**
+- Add `src/model/tests/test_compile_and_num_fonts.py` (or similar) covering:
+  - torch.compile smoke test (doesn't crash)
+  - num_fonts edge cases (0, negative, exceeds available, valid limit)
+
+**Once tests are added:**
+- Re-run full test suite (`python -m pytest src/model/tests/ -v`)
+- Verify all tests pass
+- I will re-review and approve
+
+---
+
+## Architectural Notes
+
+This PR follows good patterns:
+- Conservative defaults (compile off by default)
+- Graceful degradation (multiple fallback tiers)
+- Clear documentation of tradeoffs (overhead vs speedup)
+- Alphabetical sorting for determinism
+
+The only gap is test coverage, which is a process requirement, not a code quality issue.
+
