@@ -2822,3 +2822,86 @@ This PR follows good patterns:
 
 The only gap is test coverage, which is a process requirement, not a code quality issue.
 
+---
+
+## Decision: Test Coverage for torch.compile and num_fonts Parameters
+
+**Date:** 2025-01-XX  
+**Context:** PR #47 review  
+**Author:** Batou (Revision Specialist)  
+**Status:** Implemented  
+
+### Decision
+Added comprehensive test coverage for PR #47 features (`torch.compile` support and `num_fonts` parameter) in `src/model/tests/test_compile_and_num_fonts.py`.
+
+### Rationale
+Saito's review identified **missing test coverage** as the only blocking issue for PR #47. The implementation of both features (torch.compile support in train.py and num_fonts parameter in dataset.py) was approved, but required tests to ensure:
+1. **torch.compile integration doesn't crash** — verification that models can be wrapped with torch.compile without runtime errors
+2. **num_fonts parameter is correctly validated** — verification that edge cases (0, negative, exceeds available, valid limits) are handled gracefully
+
+### Test Structure
+- **File:** `src/model/tests/test_compile_and_num_fonts.py`  
+- **Total tests:** 8 (3 torch.compile + 5 num_fonts)
+- **Results:** 7 passed, 1 skipped (forward pass test on CPU, requires CUDA per train.py guards)
+- **Existing tests:** All 22 continue to pass
+
+### Test Coverage
+**torch.compile tests:**
+1. ✅ test_compile_generator_succeeds
+2. ✅ test_compile_discriminator_succeeds  
+3. ⏭️ test_compiled_model_forward_pass (GPU-only, properly skipped)
+
+**num_fonts tests:**
+4. ✅ test_num_fonts_zero_returns_empty_or_raises
+5. ✅ test_num_fonts_negative_returns_all_fonts
+6. ✅ test_num_fonts_exceeds_available_clamps_to_available
+7. ✅ test_num_fonts_valid_limit_respects_limit
+8. ✅ test_cached_dataset_num_fonts_limit
+
+### Files Changed
+- **Created:** `src/model/tests/test_compile_and_num_fonts.py` (291 lines)
+
+### Cross-references
+- PR #47: feat(training): Triton/torch.compile support + configurable font count
+- Branch: squad/46-training-triton-fonts
+- Commit: 3bb4e04
+
+---
+
+## Decision: PR #47 Re-Approval After Test Coverage Added
+
+**Date:** 2026-03-08  
+**Agent:** Saito (Tester)  
+**Status:** APPROVED ✅  
+**PR:** #47 — feat(training): Triton/torch.compile support + configurable font count  
+
+### Re-Review Findings
+
+**Test Coverage (8 tests, exceeds requirement of 5):**
+- torch.compile tests: 3 (2 passed, 1 GPU-skipped)
+- num_fonts tests: 5 (all passed)
+
+**Test Results:**
+- 7 tests passed
+- 1 test skipped (forward pass test on CPU, requires CUDA per train.py lines 279-281)
+- All 22 existing model tests pass
+- No regressions
+
+**Quality Assessment:**
+- Test coverage comprehensive and exceeds requirement
+- Tests follow existing patterns: CPU-safe, fast, unittest style
+- Documentation excellent: clear docstrings, edge cases documented
+- GPU skip is legitimate and mirrors train.py guards
+
+### Decision
+
+**APPROVED ✅**
+
+Batou's revision fully addresses the blocking issue. The test file exists with 8 tests (exceeds the 5 required), all pass (7) or are legitimately skipped (1), and all existing tests continue to pass (22 total).
+
+### Implications
+
+1. **PR #47 is ready to merge** — blocking test coverage issue resolved
+2. **Quality bar met** — test coverage exceeds expectations
+3. **Team velocity** — prompt approval after successful revision accelerates delivery
+
