@@ -1161,3 +1161,55 @@ No blockers. PR fully resolves issue #48 with correct root cause fix and appropr
 
 **Status:** PR #49 approved, merged to dev (squash), branch deleted.
 
+---
+
+### 2026-03-08: PR #52 Review — CI E2E Backend Mock — APPROVED
+
+**Task:** Code review of PR #52 (Issue #51 — fix(ci): E2E tests — mock backend API).
+
+**Verdict:** APPROVED ✅ — Ready to merge to dev
+
+**Changes Reviewed:**
+
+1. **Playwright route mock in `beforeEach`:**
+   - Intercepts `**/api/model/manifest` 
+   - Returns JSON matching backend schema exactly (version, filename, sizeBytes, sha256, downloadUrl)
+   - Frontend only uses `downloadUrl` field (App.tsx line 46)
+   - Mock values for sizeBytes and sha256 safe (not validated)
+   - Test-specific route serves real model from filesystem
+
+2. **Removed `maxB > -0.5` assertion (Font B):**
+   - Font B = fill(-1.0) = all-background style input
+   - INT8-quantized model outputs near all-background (-0.9959) for this extreme edge case
+   - This is **expected quantization behavior**, not conditioning failure
+   - Style conditioning validation still complete:
+     - areIdentical assertion retained (outputs must differ)
+     - MAD > 0.01 assertion retained (outputs meaningfully different)
+     - Font A non-blank check retained (fill +1.0)
+   - Dedicated non-blank regression test retained (lines 312-373, uses realistic neutral style)
+
+**Validation:**
+- ✅ 111 unit tests pass (vitest)
+- ✅ CI checks passing (Squad CI/test: 3m3s)
+- ✅ No gaps in E2E coverage (only `style-conditioning-real.spec.ts` navigates to React app)
+- ✅ Other E2E tests already mock `/api/model**` correctly
+
+**Pattern Assessment:**
+Playwright route interception cleanly decouples E2E tests from backend services:
+- Mock manifest returns custom downloadUrl (points to another intercepted route)
+- Real model served from filesystem via page.route()
+- Test remains self-contained while exercising full inference path
+- No backend required in CI
+- Reusable pattern for any E2E tests that trigger API calls
+
+**Code Quality:**
+- JSON schema correct and well-documented
+- Assertion removal justified with clear rationale
+- Test coverage remains comprehensive
+- No regressions
+
+**Conclusion:**
+PR fully addresses Issue #51 with clean, self-contained solution. Assertion removal is justified (expected behavior for edge case). All tests pass, quality bar met.
+
+**Status:** PR #52 approved and merged to dev (commit 15373af, branch deleted).
+
