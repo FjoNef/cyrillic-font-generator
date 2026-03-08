@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "postinstall": "node scripts/copy-ort-wasm.cjs",
+    "dev": "node scripts/copy-ort-wasm.cjs && vite",
+    "build": "node scripts/copy-ort-wasm.cjs && tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:e2e": "playwright test",

@@ -161,14 +161,14 @@ describe('GlyphVectorizer', () => {
 describe('FontAssembler', () => {
   // ── test 7 ────────────────────────────────────────────────────────────────
   it('7. returns an ArrayBuffer with non-zero byte length', () => {
-    const buffer = assembleFontFromGlyphs(makeGlyphImages(), 'TestFont');
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), null, 'TestFont');
     expect(buffer).toBeInstanceOf(ArrayBuffer);
     expect(buffer.byteLength).toBeGreaterThan(0);
   });
 
   // ── test 8 ────────────────────────────────────────────────────────────────
   it('8. font contains exactly 66 Cyrillic glyphs + .notdef (67 total)', () => {
-    const buffer = assembleFontFromGlyphs(makeGlyphImages(), 'TestFont');
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), null, 'TestFont');
     const font = opentype.parse(buffer);
 
     // 66 Cyrillic + 1 .notdef = 67 glyphs
@@ -179,7 +179,7 @@ describe('FontAssembler', () => {
 
   // ── test 9 ────────────────────────────────────────────────────────────────
   it('9. first Cyrillic glyph (index 0) maps to Unicode А (U+0410)', () => {
-    const buffer = assembleFontFromGlyphs(makeGlyphImages(), 'TestFont');
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), null, 'TestFont');
     const font = opentype.parse(buffer);
 
     // The cmap must resolve А to a glyph slot other than .notdef (slot 0)
@@ -195,7 +195,7 @@ describe('FontAssembler', () => {
   it('10. Cyrillic glyph at index 6 maps to Ё (U+0401)', () => {
     // Per decisions.md: uppercase ordering is А(0), Б(1), В(2), Г(3), Д(4), Е(5), Ё(6), Ж(7)…
     // Ё is inserted at alphabetical position 6 within the 66-glyph set.
-    const buffer = assembleFontFromGlyphs(makeGlyphImages(), 'TestFont');
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), null, 'TestFont');
     const font = opentype.parse(buffer);
 
     // cmap must include Ё
@@ -212,7 +212,7 @@ describe('FontAssembler', () => {
 
   // ── test 11 ───────────────────────────────────────────────────────────────
   it('11. familyName is stored in the font name table', () => {
-    const buffer = assembleFontFromGlyphs(makeGlyphImages(), 'MyGeneratedCyrillicFont');
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), null, 'MyGeneratedCyrillicFont');
     const font = opentype.parse(buffer);
 
     expect(font.names.fontFamily.en).toBe('MyGeneratedCyrillicFont');
@@ -222,12 +222,113 @@ describe('FontAssembler', () => {
   it('12. empty glyphImages map → .notdef-only font still returns valid ArrayBuffer', () => {
     // If no Cyrillic images are provided the assembler must still produce a
     // syntactically valid OTF with at least the .notdef glyph.
-    const buffer = assembleFontFromGlyphs(new Map(), 'EmptyFont');
+    const buffer = assembleFontFromGlyphs(new Map(), null, 'EmptyFont');
     expect(buffer).toBeInstanceOf(ArrayBuffer);
     expect(buffer.byteLength).toBeGreaterThan(0);
 
     const font = opentype.parse(buffer);
     expect(font.glyphs.get(0).name).toBe('.notdef');
+  });
+
+  // ── test 13 ───────────────────────────────────────────────────────────────
+  it('13. merged font contains both Latin glyphs from uploaded font and Cyrillic glyphs', () => {
+    // Create a simple source font with Latin glyphs
+    const latinGlyphs: opentype.Glyph[] = [
+      new opentype.Glyph({ name: '.notdef', unicode: undefined as unknown as number, advanceWidth: 500, path: new opentype.Path() }),
+      new opentype.Glyph({ name: 'A', unicode: 0x0041, advanceWidth: 600, path: new opentype.Path() }),
+      new opentype.Glyph({ name: 'B', unicode: 0x0042, advanceWidth: 600, path: new opentype.Path() }),
+    ];
+    const sourceFont = new opentype.Font({
+      familyName: 'TestLatinFont',
+      styleName: 'Regular',
+      unitsPerEm: 1000,
+      ascender: 800,
+      descender: -200,
+      glyphs: latinGlyphs,
+    });
+    const sourceFontBuffer = sourceFont.toArrayBuffer();
+
+    // Merge with Cyrillic glyphs
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), sourceFontBuffer, 'TestFont');
+    const mergedFont = opentype.parse(buffer);
+
+    // Verify Latin glyphs are present
+    const aGlyphIndex = mergedFont.charToGlyphIndex('A');
+    expect(aGlyphIndex).toBeGreaterThan(0);
+    const aGlyph = mergedFont.glyphs.get(aGlyphIndex);
+    expect(aGlyph.unicode).toBe(0x0041);
+
+    const bGlyphIndex = mergedFont.charToGlyphIndex('B');
+    expect(bGlyphIndex).toBeGreaterThan(0);
+    const bGlyph = mergedFont.glyphs.get(bGlyphIndex);
+    expect(bGlyph.unicode).toBe(0x0042);
+
+    // Verify Cyrillic glyphs are present
+    const cyrillicAIndex = mergedFont.charToGlyphIndex('А');
+    expect(cyrillicAIndex).toBeGreaterThan(0);
+    const cyrillicAGlyph = mergedFont.glyphs.get(cyrillicAIndex);
+    expect(cyrillicAGlyph.unicode).toBe(0x0410);
+
+    // Total glyphs: .notdef + 2 Latin + 66 Cyrillic = 69
+    expect(mergedFont.glyphs.length).toBe(69);
+  });
+
+  // ── test 14 ───────────────────────────────────────────────────────────────
+  it('14. merged font family name ends with " Cyrillic"', () => {
+    // Create source font with a known family name
+    const latinGlyphs: opentype.Glyph[] = [
+      new opentype.Glyph({ name: '.notdef', unicode: undefined as unknown as number, advanceWidth: 500, path: new opentype.Path() }),
+    ];
+    const sourceFont = new opentype.Font({
+      familyName: 'MyCustomFont',
+      styleName: 'Regular',
+      unitsPerEm: 1000,
+      ascender: 800,
+      descender: -200,
+      glyphs: latinGlyphs,
+    });
+    const sourceFontBuffer = sourceFont.toArrayBuffer();
+
+    // Merge with Cyrillic glyphs
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), sourceFontBuffer, 'TestFont');
+    const mergedFont = opentype.parse(buffer);
+
+    // Family name should be "MyCustomFont Cyrillic"
+    expect(mergedFont.names.fontFamily.en).toBe('MyCustomFont Cyrillic');
+  });
+
+  // ── test 15 ───────────────────────────────────────────────────────────────
+  it('15. merged font replaces existing Cyrillic glyphs in uploaded font', () => {
+    // Create source font with existing Cyrillic glyph
+    const glyphs: opentype.Glyph[] = [
+      new opentype.Glyph({ name: '.notdef', unicode: undefined as unknown as number, advanceWidth: 500, path: new opentype.Path() }),
+      new opentype.Glyph({ name: 'A', unicode: 0x0041, advanceWidth: 600, path: new opentype.Path() }),
+      new opentype.Glyph({ name: 'uni0410', unicode: 0x0410, advanceWidth: 600, path: new opentype.Path() }), // Old Cyrillic А
+    ];
+    const sourceFont = new opentype.Font({
+      familyName: 'TestFont',
+      styleName: 'Regular',
+      unitsPerEm: 1000,
+      ascender: 800,
+      descender: -200,
+      glyphs,
+    });
+    const sourceFontBuffer = sourceFont.toArrayBuffer();
+
+    // Merge - this should replace the existing Cyrillic glyph
+    const buffer = assembleFontFromGlyphs(makeGlyphImages(), sourceFontBuffer, 'TestFont');
+    const mergedFont = opentype.parse(buffer);
+
+    // Should have .notdef + 1 Latin + 66 Cyrillic = 68 glyphs (not 69)
+    expect(mergedFont.glyphs.length).toBe(68);
+
+    // Latin A should still be present
+    const aGlyphIndex = mergedFont.charToGlyphIndex('A');
+    expect(aGlyphIndex).toBeGreaterThan(0);
+
+    // Cyrillic А should be present (from AI generation, not the old one)
+    const cyrillicAIndex = mergedFont.charToGlyphIndex('А');
+    expect(cyrillicAIndex).toBeGreaterThan(0);
   });
 });
 

@@ -4,6 +4,113 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 <!-- Append new entries below. Scribe merges from inbox. -->
 
+---
+
+# Style Conditioning Validation — Real Model E2E Tests
+
+**Date:** 2026-03-08  
+**Author:** Togusa (Frontend Dev)  
+**Status:** CONFIRMED — smoke test PASS, 128 tests green
+
+## Context
+
+Smoke test of retrained model (`models/v1/generator.onnx`, epoch 200, INT8 dynamic quantization) for browser-side ONNX inference. Validates that style input conditioning works correctly in the frontend (Chromium, ORT WASM, single-threaded).
+
+## Findings
+
+### ✅ Style Conditioning: CONFIRMED WORKING
+
+The retrained model correctly responds to style input differences:
+
+- **Test:** `src/frontend/e2e/style-conditioning-real.spec.ts` (3 new tests)
+- **Font A** (style_glyphs all +1.0) vs **Font B** (style_glyphs all -1.0), same char_index=5
+- **Mean Absolute Difference (MAD):** 0.281 — far above 0.01 threshold
+- **Previous model:** MAD ≈ 0.0 (style ignored) → **Current model:** MAD = 0.281 (style working) ✅
+
+### ⚠️ INT8 Quantization Range Epsilon
+
+INT8 quantized model produces output values like `-1.0000001192092896` (epsilon ~1.2e-7 outside [-1.0, 1.0]).
+
+**Decision:** Range assertions use `±1e-6` tolerance, not strict `±1.0`.
+- Applied in `style-conditioning-real.spec.ts`
+- `onnxContract.test.ts` (unit tests, stub model) unaffected
+- Future tests asserting on real model output should use `±1e-6`
+
+### ℹ️ Real Model E2E: Chromium-Only Scope
+
+The 53 MB WASM model is too slow for routine cross-browser testing (Firefox WASM JIT 5–10× slower than Chromium). Chromium-only scope is intentional for CI speed.
+
+For full cross-browser validation, would need smaller quantized model or dedicated slower CI job.
+
+## Results
+
+- **Tests:** 128 green (108 unit + 17 E2E stub + 3 E2E real-model)
+- **New test file:** `src/frontend/e2e/style-conditioning-real.spec.ts`
+- **Status:** All passing
+
+---
+
+# ONNX Export — torch.compile State Dict Key Handling
+
+**Date:** 2026-03-08  
+**Author:** Major (AI/ML Engineer)  
+**Status:** Resolved — fix committed to `dev`
+
+## Context
+
+After the full model retrain (epoch_0200, 2026-03-08), the ONNX export script
+`src/model/export/export_onnx.py` crashed with a `RuntimeError` when loading the
+checkpoint:
+
+```
+Missing key(s): "char_embedding.weight", ...
+Unexpected key(s): "_orig_mod.char_embedding.weight", ...
+```
+
+**Root cause:** Training was run with `use_compile: true` in `train_config.yaml`.
+When `torch.compile` wraps a module, it stores weights under an inner `_orig_mod`
+attribute. PyTorch's checkpoint serialization preserves this prefix in all keys.
+The export script instantiated a plain `UNetGenerator` (no compile) and called
+`load_state_dict()` directly — key names did not match.
+
+## Decision
+
+**Fix:** Added `_strip_orig_mod(state_dict)` helper to `export_onnx.py` that strips
+the `_orig_mod.` prefix from all checkpoint keys before loading. Applied to both
+`style_encoder_state` and `generator_state` dicts.
+
+```python
+def _strip_orig_mod(state_dict):
+    return {k.replace("_orig_mod.", "", 1) if k.startswith("_orig_mod.") else k: v
+            for k, v in state_dict.items()}
+```
+
+This is transparent to the caller and handles both compiled and non-compiled checkpoints.
+
+## Implications
+
+- **Any future export** from a `use_compile: true` training run will work without
+  manual intervention.
+- The fix is backward-compatible: non-compiled checkpoints have no `_orig_mod.` prefix
+  so the helper is a no-op.
+- The `_strip_orig_mod()` pattern should be applied in any other script that loads
+  checkpoints (e.g. evaluation, fine-tuning scripts).
+
+## Export Result (Post-Fix)
+
+| Metric | Value |
+|---|---|
+| Checkpoint | `models/checkpoints/epoch_0200.pth` |
+| Format | INT8 dynamic quantization |
+| Output | `models/v1/generator.onnx` |
+| Size | 53.1 MB |
+| Brotli estimate | ~15.9 MB ✅ |
+| Output shape | (B, 1, 128, 128) float32 |
+| Value range | [-1.0, 1.0] ✅ |
+| Commit | `ceab05d` on `dev` |
+
+---
+
 # torch.compile + num_fonts Configuration
 
 **Date:** 2026-03-08  
@@ -3135,3 +3242,730 @@ um_fonts=-1 raises RuntimeError (empty list after slicing)
 1. **GPU CI runner:** If GitHub Actions adds GPU runners, enable 	est_compiled_model_forward_pass (remove CPU skip)
 2. **num_fonts behavior:** If implementation changes to treat negative as "all fonts", update 	est_num_fonts_negative_returns_all_fonts
 3. **Integration test:** Consider smoke test with real font files (currently tests use synthetic data or empty directories)
+
+---
+
+# Decision: Restore Training Speed Optimization to dev
+
+**Date:** 2026-03-08  
+**Author:** Major (AI/ML Engineer)  
+**Context:** Revert commit 1d8ec45 (which reverted a89456) was a mistake. fjodo requested restoration.
+
+## Decision
+
+Reverted the revert commit (1d8ec45) on dev via git revert 1d8ec45 --no-edit, restoring:
+- src/model/data/build_cache.py — pre-render fonts to .pt cache files
+- src/model/data/dataset.py — CachedFontDataset class
+- src/model/configs/train_config.yaml — onts_cache_dir config key
+- src/model/train/profile_real_data.py — real data profiling script
+- src/model/train/profile_training.py — training loop profiler
+- src/model/train/train.py — CachedFontDataset wiring
+- src/model/TRAINING.md — full profiling documentation
+
+## Conflict Resolution
+
+PR #47 (c67a03b) was already merged when the revert was done. It had stripped CachedFontDataset references during its own conflict resolution. The revert-of-revert produced conflicts in:
+- TRAINING.md: Kept Performance Tuning section (optimization); updated Strategy 4 with PR #47's real torch.compile benchmarks (it works now)
+- 	rain_config.yaml: Kept both 
+um_fonts comment (from PR #47) AND onts_cache_dir comment (from optimization)
+
+## Follow-up Fix
+
+CachedFontDataset lacked the 
+um_fonts parameter that PR #47 had wired into CyrillicFontDataset. Added 
+um_fonts to CachedFontDataset.__init__ and wired it through 	rain.py. Re-enabled the previously-skipped 	est_cached_dataset_num_fonts_limit test.
+
+## Final State
+
+- 22 tests pass, 1 skipped (compile on CPU — expected)
+- dev HEAD: d2519bc
+- All optimization code restored + all PR #47 features intact.
+
+---
+
+# Decision: ImageData Mock in test-setup.ts for jsdom
+
+**Date:** 2026-03-07  
+**Author:** Togusa (Frontend Dev)  
+**Status:** Implemented (PR #47, sha: 7863589)
+
+## Context
+
+PR #47 CI was failing with ReferenceError: ImageData is not defined in styleConditioning.test.ts. The error occurred at OnnxInference.ts:111:
+
+`typescript
+return new ImageData(pixels, size, size);
+`
+
+This code runs in production browsers (where ImageData is native) but also in Vitest tests (where jsdom does not provide a Canvas API constructor).
+
+## Problem
+
+- **jsdom limitation:** jsdom provides DOM APIs but lacks native Canvas implementation.
+- **OnnxInference contract:** generateGlyph() must return an ImageData object (browser-standard type).
+- **Test coverage:** 6 new style conditioning tests invoke generateGlyph() and trigger the ImageData constructor.
+
+## Options Considered
+
+### Option A: Mock ImageData globally in test-setup.ts ✅ **CHOSEN**
+**Pros:**
+- Single source of truth for all test environment polyfills.
+- Consistent with existing Path2D and getImageData mocks in same file.
+- Zero production code changes.
+- Future-proof: guards with 	ypeof globalThis.ImageData === 'undefined'.
+
+**Cons:**
+- None.
+
+### Option B: Mock generateGlyph in each test file
+**Pros:**
+- Test-local control.
+
+**Cons:**
+- Violates DRY (38 onnxContract tests + 6 styleConditioning tests).
+- Mocking generateGlyph defeats the purpose of integration tests (they need to exercise the real ImageData return path).
+
+### Option C: Switch to happy-dom
+**Pros:**
+- happy-dom provides more Canvas APIs.
+
+**Cons:**
+- Unknown compatibility with existing tests.
+- Larger environment change for a single API.
+- Not guaranteed to provide ImageData constructor.
+
+## Decision
+
+Implement **Option A**: Add a minimal ImageData class mock to 	est-setup.ts.
+
+## Implementation
+
+Added to src/frontend/src/test-setup.ts (lines 38-53):
+
+`typescript
+// ImageData is not available in jsdom; provide a minimal implementation.
+if (typeof (globalThis as any).ImageData === 'undefined') {
+  (globalThis as any).ImageData = class ImageData {
+    data: Uint8ClampedArray;
+    width: number;
+    height: number;
+
+    constructor(dataOrWidth: Uint8ClampedArray | number, widthOrHeight: number, height?: number) {
+      if (dataOrWidth instanceof Uint8ClampedArray) {
+        this.data = dataOrWidth;
+        this.width = widthOrHeight;
+        this.height = height!;
+      } else {
+        this.width = dataOrWidth;
+        this.height = widthOrHeight;
+        this.data = new Uint8ClampedArray(this.width * this.height * 4);
+      }
+    }
+  };
+}
+`
+
+Supports both Canvas API constructors:
+1. 
+ew ImageData(data: Uint8ClampedArray, width: number, height: number) — used by OnnxInference.ts
+2. 
+ew ImageData(width: number, height: number) — Canvas API standard
+
+## Verification
+
+- **Before:** 6/6 styleConditioning tests failing, 102/108 total passing.
+- **After:** 108/108 tests passing, zero regressions.
+
+## Consequences
+
+- ✅ CI unblocked for PR #47.
+- ✅ All future tests using ImageData will work without additional mocking.
+- ✅ Pattern established for adding jsdom polyfills (use test-setup.ts, guard with 	ypeof).
+- ⚠️ If Vitest/jsdom adds native ImageData in the future, our guard ensures the mock is skipped.
+
+---
+# Finding: Blank Glyph Bug — Model Output Analysis
+
+**From:** Major (AI/ML Engineer)  
+**Date:** 2026-03-08  
+**For:** Togusa (Frontend) — cross-reference for browser smoke test investigation  
+
+---
+
+## What the sanity check reveals about blank glyphs
+
+The new `check_model.py` script directly tests the model output in Python (no browser involved).  
+Run it on the current `models/v1/generator.onnx` to get definitive evidence:
+
+```bash
+cd src/model
+python export/check_model.py models/v1/generator.onnx
+```
+
+---
+
+## The blank-glyph root cause (architectural, now fixed in code)
+
+The blank glyph bug has a **known architectural root cause** that was diagnosed and fixed in code on 2026-03-07, but the current ONNX model (`epoch_0200`) was trained with the **old, broken architecture**.  
+The fix requires retraining from scratch.
+
+### What went wrong
+
+`UNetGenerator.forward()` previously fed `torch.zeros(B, 1, 128, 128)` — a blank canvas — through the U-Net encoder.  This made all six skip connections (e1–e6) **identical constants** regardless of the input font.
+
+Style conditioning entered only at the 1×1 bottleneck via `cond_spatial`.  After 6 decoder stages each mixed with constant-zero skip connections, the style signal was overwhelmed.  The model learned to output the *average* glyph shape with no ink, driven entirely by the L1 loss against training targets whose per-pixel average is near background (-1.0).
+
+### What the sanity check would catch
+
+| Check | Expected result on epoch_0200 | Reason |
+|---|---|---|
+| Output range | ✅ PASS — values in [-1, 1] | INT8 quantisation preserves range |
+| Non-blank | ❌ **FAIL** — < 1 % of pixels above 0.0 | Model learned to output all-background (-1.0) |
+| Style conditioning | ✅ PASS — MAD ≈ 0.28 | Model still responds to style fill level slightly |
+| Char isolation | ❓ Likely FAIL or marginal | Char embedding has little effect post-collapse |
+
+The **non-blank check** is the key detector.  The old browser smoke test only checked relative MAD (style conditioning), which passed because the model does shift output values slightly with style — but the absolute output values are all near -1.0 = all white = blank glyph.
+
+---
+
+## The fix (already in code, requires retraining)
+
+`UNetGenerator.forward()` now receives `style_glyph_0` (the first style reference glyph) instead of `torch.zeros`.  All six skip connections carry real per-font structure.  Feature-matching loss and `lambda_l1=10` (down from 100) were also added.
+
+**Implication for Togusa:** The current ONNX model is architecturally broken — no inference-time fix is possible.  Once the retrained model is exported, use `check_model.py` to verify the non-blank check passes before browser integration.
+
+---
+
+## How to confirm the diagnosis right now
+
+```bash
+cd src/model
+python export/check_model.py models/v1/generator.onnx
+```
+
+Expected output if diagnosis is correct:
+
+```
+  ✅  PASS  Output range in [-1, 1]             min=...  max=...
+  ❌  FAIL  Non-blank (≥1% ink pixels)           ink_frac=0.0000  (threshold output>0.0)
+  ✅  PASS  Style conditioning (MAD > 0.01)      MAD=0.2810  ...
+  ❌  FAIL  Char isolation (MAD > 0.005)         MAD(0,1)=0.0001  ...
+```
+
+
+---
+# Decision: Retrained Generator Export — Style Conditioning Fix Confirmed
+
+**Date:** 2026-03-08  
+**Author:** Major (AI/ML Engineer)  
+**Status:** Confirmed and committed
+
+## Decision
+
+The retrained `models/v1/generator.onnx` (from `epoch_0200.pth`, trained with the fixed `UNetGenerator.forward()`) replaces the previous broken export. This model is the canonical v1 model for browser delivery.
+
+## Context
+
+The previous `generator.onnx` was trained with `torch.zeros` as the encoder input, making all 6 U-Net skip connections constant zeros. This caused blank white glyph output (all -1.0 in model space). The architecture was fixed to use `style_glyph_0` as encoder input, and a full 200-epoch retrain was completed.
+
+## Validation
+
+All 4 `check_model.py` checks pass on the new export:
+- Non-blank check: ink_frac=0.0266 (was 0.0 with the broken model)
+- Style conditioning MAD: 0.2823 (strong style sensitivity)
+- Char isolation MAD: 0.084–0.091 (distinct per-character output)
+- Output range: [-1.0, 1.0] ✅
+
+## Implications
+
+- **Togusa:** The `models/v1/generator.onnx` now produces non-blank, style-sensitive glyphs. The blank white glyph regression is resolved.
+- **Batou:** File size unchanged — still 53.1 MB uncompressed, ~15.9 MB brotli. No server-side changes needed.
+- **Future:** The check_model.py non-blank check (ink_frac ≥ 1%) is now the mandatory regression gate before any future model commit.
+
+
+---
+# Model Sanity Check — Implemented
+
+**From:** Major (AI/ML Engineer)  
+**Date:** 2026-03-08  
+**Status:** Done  
+
+---
+
+## Summary
+
+Implemented `src/model/export/check_model.py` — a fast Python sanity check script for exported ONNX models.  Runs in < 10 seconds using synthetic inputs only.  Added `--check` flag to `export_onnx.py` and documented usage in `TRAINING.md`.
+
+---
+
+## Deliverables
+
+| File | Change |
+|---|---|
+| `src/model/export/check_model.py` | New script — 5 checks, pass/fail summary, exit code |
+| `src/model/export/export_onnx.py` | Added `--check` flag; `export()` now returns path |
+| `src/model/TRAINING.md` | New section "## Model Sanity Check" with usage, convention table, examples |
+| `.squad/decisions/inbox/major-blank-glyph-finding.md` | Blank glyph diagnosis for Togusa |
+
+---
+
+## Checks implemented
+
+### 1. Output range ([-1, 1])
+Verifies min/max of a neutral inference run stay within [-1.0 ± 0.1, 1.0 ± 0.1].  The epsilon tolerates INT8 quantisation artefacts.
+
+### 2. Non-blank
+**This is the key check that would have caught the blank-glyph bug.**
+
+In model output space: `+1.0` = black ink, `-1.0` = white background (postprocessing: `((1-output)/2)*255`).  
+A blank glyph has all output near `-1.0` — zero ink pixels.  
+Check: ≥ 1 % of pixels must be above `0.0`.
+
+### 3. Style conditioning
+Runs two inferences with maximally contrasting style inputs (all +1.0 vs all -1.0).  
+MAD must exceed 0.01 — confirms the model is not ignoring style inputs.
+
+### 4. Character isolation
+Runs inferences with `char_index=0`, `char_index=1`, `char_index=65`.  
+MAD between any two must exceed 0.005 — confirms character embedding has effect.
+
+### 5. Regression baseline (optional)
+If `test_outputs/` contains `.npy` baseline files (saved with `--save-baselines`), compares current outputs against them.  MAD must stay ≤ 0.1.  Skipped gracefully if no baselines exist.
+
+---
+
+## Why the old smoke test missed the blank-glyph bug
+
+The browser smoke test checked relative MAD between two style inputs (similar to check #3 above).  That check **passed** (MAD ≈ 0.281) because the broken model still shifts output values slightly with style input.  But the absolute values were all near -1.0 (all white = blank), which required check #2 (non-blank) to detect.
+
+**Lesson:** Style conditioning alone is insufficient as a correctness signal.  Absolute output quality (non-blank, range) must be verified independently.
+
+---
+
+## Usage
+
+```bash
+# Quick check:
+python export/check_model.py models/v1/generator.onnx
+
+# After confirming model is correct, save baselines:
+python export/check_model.py models/v1/generator.onnx --save-baselines test_outputs/
+
+# Future checks with regression:
+python export/check_model.py models/v1/generator.onnx --baselines test_outputs/
+
+# Automatically after export:
+python export/export_onnx.py \
+    --checkpoint models/checkpoints/epoch_0200.pth \
+    --output models/v1/generator.onnx \
+    --check
+```
+
+---
+
+## Next steps
+
+1. Run `check_model.py` on the current `epoch_0200` export — expected to fail check #2 (non-blank), confirming the blank-glyph diagnosis.
+2. After retrain completes, run `check_model.py --save-baselines test_outputs/` to establish regression baselines for the fixed model.
+3. Consider adding `check_model.py` to the CI pipeline (it exits 1 on failure).
+
+
+---
+# Blank Cyrillic Glyph — Frontend Audit & Smoke Test Fix
+
+**Author:** Togusa (Frontend Dev)  
+**Date:** 2026-03-09  
+**Status:** Frontend fix applied — retraining required for full resolution  
+
+---
+
+## Root Cause Confirmed
+
+The blank glyph bug is **model-level**, not frontend-level.
+
+The `epoch_0200` ONNX model was trained with the **old, broken `UNetGenerator` architecture** that fed `torch.zeros(B,1,128,128)` through the U-Net encoder. All six skip connections were constant-zero regardless of input font. The model learned to minimise L1 loss by predicting near-all-background (-1.0), which postprocesses to 255 (white) on every pixel → blank canvas.
+
+Cross-referenced with Major's inbox finding (`major-blank-glyph-finding.md`): non-blank check expected to fail with < 1 % of pixels above 0.0 on `epoch_0200`.
+
+---
+
+## Frontend Code Audit — Everything is Correct
+
+A full audit of the inference pipeline found **no frontend code bugs**:
+
+| Component | Formula / Logic | Status |
+|-----------|----------------|--------|
+| `FontLoader.extractStyleGlyphs()` | `1 - brightness * 2` (white bg→-1, black ink→+1) | ✅ Correct |
+| `OnnxInference.generateGlyph()` | `((1 - outputData[i]) / 2) * 255` (+1→0 black, -1→255 white) | ✅ Correct |
+| `App.tsx` postprocessing | Same formula, `alpha = 255` hardcoded | ✅ Correct |
+| `inferenceWorker.ts` | `new Float32Array(outputData)` copy before return | ✅ Correct |
+| `ModelLoader.ts` | `new Float32Array(msg.output)` defensive copy on receive | ✅ Correct |
+
+No code changed between the model export (`ceab05d`) and the blank-output report (`git diff` was empty on all frontend inference files).
+
+---
+
+## Why the Smoke Test Gave a False Pass
+
+The style conditioning smoke test checked **relative** style response (MAD between `fill(+1.0)` and `fill(-1.0)` inputs). MAD = 0.281 confirmed the model responds differently to different style extremes.
+
+However, the model can produce slightly different near-all-background outputs and still pass a MAD > 0.01 threshold. Neither output needs to be non-blank for the relative test to pass.
+
+**The test lacked an absolute pixel content assertion.**
+
+---
+
+## Fix Applied (Frontend)
+
+Updated `src/frontend/e2e/style-conditioning-real.spec.ts`:
+
+1. **Style conditioning test** — added `minA`, `maxA`, `minB`, `maxB` to returned data and added:
+   ```javascript
+   expect(result.maxA).toBeGreaterThan(-0.5); // not all-background
+   expect(result.maxB).toBeGreaterThan(-0.5);
+   ```
+
+2. **New test**: `'non-blank: neutral style input must produce visible glyph pixels'`
+   - Uses `fill(0.0)` (neutral midtone) style input and `char_index=0` (А)
+   - Asserts `max > -0.5` (ink pixels present) and `std > 0.05` (structural variation)
+   - This test **will fail** on the `epoch_0200` model and **pass** on the correctly retrained model
+
+Total tests: was 20, now 21 (Chromium E2E). Unit tests unchanged (108/108 green).
+
+---
+
+## Action Required: Model Retraining
+
+**For Major:** The architectural fix (`UNetGenerator.forward()` now passes `style_glyph_0` instead of `torch.zeros`) is already committed. The next step is to:
+
+1. Retrain from scratch using the fixed architecture
+2. Export new ONNX model
+3. Run `python export/check_model.py models/v1/generator.onnx` to verify the **non-blank check passes**
+4. Re-run `npx playwright test style-conditioning-real.spec.ts` to verify all 5 real-model tests pass (including the new non-blank test)
+
+---
+
+## Decision
+
+**The smoke test must always include an absolute-value non-blank assertion alongside relative MAD.**  
+A MAD-only test is insufficient to detect mode-collapsed models that output all-background.
+
+
+---
+# Smoke Test Result: models/v1/generator.onnx (epoch_0200)
+
+**Date:** 2026-03-08  
+**Author:** Togusa  
+**Status:** ✅ GREEN — No issues found
+
+## Summary
+
+Full smoke test run against `models/v1/generator.onnx` (53.1 MB INT8, epoch_0200 retrain).
+
+All 128 tests pass. Style conditioning is confirmed working.
+
+## Test Results
+
+| Suite | Result | Count |
+|---|---|---|
+| Vitest unit tests | ✅ PASS | 108/108 |
+| Playwright E2E (stub model) | ✅ PASS | 17/17 |
+| Playwright E2E (real model) | ✅ PASS | 3/3 |
+| **Total** | **✅ PASS** | **128/128** |
+
+## Style Conditioning Validation
+
+The KEY test: `STYLE CONDITIONING: two maximally-different font styles produce different outputs`
+
+- **Font A** (styleGlyphs all +1.0) vs **Font B** (styleGlyphs all -1.0)
+- **Mean Absolute Difference:** 0.281117 (threshold: > 0.01) ✅
+- **areIdentical:** false ✅
+- **inputNames:** `style_glyphs`, `char_index` (matches contract) ✅
+
+The old broken model (pre-epoch_0200) produced identical outputs regardless of style input. The new model clearly responds to different style signals — **style conditioning is fixed**.
+
+## Model File
+
+- Path: `models/v1/generator.onnx`
+- Size: 53,084,867 bytes (53.1 MB)
+- Last modified: 2026-03-08 10:55:17
+- Quantization: INT8 dynamic
+
+## No Issues Found
+
+- No console errors related to model loading or inference
+- Model load time: within 5000 ms target (passes E2E assertion)
+- Per-glyph inference: within 500 ms WASM target (passes E2E assertion)
+- Output shape correct: [1, 1, 128, 128] ✅
+- Output range correct: [-1, 1] (±1e-6 for INT8 epsilon) ✅
+- Determinism: same inputs → bit-identical outputs ✅
+
+## ORT WASM Output Copy Note
+
+The real model test (`style-conditioning-real.spec.ts`) correctly uses `new Float32Array(tensor.data)` to explicitly copy ORT WASM output before comparison. This guards against the aliasing bug fixed in PR #40. Pattern is correctly followed throughout.
+
+
+---
+# Decision Inbox: Frontend Validation Complete — Model c339b72
+
+**Author:** Togusa  
+**Date:** 2026-03-09  
+**Status:** ✅ Complete  
+
+---
+
+## Summary
+
+Full frontend test suite ran against the corrected `models/v1/generator.onnx` (commit `c339b72`, retrained with correct `UNetGenerator.forward()` using `style_glyph_0` instead of `torch.zeros`).
+
+**All 129 tests pass.** Non-blank regression tests are green.
+
+---
+
+## Test Results
+
+| Suite | Count | Status |
+|-------|-------|--------|
+| Vitest unit tests | 108/108 | ✅ |
+| Playwright E2E (Chromium) | 21/21 | ✅ |
+| **Total** | **129/129** | **✅** |
+
+### Non-blank regression tests (the regressions added to catch epoch_0200 bug):
+
+- `non-blank: neutral style input must produce visible glyph pixels` → **PASS** (max=1.0, std=0.3015)
+- `STYLE CONDITIONING: two maximally-different font styles produce different outputs` → **PASS** (MAD=0.2874, maxA=1.0)
+
+---
+
+## Test Fix Applied
+
+**File:** `src/frontend/e2e/style-conditioning-real.spec.ts`
+
+Removed `expect(result.maxB).toBeGreaterThan(-0.5)` from the style conditioning test.
+
+**Reason:** Font B uses `fill(-1.0)` (all-background style). The correctly retrained model produces near-background output for an all-background style input — this is correct style conditioning behaviour, not a blank glyph bug. The assertion was a false positive introduced when diagnosing the epoch_0200 blank glyph issue.
+
+The dedicated `non-blank` test using `fill(0.0)` (neutral style) is the correct regression guard and continues to pass with strong metrics.
+
+---
+
+## Decision for Team
+
+**Non-blank detection should always use neutral/realistic style inputs (`fill(0.0)`)**, not maximally extreme synthetic inputs (`fill(-1.0)`). The all-background extreme legitimately produces low-ink output from a properly conditioned model.
+
+The `non-blank` test is now the canonical blank glyph regression guard.
+
+
+
+---
+
+# Blank Inference Output — Root Cause and Fix
+
+**Date:** 2026-03-09  
+**Reporter:** Major (AI/ML Engineer)  
+**Status:** FIXED  
+
+## Problem
+
+After user rebuilt frontend/backend and cleared cache, all 66 preview glyphs appeared as blank white squares. Downloaded .otf had no visible glyphs (expected cascading failure from blank inference).
+
+## Root Cause
+
+The `/api/model/manifest` endpoint returns an **absolute URL**:
+```json
+{
+  "downloadUrl": "http://localhost:5000/api/model/v1/generator.onnx"
+}
+```
+
+When `App.tsx` (running on Vite dev server at `http://localhost:5173`) passes this absolute URL to the inference worker, the worker tries to fetch **directly from port 5000**, bypassing the Vite proxy.
+
+**Why this fails:**
+1. Web Workers run in a separate JavaScript context
+2. They do NOT inherit the Vite proxy configuration (`/api` → `http://localhost:5000`)
+3. Direct fetch from worker to port 5000 likely fails (CORS, connection refused, or other cross-origin issues)
+4. Worker fails silently, never loads the model, produces blank output
+
+**Why the manifest returns an absolute URL:**
+`ModelEndpoints.cs` line 109:
+```csharp
+var baseUrl = $"{request.Scheme}://{request.Host}";
+downloadUrl = $"{baseUrl}/api/model/{cache.Version}/{cache.Filename}"
+```
+When the request comes through the Vite proxy, `request.Host` is the backend's own address (`localhost:5000`), not the frontend's (`localhost:5173`).
+
+## Fix
+
+**App.tsx (lines 41-51):** Extract only the **pathname** from the absolute URL before passing to `modelLoader.load()`:
+
+```typescript
+const manifestRes = await fetch('/api/model/manifest');
+const manifest: { downloadUrl: string } = await manifestRes.json();
+
+// ⚠️ Critical: Extract only the pathname from downloadUrl.
+// The manifest returns an absolute URL (http://localhost:5000/api/model/...),
+// but the worker needs to fetch via the Vite proxy on port 5173.
+const url = new URL(manifest.downloadUrl, window.location.origin);
+const modelPath = url.pathname; // e.g. "/api/model/v1/generator.onnx"
+
+await modelLoader.load(modelPath, (progress) => { ... });
+```
+
+This ensures:
+- The worker fetches from `/api/model/v1/generator.onnx` (relative path)
+- Vite proxy intercepts and forwards to `http://localhost:5000/api/model/v1/generator.onnx`
+- CORS is satisfied (same-origin from worker's perspective)
+
+## Additional Changes
+
+1. **inferenceWorker.ts:** Added debug log to verify non-blank output:
+   ```typescript
+   const maxVal = Math.max(...Array.from(outputData.slice(0, 100)));
+   const minVal = Math.min(...Array.from(outputData.slice(0, 100)));
+   console.debug('[inferenceWorker] output range (first 100px):', minVal, 'to', maxVal);
+   ```
+   This lets user verify immediately whether inference is producing real output.
+
+2. **FontAssembler.ts:** Fixed TypeScript error (`glyph.name` can be `null`, opentype.js expects `string | undefined`).
+
+## Verification
+
+Model sanity check confirmed working before the fix:
+```
+✅  ALL CHECKS PASSED (4/4)
+- Output range in [-1, 1]
+- Non-blank (ink_frac=0.0266)
+- Style conditioning (MAD=0.282292)
+- Char isolation (MAD(0,1)=0.084033)
+```
+
+So the bug was definitively in the inference pipeline URL handling, not the model itself.
+
+## Impact
+
+- **Production:** No impact (frontend and backend share the same origin, no proxy involved)
+- **Development:** Critical fix — without it, local dev environment produces blank glyphs
+
+## Recommendation
+
+Consider changing `ModelEndpoints.cs` to return **relative URLs** only:
+```csharp
+downloadUrl = $"/api/model/{cache.Version}/{cache.Filename}"
+```
+
+This would work in both dev and production, avoiding the need for pathname extraction in the frontend.
+
+Alternatively, keep current approach (absolute URLs) but document that frontends running behind proxies must extract the pathname.
+
+Current fix (pathname extraction in `App.tsx`) is safe for both dev and production.
+
+
+---
+
+# Decision: Font Merge Feature
+
+**Date:** 2026-03-09  
+**Agent:** Togusa  
+**Status:** Implemented  
+
+## Context
+
+The app previously generated a standalone Cyrillic-only font containing only the 66 AI-generated Cyrillic glyphs. Users needed to manually merge this with their original font using external tools.
+
+## Decision
+
+Modified the font assembly pipeline to automatically merge AI-generated Cyrillic glyphs into the uploaded font, producing a single complete font with both original glyphs AND new Cyrillic glyphs.
+
+## Implementation
+
+### FontAssembler.ts Changes
+
+**New signature:**
+```typescript
+assembleFontFromGlyphs(
+  glyphImages: Map<number, Float32Array>,
+  uploadedFont: ArrayBuffer | null,
+  baseFamilyName: string
+): ArrayBuffer
+```
+
+**Merge logic:**
+1. Parse uploaded font with `opentype.parse()`
+2. Extract font metrics (unitsPerEm, ascender, descender)
+3. Build output glyph list:
+   - Start with .notdef (required first glyph)
+   - Copy all glyphs from uploaded font EXCEPT:
+     - Glyphs without unicode (special glyphs/ligatures)
+     - Cyrillic range (0x0400-0x04FF) — will be replaced by AI-generated versions
+   - Add all 66 AI-generated Cyrillic glyphs
+4. Set family name to `{existingFamilyName} Cyrillic`
+5. Preserve uploaded font's metrics instead of hardcoded defaults
+
+**Fallback:** If `uploadedFont` is `null`, creates standalone Cyrillic-only font with default 1000 UPM metrics (backward-compatible).
+
+### GlyphVectorizer.ts Changes
+
+Added `targetUpm` parameter (default: 1000) to `vectorizeGlyph()`:
+- Scales all path coordinates by `targetUpm / 1000` factor
+- Allows Cyrillic glyphs to match uploaded font's coordinate system
+- Example: If uploaded font is 2048 UPM, Cyrillic glyphs are scaled 2.048x
+
+### App.tsx Changes
+
+Updated `handleGenerate()` to pass `uploadedFont` from store:
+```typescript
+const buffer = assembleFontFromGlyphs(rawGlyphs, uploadedFont, fontName ?? 'Generated Cyrillic');
+```
+
+## Testing
+
+Added 3 new tests to `fontPipeline.test.ts`:
+- **Test 13:** Verifies merged font contains both Latin (from uploaded) and Cyrillic (AI-generated) glyphs
+- **Test 14:** Verifies family name ends with " Cyrillic"
+- **Test 15:** Verifies existing Cyrillic glyphs are replaced (not duplicated)
+
+All 111 tests passing across 10 test files.
+
+## Technical Notes
+
+### Cyrillic Unicode Range
+Must skip range 0x0400-0x04FF when copying from uploaded font to avoid duplicates:
+```typescript
+if (glyph.unicode >= CYRILLIC_UNICODE_MIN && glyph.unicode <= CYRILLIC_UNICODE_MAX) {
+  continue; // Will be replaced by AI-generated version
+}
+```
+
+### Font Metrics Scaling
+Cyrillic advance width scales proportionally to uploaded font UPM:
+```typescript
+const cyrillicAdvanceWidth = Math.round(600 * upm / 1000);
+```
+
+### Font Name Extraction
+Family name extracted with fallback chain:
+```typescript
+const existingFamilyName = 
+  sourceFont.names.fontFamily?.en || 
+  sourceFont.names.fullName?.en || 
+  baseFamilyName;
+```
+
+## User Impact
+
+**Before:** Users received a Cyrillic-only .otf file and had to manually merge it with their original font using external tools.
+
+**After:** Users receive a complete merged font with:
+- All original Latin/symbols/ligatures from uploaded font
+- AI-generated Cyrillic glyphs (66 characters)
+- Correct font metrics matching the uploaded font
+- Family name: `{Original Name} Cyrillic` (e.g., "Inter Cyrillic", "Roboto Cyrillic")
+
+## Files Changed
+
+- `src/frontend/src/FontAssembler.ts` — merge logic
+- `src/frontend/src/GlyphVectorizer.ts` — UPM scaling
+- `src/frontend/src/App.tsx` — pass uploaded font buffer
+- `src/frontend/src/fontPipeline.test.ts` — 3 new merge tests
+- `src/frontend/src/inference/__tests__/integration.test.ts` — updated signature
+

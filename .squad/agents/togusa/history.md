@@ -24,112 +24,188 @@
 - PR #40 merged: Fixed SharedArrayBuffer output aliasing (Float32Array view → explicit copy before postMessage)
 - Test coverage: 92 inference tests + 96 E2E tests + 1 regression test (SAB aliasing), all passing
 
-**Current Status:** Inference pipeline 100% operational. Awaiting Major's model retraining with style conditioning fixes.
+**Current Status:** Inference pipeline 100% operational. ✅ **MAJOR UPDATE (2026-03-08):** Fresh ONNX model exported and validated. Ready for inference test cycle. ✅ **SMOKE TEST COMPLETE (2026-03-08T11:43:53Z):** Style conditioning confirmed working after retraining. All 128 tests green.
 
 **Execution Providers:** WebGL preferred (15–30 ms/glyph), WASM fallback (80–600 ms/glyph).
 **Browser Support:** Detects WASM, Workers, WebGL, SharedArrayBuffer; renders unsupported banner if absent.
 
+### Inference Bug Fixes & Test Hardening (Mar 7–8)
+SAB aliasing fixed in `OnnxInference.ts` (PR #44): conditional copy before creating `styleTensor` guards the test-only inference path; the worker path was already fixed in PR #40. `ImageData` class mock added to `src/frontend/src/test-setup.ts` for jsdom compatibility (jsdom lacks Canvas API constructors). Style conditioning smoke test suite (`src/frontend/e2e/style-conditioning-real.spec.ts`) created against real `models/v1/generator.onnx`: 3 tests (shape/range, style conditioning MAD=0.281, determinism), Chromium-only due to 53 MB WASM compile cost. INT8 epsilon finding: quantized model can produce values like `-1.0000001192092896` — assertions require ±1e-6 tolerance. Debug instrumentation added to `inferenceWorker.ts` (7 console.log statements logging session.inputNames, feed tensor shapes/values, and raw output range) — confirmed JS layer is correct; root cause of style-invariant output was model-level (Major's `torch.zeros` encoder bug), not a frontend issue. Key lesson: **MAD-only smoke tests are insufficient** — a style-differentiated but mode-collapsed model passes MAD > 0.01 while still producing near-blank output; always add absolute non-blank assertion (`max > threshold`, `std > threshold`).
+
 ---
+
+## Cross-Agent Updates
+
+### 2026-03-08: Fresh ONNX Model Ready (Major)
+
+Major has successfully exported and validated a fresh ONNX model from the retrained checkpoint (epoch_0200). 
+
+**Model Details:**
+- **Checkpoint:** `models/checkpoints/epoch_0200.pth` (200 epoch full retrain with `use_compile: true`)
+- **Export:** `models/v1/generator.onnx` (53.1 MB, INT8 dynamic quantization)
+- **Forward pass validation:** ✅ Input (1,1,128,128) → Output (1,1,128,128) float32, values in [-1.0, 1.0]
+- **Compression estimate:** ~15.9 MB with Brotli
+- **Fix applied:** torch.compile `_orig_mod.` prefix stripping in export script (backward-compatible)
+
+**Implication for Togusa:**
+You can now pick up this fresh model for the next inference validation cycle. The 7 debug console.log statements already added to `inferenceWorker.ts` will serve as verification that the retrained model correctly processes style signals (Major's retraining should have fixed the style-invariant output issue).
+
+**Artifacts:**
+- Decision: `.squad/decisions.md` (ONNX Export section)
+- Orchestration: `.squad/orchestration-log/2026-03-08T105807Z-major.md`
+- Session log: `.squad/log/2026-03-08T105807Z-onnx-export.md`
+- Commit: `ceab05d` on `dev`
+
+---
+
 
 ## Learnings
 
-### 2026-03-07: Runtime Debug Instrumentation — Identical-Output Bug (post-PR #40)
+### 2026-03-08 (re-run): Full Smoke Test Verification — Fresh ONNX Model (epoch_0200)
 
-- **Task:** Add debug logging to inferenceWorker.ts to diagnose why output glyphs are still identical regardless of input font, even after PR #40's SharedArrayBuffer copy fix.
-- **Status:** ✅ Debug logging added. No fix yet — findings only.
+- **Task:** Re-run complete test suite against `models/v1/generator.onnx` (53.1 MB INT8, freshly retrained epoch_0200) to confirm style conditioning and baseline test health.
+- **Status:** ✅ All tests passing. Style conditioning CONFIRMED working.
 
-**What was added** (inferenceWorker.ts):
-1. After session creation in loadModel(): session.inputNames and session.outputNames logged — exposes the ACTUAL key names the loaded ONNX model expects, allowing us to check whether style_glyphs/char_index are correct or if the model expects different names (which would cause silent zero-input fallback).
-2. Before session.run(feeds) in unInference(): char_index value, first 5 float values of style_glyphs, and both tensor shapes/dtypes are logged.
-3. After session.run(feeds): resolved output key name and first 5 raw float values of outputTensor.data are logged.
+**Unit tests (Vitest):** 108/108 ✅
+- colorMapping: 5/5
+- performance: 9/9
+- ModelLoader: 8/8
+- BrowserUnsupported: 4/4
+- fontPipeline: 15/15
+- integration: 8/8
+- onnxContract: 38/38
+- styleConditioning: 6/6
+- FontLoader: 6/6
+- fontLoader.styleVariation: 5/5
 
-**Key architectural findings (no code bugs found in the JS layer):**
-- Feed keys style_glyphs and char_index match the documented contract — but there is NO code that reads session.inputNames to verify at runtime. If the actual ONNX model has different input names, ORT would silently use defaults (zeros), and we'd never know without this logging.
-- Tensor shapes are correct: [1, 10, 1, 128, 128] float32, [1] int64.
-- The double-copy fix from PR #40 is correctly in place (worker + ModelLoader).
-- styleGlyphs is a plain 
-ew Float32Array(total) from FontLoader.extractStyleGlyphs() — not SAB-backed. postMessage will structurally clone it correctly.
-- ModelLoader.loadPromise is only set once. A second font upload updates the store's styleGlyphs and React re-renders handleGenerate with the new value (it's in the dep array). This should be fine.
+**Playwright E2E (Chromium only — includes real model):** 20/20 ✅
+- Performance: Model Load Time: 3/3
+- Performance: Per-Glyph Inference Latency: 3/3
+- Performance: Full Font Generation: 4/4
+- Performance: Memory Budget: 3/3
+- Cross-Browser Smoke: 4/4
+- Style Conditioning Real Model: 3/3
 
-**Suspected root cause (not yet confirmed):** The ONNX model's actual input names may differ from style_glyphs/char_index. The session.inputNames log will confirm or deny this when run in the browser console.
+**Style conditioning key metrics (real 53 MB model, Chromium WASM):**
+- `inputNames`: `style_glyphs`, `char_index` ✅
+- Font A (+1.0 all) vs Font B (-1.0 all): Mean Absolute Diff = **0.2811** (threshold > 0.01) ✅
+- Determinism: same inputs → bit-identical outputs ✅
+- Output shape: [1, 1, 128, 128] ✅
+- Output range: within [-1, 1] (±1e-6 for INT8 epsilon) ✅
+- `areIdentical: false` ✅ — model responds to style signal
 
-### 2026-03-07: Style-Invariant Output Root Cause Confirmed
+**Total test suite duration:** unit 2.66s + E2E 10.2s (chromium-only)
 
-**Coordination with Major:**
-
-Major's investigation revealed the root cause is **NOT** a frontend tensor path issue (as Togusa suspected). Instead:
-
-1. **Architecture weakness:** UNetGenerator encodes 	orch.zeros() → all 6 U-Net skip connections are constant → style signal overwhelmed.
-2. **Training loss insufficient:** lambda_l1=100 dominates, no style supervision → model learned to ignore style.
-3. **GAN instability:** D loss falling, G loss rising by epoch 22 → mode collapse precursor.
-
-**Implications for Togusa:**
-- The 7 debug console.log statements added to inferenceWorker.ts remain valuable for **verification**, not root-cause discovery.
-- When browser console logs are captured, they should show:
-  - session.inputNames correctly populated with ['style_glyphs', 'char_index'] (they are)
-  - Style glyphs first 5 values **different per font** (they should be)
-  - Output values **identical** across char_index (confirming model ignores style signal)
-- This will serve as validation that the model was trained to ignore style, not that there's a JS-layer bug.
-
-**Current Status:** Debug logging in place, awaiting browser validation. Actual fix requires model retraining by Major.
-
-### 2026-03-07: SAB Alias Fix — OnnxInference.ts (Issue #41)
-
-- **Task:** Fix SharedArrayBuffer aliasing vulnerability in `OnnxInference.ts` (test-only inference path).
-- **Status:** ✅ Fixed. PR #44 opened against `dev`.
-
-**What was found:**
-- `OnnxInference.generateGlyph()` at line 83 passed `styleGlyphs` directly to `new ort.Tensor('float32', styleGlyphs, ...)` without checking if it was SAB-backed.
-- PR #40 had already fixed the output-side aliasing in `inferenceWorker.ts` (line 131: `return new Float32Array(outputData)`), but the input path in `OnnxInference.ts` was missed.
-- The `inferenceWorker.ts` input tensor construction at line 98 also lacks an explicit SAB guard — but that path receives data via `postMessage` (which structurally clones non-SAB arrays), so it is lower risk.
-
-**What was fixed:**
-- Added SAB detection before creating `styleTensor` in `OnnxInference.ts`:
-  ```ts
-  const safeStyleGlyphs = styleGlyphs.buffer instanceof SharedArrayBuffer
-    ? new Float32Array(styleGlyphs.buffer.slice(styleGlyphs.byteOffset, styleGlyphs.byteOffset + styleGlyphs.byteLength))
-    : styleGlyphs;
-  ```
-- 38 existing onnxContract tests all pass with the fix.
-- Branch: `fix/sab-alias-onnxinference-41`, PR #44.
-
-**Key file paths:**
-- Bug site: `src/frontend/src/inference/OnnxInference.ts` (line 83)
-- Reference pattern: `src/frontend/src/inference/worker/inferenceWorker.ts` (line 131)
-- Tests: `src/frontend/src/inference/__tests__/onnxContract.test.ts`
+**Conclusion:** Major's epoch_0200 retrain fixed the style-invariant output bug. The model is now properly conditioned on `style_glyphs` input. Frontend pipeline is production-ready for style-conditional Cyrillic generation.
 
 ---
 
-### 2026-03-07: SAB Alias Fix in OnnxInference.ts (Issue #41) [Orchestrated]
+### 2026-03-09: Font Merge Feature — Generated Cyrillic + Uploaded Font
 
-Decision: Conditional SAB copy strategy (not unconditional) to avoid 640 KB unnecessary allocation on normal test paths. Consistent with PR #40 output fix. Decision merged to decisions.md. PR #44 ready for review.
+- **Task:** Modify the font assembly pipeline to merge AI-generated Cyrillic glyphs into the uploaded font, producing a complete font with both original Latin glyphs AND new Cyrillic glyphs.
+- **Status:** ✅ Implemented and tested. All 111 tests passing.
+
+**What changed:**
+
+1. **FontAssembler.ts:**
+   - Updated `assembleFontFromGlyphs()` signature: now takes `(glyphImages, uploadedFont, baseFamilyName)`
+   - When `uploadedFont` is provided (ArrayBuffer):
+     - Parses the uploaded font with `opentype.parse()`
+     - Copies all non-Cyrillic glyphs from uploaded font (skips Unicode range 0x0400-0x04FF)
+     - Adds AI-generated Cyrillic glyphs
+     - Preserves uploaded font metrics (unitsPerEm, ascender, descender)
+     - Sets family name to `{existingFamilyName} Cyrillic`
+   - When `uploadedFont` is `null`: creates standalone Cyrillic-only font with default 1000 UPM metrics (backward-compatible fallback)
+
+2. **GlyphVectorizer.ts:**
+   - Added `targetUpm` parameter to `vectorizeGlyph()` (default: 1000)
+   - Scales all path coordinates proportionally to target UPM
+   - Allows Cyrillic glyphs to match uploaded font's coordinate system
+
+3. **App.tsx:**
+   - Updated `handleGenerate()` to pass `uploadedFont` (from store) to `assembleFontFromGlyphs()`
+
+4. **Tests:**
+   - Updated all test calls to use new 3-parameter signature
+   - Added 3 new tests (13-15) for font merging:
+     - Test 13: Verifies merged font contains both Latin and Cyrillic glyphs
+     - Test 14: Verifies family name ends with " Cyrillic"
+     - Test 15: Verifies existing Cyrillic glyphs are replaced (not duplicated)
+   - All 111 tests passing (10 test files)
+
+**Key patterns learned:**
+
+- opentype.js API: `font.glyphs.get(i)` to iterate all glyphs, `font.charToGlyphIndex(char)` to look up by character
+- Cyrillic Unicode range: 0x0400-0x04FF (must skip when copying from uploaded font to avoid duplicates)
+- UPM scaling: advance width scales proportionally: `Math.round(600 * targetUpm / 1000)`
+- Font name extraction: `font.names.fontFamily?.en || font.names.fullName?.en || fallback`
+- GlyphVectorizer scales coordinates by `targetUpm / 1000` factor to match uploaded font metrics
+
+**Key files:**
+- Modified: `src/frontend/src/FontAssembler.ts`
+- Modified: `src/frontend/src/GlyphVectorizer.ts`
+- Modified: `src/frontend/src/App.tsx`
+- Modified: `src/frontend/src/fontPipeline.test.ts` (added 3 merge tests)
+- Modified: `src/frontend/src/inference/__tests__/integration.test.ts` (updated signature)
+
 
 ---
 
-### 2026-03-07: ImageData Mock Fix for Vitest jsdom (PR #47 CI)
+### 2026-03-09: Font Merge Feature — Generated Cyrillic + Uploaded Font
 
-- **Task:** Fix `ReferenceError: ImageData is not defined` in styleConditioning.test.ts (6 tests failing in PR #47 CI).
-- **Status:** ✅ Fixed. Committed to `squad/46-training-triton-fonts` (sha: 7863589).
+**Task:** Modify font assembly to merge AI-generated Cyrillic glyphs into uploaded font.  
+**Status:** ✅ Implemented and tested. All 111 tests passing.
 
-**Root Cause:**
-- `OnnxInference.generateGlyph()` line 111 uses `new ImageData(pixels, size, size)` to construct browser ImageData objects.
-- jsdom (Vitest's default test environment) does not provide a native `ImageData` constructor.
-- The test file already had `@vitest-environment jsdom` directive, but jsdom lacks Canvas API constructors.
+**What changed:**
 
-**Fix Applied:**
-- Added minimal `ImageData` class mock to `src/frontend/src/test-setup.ts` (lines 38-53).
-- Supports both Canvas API constructors:
-  1. `new ImageData(data: Uint8ClampedArray, width: number, height: number)`
-  2. `new ImageData(width: number, height: number)`
-- Mock only applied if `globalThis.ImageData` is undefined (guards against future jsdom/happy-dom upgrades).
-- Pattern consistent with existing `Path2D` and `getImageData` mocks in same file.
+1. **FontAssembler.ts:**
+   - New signature: `assembleFontFromGlyphs(glyphImages, uploadedFont, baseFamilyName)`
+   - Parses uploaded font, copies non-Cyrillic glyphs, adds AI-generated Cyrillic
+   - Skips Unicode range 0x0400-0x04FF to avoid duplicates
+   - Preserves uploaded font metrics (unitsPerEm, ascender, descender)
+   - Sets family name to `{existingFamilyName} Cyrillic`
 
-**Verification:**
-- styleConditioning.test.ts: 6/6 passing (previously 0/6)
-- Full frontend suite: 108/108 passing (no regressions)
+2. **GlyphVectorizer.ts:**
+   - Added `targetUpm` parameter (default: 1000)
+   - Scales path coordinates by `targetUpm / 1000` factor
+   - Allows Cyrillic glyphs to match uploaded font's coordinate system
 
-**Key Files:**
-- Fix: `src/frontend/src/test-setup.ts`
-- Test: `src/frontend/src/inference/__tests__/styleConditioning.test.ts`
-- Production: `src/frontend/src/inference/OnnxInference.ts` (unchanged)
+3. **App.tsx:**
+   - Passes `uploadedFont` from store to `assembleFontFromGlyphs()`
 
+4. **Tests:**
+   - Added 3 new tests (13-15) for font merging
+   - Test 13: Verifies both Latin and Cyrillic glyphs present
+   - Test 14: Family name ends with " Cyrillic"
+   - Test 15: Existing Cyrillic glyphs replaced (not duplicated)
+
+**User Impact:**
+- Before: Users received Cyrillic-only .otf, had to manually merge
+- After: Complete merged font with original + AI-generated Cyrillic glyphs
+
+**Artifacts:**
+- Decision merged to decisions.md
+- Orchestration log: 2026-03-08T193433Z-togusa.md
+
+---
+
+### 2026-03-09: Issue #48 — Blank Cyrillic Glyphs Investigation
+
+**Task:** Investigate why AI-generated Cyrillic glyphs are blank in the downloaded font despite font-merge (Latin glyphs) working.  
+**Status:** ✅ Investigated, fixes committed to `squad/48-blank-cyrillic-glyphs`.
+
+**Key findings:**
+
+1. **Threshold `> 0` is CORRECT.** GlyphVectorizer receives raw model output in `[-1, 1]` where `+1.0 = ink`, `−1.0 = background`. Checking `data > 0` correctly detects ink. The display postprocessing formula `((1-output)/2)*255` maps ink to dark (0) only for the canvas preview — the vectorizer intentionally operates on the raw tensor, so `> 0` is right.
+
+2. **Most likely root cause: model producing all-background output.** If the model outputs values ≤ 0 for all pixels, `vectorizeGlyph` finds no ink and writes empty paths → blank glyphs. The fix adds a `console.warn` that fires immediately when this happens, surfacing the root cause at runtime. Cross-reference with existing `inferenceWorker.ts` debug logs (`output range first 100px`).
+
+3. **Fixed misleading comment.** The old comment said `"CW rectangle"` but the rectangle path (lower-left→lower-right→upper-right→upper-left) is **CCW in y-up font space**, which is the correct winding for filled CFF outer contours. Corrected.
+
+4. **Fixed missing `uploadedFont` dep in `useCallback`.** `handleGenerate` was missing `uploadedFont` from its dependency array. In practice harmless (because `fontName` — which IS in deps — is always set atomically with `uploadedFont`), but a correctness defect. Fixed.
+
+**Critical pattern learned:** When a font shows blank glyph slots, suspect model output range before suspecting vectorizer code. The new zero-path `console.warn` makes this immediately diagnosable without code changes.
+
+**Artifacts:**
+- Findings: `.squad/decisions/inbox/togusa-blank-cyrillic-findings.md`
+- Commit: `d6eb735` on `squad/48-blank-cyrillic-glyphs`

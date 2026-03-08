@@ -92,7 +92,7 @@ describe('Inference Pipeline Integration', () => {
       rawGlyphs.set(index, await modelLoader.infer(styleGlyphs, index));
     }
 
-    const buffer = assembleFontFromGlyphs(rawGlyphs, 'TestFont');
+    const buffer = assembleFontFromGlyphs(rawGlyphs, null, 'TestFont');
 
     expect(buffer).toBeInstanceOf(ArrayBuffer);
     expect(buffer.byteLength).toBeGreaterThan(0);

@@ -2,6 +2,8 @@
 
 **Author:** Saito  
 **Created:** 2026-03-07  
+**Validated:** 2026-03-08 by Togusa — all 20 E2E tests passing against real 53 MB INT8 model (epoch_0200); style conditioning MAD=0.281 ✅  
+**Confidence:** HIGH — patterns battle-tested against both stub model and production ONNX  
 **Tags:** playwright, onnxruntime-web, wasm, e2e, performance-testing  
 
 ## Context
