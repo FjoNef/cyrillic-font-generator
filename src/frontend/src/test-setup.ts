@@ -34,3 +34,24 @@ if (typeof (globalThis as any).Path2D === 'undefined') {
     constructor(_?: string) {}
   };
 }
+
+// ImageData is not available in jsdom; provide a minimal implementation.
+if (typeof (globalThis as any).ImageData === 'undefined') {
+  (globalThis as any).ImageData = class ImageData {
+    data: Uint8ClampedArray;
+    width: number;
+    height: number;
+
+    constructor(dataOrWidth: Uint8ClampedArray | number, widthOrHeight: number, height?: number) {
+      if (dataOrWidth instanceof Uint8ClampedArray) {
+        this.data = dataOrWidth;
+        this.width = widthOrHeight;
+        this.height = height!;
+      } else {
+        this.width = dataOrWidth;
+        this.height = widthOrHeight;
+        this.data = new Uint8ClampedArray(this.width * this.height * 4);
+      }
+    }
+  };
+}
