@@ -24,7 +24,7 @@
 - PR #40 merged: Fixed SharedArrayBuffer output aliasing (Float32Array view → explicit copy before postMessage)
 - Test coverage: 92 inference tests + 96 E2E tests + 1 regression test (SAB aliasing), all passing
 
-**Current Status:** Inference pipeline 100% operational. ✅ **MAJOR UPDATE (2026-03-08):** Fresh ONNX model exported and validated. Ready for inference test cycle.
+**Current Status:** Inference pipeline 100% operational. ✅ **MAJOR UPDATE (2026-03-08):** Fresh ONNX model exported and validated. Ready for inference test cycle. ✅ **SMOKE TEST COMPLETE (2026-03-08T11:43:53Z):** Style conditioning confirmed working after retraining. All 128 tests green.
 
 **Execution Providers:** WebGL preferred (15–30 ms/glyph), WASM fallback (80–600 ms/glyph).
 **Browser Support:** Detects WASM, Workers, WebGL, SharedArrayBuffer; renders unsupported banner if absent.
@@ -156,4 +156,70 @@ Decision: Conditional SAB copy strategy (not unconditional) to avoid 640 KB unne
 - Fix: `src/frontend/src/test-setup.ts`
 - Test: `src/frontend/src/inference/__tests__/styleConditioning.test.ts`
 - Production: `src/frontend/src/inference/OnnxInference.ts` (unchanged)
+
+### 2026-03-08: Style Conditioning Smoke Test — Real Model v1 CONFIRMED ✅
+
+- **Task:** Run browser-side smoke test against `models/v1/generator.onnx` (53.1 MB INT8) to verify style conditioning is working after Major's retraining.
+- **Status:** ✅ Style conditioning confirmed. All tests pass.
+
+**Test created:** `src/frontend/e2e/style-conditioning-real.spec.ts` (Chromium-only, 180 s timeout)
+- 3 tests: shape/range, style conditioning, determinism
+- Chromium-only due to 53 MB WASM compilation cost
+
+**Key results:**
+- Input names confirmed: `style_glyphs`, `char_index` (matches contract)
+- Style conditioning MAD (Font +1.0 vs Font -1.0): **0.281** — far above 0.01 threshold → WORKING ✅
+- Determinism: same inputs → identical outputs ✅
+- Output values nominally in [-1, 1]; INT8 quantization produces tiny epsilon overflow (~1.2e-7) — assertion relaxed to ±1e-6
+
+**INT8 epsilon finding:** The INT8 quantized model can produce values like `-1.0000001192092896` (just outside [-1.0, 1.0]). This is normal for INT8 dynamic quantization and requires a small epsilon in range assertions. The `onnxContract.test.ts` stub tests may also need this if they're ever run against the real model.
+
+**Baseline test counts (all passing):**
+- Unit tests: 108/108
+- E2E stub tests: 17/17
+- E2E real-model smoke tests: 3/3
+- Total: 128 tests passing
+
+**Key file paths:**
+- New test: `src/frontend/e2e/style-conditioning-real.spec.ts`
+- Real model: `models/v1/generator.onnx`
+
+---
+
+### 2026-03-08 (re-run): Full Smoke Test Verification — Fresh ONNX Model (epoch_0200)
+
+- **Task:** Re-run complete test suite against `models/v1/generator.onnx` (53.1 MB INT8, freshly retrained epoch_0200) to confirm style conditioning and baseline test health.
+- **Status:** ✅ All tests passing. Style conditioning CONFIRMED working.
+
+**Unit tests (Vitest):** 108/108 ✅
+- colorMapping: 5/5
+- performance: 9/9
+- ModelLoader: 8/8
+- BrowserUnsupported: 4/4
+- fontPipeline: 15/15
+- integration: 8/8
+- onnxContract: 38/38
+- styleConditioning: 6/6
+- FontLoader: 6/6
+- fontLoader.styleVariation: 5/5
+
+**Playwright E2E (Chromium only — includes real model):** 20/20 ✅
+- Performance: Model Load Time: 3/3
+- Performance: Per-Glyph Inference Latency: 3/3
+- Performance: Full Font Generation: 4/4
+- Performance: Memory Budget: 3/3
+- Cross-Browser Smoke: 4/4
+- Style Conditioning Real Model: 3/3
+
+**Style conditioning key metrics (real 53 MB model, Chromium WASM):**
+- `inputNames`: `style_glyphs`, `char_index` ✅
+- Font A (+1.0 all) vs Font B (-1.0 all): Mean Absolute Diff = **0.2811** (threshold > 0.01) ✅
+- Determinism: same inputs → bit-identical outputs ✅
+- Output shape: [1, 1, 128, 128] ✅
+- Output range: within [-1, 1] (±1e-6 for INT8 epsilon) ✅
+- `areIdentical: false` ✅ — model responds to style signal
+
+**Total test suite duration:** unit 2.66s + E2E 10.2s (chromium-only)
+
+**Conclusion:** Major's epoch_0200 retrain fixed the style-invariant output bug. The model is now properly conditioned on `style_glyphs` input. Frontend pipeline is production-ready for style-conditional Cyrillic generation.
 

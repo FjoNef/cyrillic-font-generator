@@ -6,6 +6,50 @@ Team decisions, constraints, and accepted patterns. All agents must respect entr
 
 ---
 
+# Style Conditioning Validation — Real Model E2E Tests
+
+**Date:** 2026-03-08  
+**Author:** Togusa (Frontend Dev)  
+**Status:** CONFIRMED — smoke test PASS, 128 tests green
+
+## Context
+
+Smoke test of retrained model (`models/v1/generator.onnx`, epoch 200, INT8 dynamic quantization) for browser-side ONNX inference. Validates that style input conditioning works correctly in the frontend (Chromium, ORT WASM, single-threaded).
+
+## Findings
+
+### ✅ Style Conditioning: CONFIRMED WORKING
+
+The retrained model correctly responds to style input differences:
+
+- **Test:** `src/frontend/e2e/style-conditioning-real.spec.ts` (3 new tests)
+- **Font A** (style_glyphs all +1.0) vs **Font B** (style_glyphs all -1.0), same char_index=5
+- **Mean Absolute Difference (MAD):** 0.281 — far above 0.01 threshold
+- **Previous model:** MAD ≈ 0.0 (style ignored) → **Current model:** MAD = 0.281 (style working) ✅
+
+### ⚠️ INT8 Quantization Range Epsilon
+
+INT8 quantized model produces output values like `-1.0000001192092896` (epsilon ~1.2e-7 outside [-1.0, 1.0]).
+
+**Decision:** Range assertions use `±1e-6` tolerance, not strict `±1.0`.
+- Applied in `style-conditioning-real.spec.ts`
+- `onnxContract.test.ts` (unit tests, stub model) unaffected
+- Future tests asserting on real model output should use `±1e-6`
+
+### ℹ️ Real Model E2E: Chromium-Only Scope
+
+The 53 MB WASM model is too slow for routine cross-browser testing (Firefox WASM JIT 5–10× slower than Chromium). Chromium-only scope is intentional for CI speed.
+
+For full cross-browser validation, would need smaller quantized model or dedicated slower CI job.
+
+## Results
+
+- **Tests:** 128 green (108 unit + 17 E2E stub + 3 E2E real-model)
+- **New test file:** `src/frontend/e2e/style-conditioning-real.spec.ts`
+- **Status:** All passing
+
+---
+
 # ONNX Export — torch.compile State Dict Key Handling
 
 **Date:** 2026-03-08  
