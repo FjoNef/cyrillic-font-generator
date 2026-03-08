@@ -110,13 +110,23 @@ public static class ModelEndpoints
         });
     }
 
-    private static IResult HandleModelDownload(ModelManifestCache cache)
+    private static IResult HandleModelDownload(ModelManifestCache cache, HttpContext httpContext)
     {
         if (!cache.Available || cache.ResolvedModelPath == null)
             return Results.NotFound(new { error = "Model not yet trained. Please train the model first." });
 
         if (!File.Exists(cache.ResolvedModelPath))
             return Results.NotFound(new { error = "Model file not found at expected path." });
+
+        var etag = $"\"{cache.Sha256}\"";
+
+        // Honour If-None-Match so the browser only re-downloads when the model changes.
+        if (httpContext.Request.Headers.IfNoneMatch == etag)
+            return Results.StatusCode(StatusCodes.Status304NotModified);
+
+        httpContext.Response.Headers.ETag = etag;
+        // no-cache = always revalidate via ETag; 304 = free if model unchanged.
+        httpContext.Response.Headers.CacheControl = "no-cache";
 
         return Results.File(cache.ResolvedModelPath, "application/octet-stream", cache.Filename, enableRangeProcessing: true);
     }

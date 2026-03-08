@@ -70,9 +70,10 @@ async function loadModel(modelUrl: string): Promise<void> {
     offset += chunk.length;
   }
 
-  // Create session with WebGL preferred, WASM fallback
+  // INT8 quantized model requires WASM — WebGL does not support QLinear ops
+  // and silently produces all-background output when mixed with WASM fallback.
   session = await ort.InferenceSession.create(buffer.buffer, {
-    executionProviders: ['webgl', 'wasm'],
+    executionProviders: ['wasm'],
   });
 
   // DEBUG: log actual model input/output names so we can verify key correctness

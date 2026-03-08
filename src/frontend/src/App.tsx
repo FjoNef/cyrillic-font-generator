@@ -38,7 +38,14 @@ export default function App() {
     const loadModel = async () => {
       setModelStatus('loading', 0);
       try {
-        await modelLoader.load('/api/model', (progress) => {
+        // Fetch manifest first to get the versioned URL (contains SHA-256 of model).
+        // Using a versioned URL means the browser can safely cache the model bytes,
+        // and will automatically re-download when the model is retrained.
+        const manifestRes = await fetch('/api/model/manifest');
+        if (!manifestRes.ok) throw new Error(`Manifest fetch failed: ${manifestRes.statusText}`);
+        const manifest: { downloadUrl: string } = await manifestRes.json();
+
+        await modelLoader.load(manifest.downloadUrl, (progress) => {
           setModelStatus('loading', progress);
         });
         setModelStatus('ready', 100);
