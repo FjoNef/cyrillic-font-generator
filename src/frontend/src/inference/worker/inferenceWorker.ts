@@ -113,7 +113,9 @@ async function runInference(
 
   // Guard: ORT WASM cannot accept SharedArrayBuffer-backed views directly.
   // Copy to a plain ArrayBuffer if needed (mirrors OnnxInference.ts).
-  const safeStyleGlyphs = styleGlyphs.buffer instanceof SharedArrayBuffer
+  // Note: typeof guard is required because SharedArrayBuffer is undefined in non-cross-origin-isolated
+  // contexts (no COOP/COEP headers), and `instanceof` on an undefined constructor throws a ReferenceError.
+  const safeStyleGlyphs = typeof SharedArrayBuffer !== 'undefined' && styleGlyphs.buffer instanceof SharedArrayBuffer
     ? new Float32Array(styleGlyphs.buffer.slice(
         styleGlyphs.byteOffset,
         styleGlyphs.byteOffset + styleGlyphs.byteLength,
