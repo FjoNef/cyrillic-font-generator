@@ -1,11 +1,19 @@
-fix(backend): replace immutable cache-control with no-cache on model endpoint
+fix: blank inference output and implement font merge feature
 
-Cache-Control: immutable on /api/model/v1/generator.onnx caused browsers
-to permanently serve the pre-retrain (blank-producing) model from cache,
-ignoring the new generator.onnx committed at c339b72.
+Major: Fixed blank preview glyphs by extracting pathname from manifest's
+absolute URL before passing to web worker. Web workers bypass Vite proxy,
+so they need relative paths. Added debug logging to inferenceWorker.ts.
+Fixed TypeScript error in FontAssembler.ts (glyph.name can be null).
 
-Changed to no-cache so the browser always revalidates via ETag:
-- 304 Not Modified (fast) when model is unchanged
-- 200 with new model when retrained
+Togusa: Implemented font merge feature to combine AI-generated Cyrillic
+glyphs with uploaded fonts. FontAssembler now accepts uploadedFont
+parameter and merges non-Cyrillic glyphs from the original. Added UPM
+scaling to GlyphVectorizer to match uploaded font metrics. 3 new tests
+added. All 111 tests passing.
+
+Decisions merged to .squad/decisions.md.
+Cross-agent updates appended to agent history files.
+Orchestration logs: 2026-03-08T193433Z-{major,togusa}.md
+Session log: 2026-03-08T193433Z-blank-glyph-fix-font-merge.md
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

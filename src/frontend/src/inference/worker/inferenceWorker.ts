@@ -120,6 +120,11 @@ async function runInference(
   console.debug('[inferenceWorker] outputTensor.name/key resolved:', Object.keys(results)[0]);
   console.debug('[inferenceWorker] outputTensor first 5 raw values:', Array.from(outputData.slice(0, 5)));
 
+  // Quick smoke-test: verify model produces non-trivial output
+  const maxVal = Math.max(...Array.from(outputData.slice(0, 100)));
+  const minVal = Math.min(...Array.from(outputData.slice(0, 100)));
+  console.debug('[inferenceWorker] output range (first 100px):', minVal, 'to', maxVal);
+
   // ⚠️ Critical: copy output before returning.
   //
   // ORT's WASM backend returns a Float32Array that is a *view* into

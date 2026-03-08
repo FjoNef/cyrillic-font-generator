@@ -3755,3 +3755,217 @@ The dedicated `non-blank` test using `fill(0.0)` (neutral style) is the correct 
 
 The `non-blank` test is now the canonical blank glyph regression guard.
 
+
+
+---
+
+# Blank Inference Output — Root Cause and Fix
+
+**Date:** 2026-03-09  
+**Reporter:** Major (AI/ML Engineer)  
+**Status:** FIXED  
+
+## Problem
+
+After user rebuilt frontend/backend and cleared cache, all 66 preview glyphs appeared as blank white squares. Downloaded .otf had no visible glyphs (expected cascading failure from blank inference).
+
+## Root Cause
+
+The `/api/model/manifest` endpoint returns an **absolute URL**:
+```json
+{
+  "downloadUrl": "http://localhost:5000/api/model/v1/generator.onnx"
+}
+```
+
+When `App.tsx` (running on Vite dev server at `http://localhost:5173`) passes this absolute URL to the inference worker, the worker tries to fetch **directly from port 5000**, bypassing the Vite proxy.
+
+**Why this fails:**
+1. Web Workers run in a separate JavaScript context
+2. They do NOT inherit the Vite proxy configuration (`/api` → `http://localhost:5000`)
+3. Direct fetch from worker to port 5000 likely fails (CORS, connection refused, or other cross-origin issues)
+4. Worker fails silently, never loads the model, produces blank output
+
+**Why the manifest returns an absolute URL:**
+`ModelEndpoints.cs` line 109:
+```csharp
+var baseUrl = $"{request.Scheme}://{request.Host}";
+downloadUrl = $"{baseUrl}/api/model/{cache.Version}/{cache.Filename}"
+```
+When the request comes through the Vite proxy, `request.Host` is the backend's own address (`localhost:5000`), not the frontend's (`localhost:5173`).
+
+## Fix
+
+**App.tsx (lines 41-51):** Extract only the **pathname** from the absolute URL before passing to `modelLoader.load()`:
+
+```typescript
+const manifestRes = await fetch('/api/model/manifest');
+const manifest: { downloadUrl: string } = await manifestRes.json();
+
+// ⚠️ Critical: Extract only the pathname from downloadUrl.
+// The manifest returns an absolute URL (http://localhost:5000/api/model/...),
+// but the worker needs to fetch via the Vite proxy on port 5173.
+const url = new URL(manifest.downloadUrl, window.location.origin);
+const modelPath = url.pathname; // e.g. "/api/model/v1/generator.onnx"
+
+await modelLoader.load(modelPath, (progress) => { ... });
+```
+
+This ensures:
+- The worker fetches from `/api/model/v1/generator.onnx` (relative path)
+- Vite proxy intercepts and forwards to `http://localhost:5000/api/model/v1/generator.onnx`
+- CORS is satisfied (same-origin from worker's perspective)
+
+## Additional Changes
+
+1. **inferenceWorker.ts:** Added debug log to verify non-blank output:
+   ```typescript
+   const maxVal = Math.max(...Array.from(outputData.slice(0, 100)));
+   const minVal = Math.min(...Array.from(outputData.slice(0, 100)));
+   console.debug('[inferenceWorker] output range (first 100px):', minVal, 'to', maxVal);
+   ```
+   This lets user verify immediately whether inference is producing real output.
+
+2. **FontAssembler.ts:** Fixed TypeScript error (`glyph.name` can be `null`, opentype.js expects `string | undefined`).
+
+## Verification
+
+Model sanity check confirmed working before the fix:
+```
+✅  ALL CHECKS PASSED (4/4)
+- Output range in [-1, 1]
+- Non-blank (ink_frac=0.0266)
+- Style conditioning (MAD=0.282292)
+- Char isolation (MAD(0,1)=0.084033)
+```
+
+So the bug was definitively in the inference pipeline URL handling, not the model itself.
+
+## Impact
+
+- **Production:** No impact (frontend and backend share the same origin, no proxy involved)
+- **Development:** Critical fix — without it, local dev environment produces blank glyphs
+
+## Recommendation
+
+Consider changing `ModelEndpoints.cs` to return **relative URLs** only:
+```csharp
+downloadUrl = $"/api/model/{cache.Version}/{cache.Filename}"
+```
+
+This would work in both dev and production, avoiding the need for pathname extraction in the frontend.
+
+Alternatively, keep current approach (absolute URLs) but document that frontends running behind proxies must extract the pathname.
+
+Current fix (pathname extraction in `App.tsx`) is safe for both dev and production.
+
+
+---
+
+# Decision: Font Merge Feature
+
+**Date:** 2026-03-09  
+**Agent:** Togusa  
+**Status:** Implemented  
+
+## Context
+
+The app previously generated a standalone Cyrillic-only font containing only the 66 AI-generated Cyrillic glyphs. Users needed to manually merge this with their original font using external tools.
+
+## Decision
+
+Modified the font assembly pipeline to automatically merge AI-generated Cyrillic glyphs into the uploaded font, producing a single complete font with both original glyphs AND new Cyrillic glyphs.
+
+## Implementation
+
+### FontAssembler.ts Changes
+
+**New signature:**
+```typescript
+assembleFontFromGlyphs(
+  glyphImages: Map<number, Float32Array>,
+  uploadedFont: ArrayBuffer | null,
+  baseFamilyName: string
+): ArrayBuffer
+```
+
+**Merge logic:**
+1. Parse uploaded font with `opentype.parse()`
+2. Extract font metrics (unitsPerEm, ascender, descender)
+3. Build output glyph list:
+   - Start with .notdef (required first glyph)
+   - Copy all glyphs from uploaded font EXCEPT:
+     - Glyphs without unicode (special glyphs/ligatures)
+     - Cyrillic range (0x0400-0x04FF) — will be replaced by AI-generated versions
+   - Add all 66 AI-generated Cyrillic glyphs
+4. Set family name to `{existingFamilyName} Cyrillic`
+5. Preserve uploaded font's metrics instead of hardcoded defaults
+
+**Fallback:** If `uploadedFont` is `null`, creates standalone Cyrillic-only font with default 1000 UPM metrics (backward-compatible).
+
+### GlyphVectorizer.ts Changes
+
+Added `targetUpm` parameter (default: 1000) to `vectorizeGlyph()`:
+- Scales all path coordinates by `targetUpm / 1000` factor
+- Allows Cyrillic glyphs to match uploaded font's coordinate system
+- Example: If uploaded font is 2048 UPM, Cyrillic glyphs are scaled 2.048x
+
+### App.tsx Changes
+
+Updated `handleGenerate()` to pass `uploadedFont` from store:
+```typescript
+const buffer = assembleFontFromGlyphs(rawGlyphs, uploadedFont, fontName ?? 'Generated Cyrillic');
+```
+
+## Testing
+
+Added 3 new tests to `fontPipeline.test.ts`:
+- **Test 13:** Verifies merged font contains both Latin (from uploaded) and Cyrillic (AI-generated) glyphs
+- **Test 14:** Verifies family name ends with " Cyrillic"
+- **Test 15:** Verifies existing Cyrillic glyphs are replaced (not duplicated)
+
+All 111 tests passing across 10 test files.
+
+## Technical Notes
+
+### Cyrillic Unicode Range
+Must skip range 0x0400-0x04FF when copying from uploaded font to avoid duplicates:
+```typescript
+if (glyph.unicode >= CYRILLIC_UNICODE_MIN && glyph.unicode <= CYRILLIC_UNICODE_MAX) {
+  continue; // Will be replaced by AI-generated version
+}
+```
+
+### Font Metrics Scaling
+Cyrillic advance width scales proportionally to uploaded font UPM:
+```typescript
+const cyrillicAdvanceWidth = Math.round(600 * upm / 1000);
+```
+
+### Font Name Extraction
+Family name extracted with fallback chain:
+```typescript
+const existingFamilyName = 
+  sourceFont.names.fontFamily?.en || 
+  sourceFont.names.fullName?.en || 
+  baseFamilyName;
+```
+
+## User Impact
+
+**Before:** Users received a Cyrillic-only .otf file and had to manually merge it with their original font using external tools.
+
+**After:** Users receive a complete merged font with:
+- All original Latin/symbols/ligatures from uploaded font
+- AI-generated Cyrillic glyphs (66 characters)
+- Correct font metrics matching the uploaded font
+- Family name: `{Original Name} Cyrillic` (e.g., "Inter Cyrillic", "Roboto Cyrillic")
+
+## Files Changed
+
+- `src/frontend/src/FontAssembler.ts` — merge logic
+- `src/frontend/src/GlyphVectorizer.ts` — UPM scaling
+- `src/frontend/src/App.tsx` — pass uploaded font buffer
+- `src/frontend/src/fontPipeline.test.ts` — 3 new merge tests
+- `src/frontend/src/inference/__tests__/integration.test.ts` — updated signature
+

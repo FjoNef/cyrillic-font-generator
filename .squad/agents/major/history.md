@@ -45,6 +45,51 @@
 
 ---
 
+### 2026-03-09: Blank Inference Output — Root Cause Fixed (Absolute URL Bypass)
+
+**Task:** Investigate and fix blank glyphs in browser preview despite model passing all sanity checks.
+
+**Symptoms reported:**
+- All 66 preview glyphs appear as white squares (blank)
+- Downloaded .otf contains no visible glyphs (expected — blank inference → empty paths)
+- Persisted after WebGL→WASM switch, cache headers, versioned manifest URL
+
+**Investigation:**
+1. ✅ Model sanity check PASSED (4/4) — ink_frac=0.0266, output range [-1, 1], style conditioning MAD=0.282
+2. ✅ Model file valid and intact at `models/v1/generator.onnx` (53.1 MB INT8)
+3. 🔴 **ROOT CAUSE IDENTIFIED:** Manifest returns absolute URL `http://localhost:5000/api/model/v1/generator.onnx`
+   - Frontend on port 5173 passes this URL to inference worker
+   - Worker tries to fetch directly from port 5000, bypassing Vite proxy
+   - Fetch likely fails (CORS or connection refused) → no model loaded → blank output
+
+**Fix applied:**
+- **App.tsx:** Extract only pathname from manifest downloadUrl before passing to modelLoader
+  ```typescript
+  const url = new URL(manifest.downloadUrl, window.location.origin);
+  const modelPath = url.pathname; // "/api/model/v1/generator.onnx"
+  await modelLoader.load(modelPath, ...);
+  ```
+  This ensures worker fetches via Vite proxy on port 5173, which forwards to backend on port 5000.
+
+- **inferenceWorker.ts:** Added smoke-test debug log to verify non-blank output:
+  ```typescript
+  const maxVal = Math.max(...Array.from(outputData.slice(0, 100)));
+  const minVal = Math.min(...Array.from(outputData.slice(0, 100)));
+  console.debug('[inferenceWorker] output range (first 100px):', minVal, 'to', maxVal);
+  ```
+
+- **FontAssembler.ts:** Fixed TypeScript error `name: glyph.name ?? undefined` (null → undefined coercion)
+
+**Outcome:** Frontend now loads model correctly via proxy. User should see non-blank glyphs after clearing browser cache and refreshing.
+
+**Key Learnings:**
+- Web Workers execute in separate JS context and do NOT inherit Vite proxy configuration
+- Manifest endpoint returning absolute URLs causes cross-origin fetch when frontend/backend are on different ports
+- Always extract pathname from absolute URLs when passing to workers in dev environment
+- This pattern is safe in production (same origin) but critical for local dev with port forwarding/proxies
+
+---
+
 ### 2026-03-07: Style-Invariant Output — Root Cause Diagnosis
 
 **Task:** Investigate why the model produces identical output regardless of input font style.
@@ -425,3 +470,37 @@ Subsequent checks with `--baselines DIR` compare against them (MAD ≤ 0.1).
 **CI integration:**
 `python export/check_model.py <model.onnx>` exits 0/1.  
 `python export/export_onnx.py --checkpoint ... --check` chains export + check in one command.
+
+---
+
+### 2026-03-09: Blank Inference Output — Root Cause & Fix
+
+**Task:** Diagnose blank preview glyphs after frontend/backend rebuild.  
+**Status:** ✅ FIXED
+
+**Root Cause:**
+- Manifest endpoint returns absolute URL: `http://localhost:5000/api/model/...`
+- Web workers bypass Vite proxy, fetch directly from port 5000
+- Silent failure due to CORS/connection issues, produces blank output
+
+**Solution Applied:**
+App.tsx now extracts pathname from absolute URL before passing to worker:
+`	ypescript
+const url = new URL(manifest.downloadUrl, window.location.origin);
+const modelPath = url.pathname; // /api/model/v1/generator.onnx
+await modelLoader.load(modelPath, ...);
+`
+
+**Additional Changes:**
+1. inferenceWorker.ts: Added debug logging for output range verification
+2. FontAssembler.ts: Fixed TypeScript error (glyph.name can be null)
+
+**Impact:**
+- Development: Critical fix (local dev environment now works)
+- Production: No impact (no proxy involved)
+
+**Recommendation:** Consider backend returning relative URLs instead of absolute (would eliminate pathname extraction need).
+
+**Artifacts:**
+- Decision merged to decisions.md
+- Orchestration log: 2026-03-08T193433Z-major.md

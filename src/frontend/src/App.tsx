@@ -45,7 +45,14 @@ export default function App() {
         if (!manifestRes.ok) throw new Error(`Manifest fetch failed: ${manifestRes.statusText}`);
         const manifest: { downloadUrl: string } = await manifestRes.json();
 
-        await modelLoader.load(manifest.downloadUrl, (progress) => {
+        // ⚠️ Critical: Extract only the pathname from downloadUrl.
+        // The manifest returns an absolute URL (http://localhost:5000/api/model/...),
+        // but the worker needs to fetch via the Vite proxy on port 5173.
+        // Stripping to pathname ensures the fetch goes through the proxy.
+        const url = new URL(manifest.downloadUrl, window.location.origin);
+        const modelPath = url.pathname; // e.g. "/api/model/v1/generator.onnx"
+
+        await modelLoader.load(modelPath, (progress) => {
           setModelStatus('loading', progress);
         });
         setModelStatus('ready', 100);
@@ -98,7 +105,7 @@ export default function App() {
       }
 
       // Assemble OTF from already-generated raw glyphs (no re-inference)
-      const buffer = assembleFontFromGlyphs(rawGlyphs, fontName ?? 'Generated Cyrillic');
+      const buffer = assembleFontFromGlyphs(rawGlyphs, uploadedFont, fontName ?? 'Generated Cyrillic');
       setFontBuffer(buffer);
       setGenerationStatus('done');
     } catch (error) {

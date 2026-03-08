@@ -291,3 +291,91 @@ Decision: Conditional SAB copy strategy (not unconditional) to avoid 640 KB unne
 
 **Conclusion:** Major's epoch_0200 retrain fixed the style-invariant output bug. The model is now properly conditioned on `style_glyphs` input. Frontend pipeline is production-ready for style-conditional Cyrillic generation.
 
+---
+
+### 2026-03-09: Font Merge Feature — Generated Cyrillic + Uploaded Font
+
+- **Task:** Modify the font assembly pipeline to merge AI-generated Cyrillic glyphs into the uploaded font, producing a complete font with both original Latin glyphs AND new Cyrillic glyphs.
+- **Status:** ✅ Implemented and tested. All 111 tests passing.
+
+**What changed:**
+
+1. **FontAssembler.ts:**
+   - Updated `assembleFontFromGlyphs()` signature: now takes `(glyphImages, uploadedFont, baseFamilyName)`
+   - When `uploadedFont` is provided (ArrayBuffer):
+     - Parses the uploaded font with `opentype.parse()`
+     - Copies all non-Cyrillic glyphs from uploaded font (skips Unicode range 0x0400-0x04FF)
+     - Adds AI-generated Cyrillic glyphs
+     - Preserves uploaded font metrics (unitsPerEm, ascender, descender)
+     - Sets family name to `{existingFamilyName} Cyrillic`
+   - When `uploadedFont` is `null`: creates standalone Cyrillic-only font with default 1000 UPM metrics (backward-compatible fallback)
+
+2. **GlyphVectorizer.ts:**
+   - Added `targetUpm` parameter to `vectorizeGlyph()` (default: 1000)
+   - Scales all path coordinates proportionally to target UPM
+   - Allows Cyrillic glyphs to match uploaded font's coordinate system
+
+3. **App.tsx:**
+   - Updated `handleGenerate()` to pass `uploadedFont` (from store) to `assembleFontFromGlyphs()`
+
+4. **Tests:**
+   - Updated all test calls to use new 3-parameter signature
+   - Added 3 new tests (13-15) for font merging:
+     - Test 13: Verifies merged font contains both Latin and Cyrillic glyphs
+     - Test 14: Verifies family name ends with " Cyrillic"
+     - Test 15: Verifies existing Cyrillic glyphs are replaced (not duplicated)
+   - All 111 tests passing (10 test files)
+
+**Key patterns learned:**
+
+- opentype.js API: `font.glyphs.get(i)` to iterate all glyphs, `font.charToGlyphIndex(char)` to look up by character
+- Cyrillic Unicode range: 0x0400-0x04FF (must skip when copying from uploaded font to avoid duplicates)
+- UPM scaling: advance width scales proportionally: `Math.round(600 * targetUpm / 1000)`
+- Font name extraction: `font.names.fontFamily?.en || font.names.fullName?.en || fallback`
+- GlyphVectorizer scales coordinates by `targetUpm / 1000` factor to match uploaded font metrics
+
+**Key files:**
+- Modified: `src/frontend/src/FontAssembler.ts`
+- Modified: `src/frontend/src/GlyphVectorizer.ts`
+- Modified: `src/frontend/src/App.tsx`
+- Modified: `src/frontend/src/fontPipeline.test.ts` (added 3 merge tests)
+- Modified: `src/frontend/src/inference/__tests__/integration.test.ts` (updated signature)
+
+
+---
+
+### 2026-03-09: Font Merge Feature — Generated Cyrillic + Uploaded Font
+
+**Task:** Modify font assembly to merge AI-generated Cyrillic glyphs into uploaded font.  
+**Status:** ✅ Implemented and tested. All 111 tests passing.
+
+**What changed:**
+
+1. **FontAssembler.ts:**
+   - New signature: `assembleFontFromGlyphs(glyphImages, uploadedFont, baseFamilyName)`
+   - Parses uploaded font, copies non-Cyrillic glyphs, adds AI-generated Cyrillic
+   - Skips Unicode range 0x0400-0x04FF to avoid duplicates
+   - Preserves uploaded font metrics (unitsPerEm, ascender, descender)
+   - Sets family name to `{existingFamilyName} Cyrillic`
+
+2. **GlyphVectorizer.ts:**
+   - Added `targetUpm` parameter (default: 1000)
+   - Scales path coordinates by `targetUpm / 1000` factor
+   - Allows Cyrillic glyphs to match uploaded font's coordinate system
+
+3. **App.tsx:**
+   - Passes `uploadedFont` from store to `assembleFontFromGlyphs()`
+
+4. **Tests:**
+   - Added 3 new tests (13-15) for font merging
+   - Test 13: Verifies both Latin and Cyrillic glyphs present
+   - Test 14: Family name ends with " Cyrillic"
+   - Test 15: Existing Cyrillic glyphs replaced (not duplicated)
+
+**User Impact:**
+- Before: Users received Cyrillic-only .otf, had to manually merge
+- After: Complete merged font with original + AI-generated Cyrillic glyphs
+
+**Artifacts:**
+- Decision merged to decisions.md
+- Orchestration log: 2026-03-08T193433Z-togusa.md
