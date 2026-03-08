@@ -140,8 +140,13 @@ def export(checkpoint_path: str, output_path: str) -> None:
     style_encoder = StyleEncoder(style_dim=256)
     generator = UNetGenerator(style_dim=256, char_emb_dim=64, base_filters=32)
 
-    style_encoder.load_state_dict(ckpt["style_encoder_state"])
-    generator.load_state_dict(ckpt["generator_state"])
+    def _strip_orig_mod(state_dict):
+        """Strip '_orig_mod.' prefix added by torch.compile from state dict keys."""
+        return {k.replace("_orig_mod.", "", 1) if k.startswith("_orig_mod.") else k: v
+                for k, v in state_dict.items()}
+
+    style_encoder.load_state_dict(_strip_orig_mod(ckpt["style_encoder_state"]))
+    generator.load_state_dict(_strip_orig_mod(ckpt["generator_state"]))
 
     style_encoder.eval()
     generator.eval()

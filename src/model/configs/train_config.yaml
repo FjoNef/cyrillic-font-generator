@@ -9,13 +9,13 @@ data:
   # Optional: limit the number of font families used for training.
   # When set, only the first N fonts (sorted alphabetically) are included.
   # Useful for quick training experiments or debugging. If null/unset, all fonts are used.
-  # num_fonts: 10
+  num_fonts: 180
 
   # Optional: path to pre-rendered .pt cache directory (from data/build_cache.py).
   # When set, CachedFontDataset is used instead of on-the-fly PIL rendering,
   # eliminating ~6ms CPU rendering overhead per sample.
   # Build with: python data/build_cache.py --fonts_dir data/fonts --output data/fonts_cache
-  # fonts_cache_dir: "data/fonts_cache"
+  fonts_cache_dir: "data/fonts_cache"
 
   # Latin glyphs used as style reference (rendered from the input font).
   # These 10 were chosen for maximum structural diversity (ascenders, descenders,
