@@ -148,7 +148,9 @@ public static class ModelEndpoints
             return Results.NotFound(new { error = "Model file not found at expected path." });
 
         httpContext.Response.Headers.ETag = etag;
-        httpContext.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+        // no-cache = always revalidate via ETag; immutable must not be used on a mutable URL.
+        // Browser sends If-None-Match → 304 if unchanged (free), 200 if model was retrained.
+        httpContext.Response.Headers.CacheControl = "no-cache";
 
         return Results.File(cache.ResolvedModelPath, "application/octet-stream", filename, enableRangeProcessing: true);
     }

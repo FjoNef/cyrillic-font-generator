@@ -1,0 +1,11 @@
+fix(backend): replace immutable cache-control with no-cache on model endpoint
+
+Cache-Control: immutable on /api/model/v1/generator.onnx caused browsers
+to permanently serve the pre-retrain (blank-producing) model from cache,
+ignoring the new generator.onnx committed at c339b72.
+
+Changed to no-cache so the browser always revalidates via ETag:
+- 304 Not Modified (fast) when model is unchanged
+- 200 with new model when retrained
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

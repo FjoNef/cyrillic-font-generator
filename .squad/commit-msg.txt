@@ -1,12 +1,11 @@
-docs(.squad): log Major session, merge decisions inbox
+.squad: Merge Major ONNX export decision; update Togusa history
 
-- Created orchestration log: 2026-03-08T024637Z-major.md
-  (restore-optimization mission completed: 22 tests pass)
-- Created session log: 2026-03-08T024637Z-restore-optimization.md
-  (restored CachedFontDataset + integrated PR #47 features)
-- Merged decisions/inbox/: 2 decisions appended to decisions.md
-  - major-restore-optimization: revert commit 1d8ec45, resolved conflicts
-  - togusa-imagedata-fix: jsdom ImageData mock for test-setup.ts
-- Deleted inbox files (major-restore-optimization.md, togusa-imagedata-fix.md)
+- Merged decision: ONNX Export — torch.compile State Dict Key Handling
+  - Added _strip_orig_mod() helper to export_onnx.py (backward-compatible)
+  - Fresh model: models/v1/generator.onnx (53.1MB, INT8 quantization)
+  - Forward pass validated: (1,1,128,128) → (1,1,128,128), range [-1.0, 1.0]
+  - Commit: ceab05d on dev
+- Updated Togusa history: Cross-agent update (fresh ONNX ready for validation)
+- Deleted decision inbox file (major-onnx-export.md)
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

@@ -22,6 +22,29 @@
 
 ## Learnings
 
+### 2026-03-08: Retrained Model Export SUCCESS (epoch_0200, style conditioning fix)
+
+**Task:** Export the freshly retrained generator (style conditioning bug fixed) to ONNX INT8.
+
+**Checkpoint used:** `models/checkpoints/epoch_0200.pth`
+
+**Export result:**
+- File: `models/v1/generator.onnx` — 53.1 MB (INT8 quantized), ~15.9 MB brotli-compressed
+- Output shape: `(1, 1, 128, 128)` float32, range `[-1.0, 1.0]`
+- `_strip_orig_mod()` applied automatically (checkpoint was trained with `torch.compile`)
+
+**check_model.py — ALL 4 CHECKS PASSED:**
+1. ✅ Output range in [-1, 1] — min=-1.0000, max=1.0000
+2. ✅ Non-blank (≥1% ink pixels) — ink_frac=0.0266
+3. ✅ Style conditioning (MAD > 0.01) — MAD=0.2823 (white-fill vs black-fill style)
+4. ✅ Char isolation (MAD > 0.005) — MAD(0,1)=0.0840, MAD(0,65)=0.0908
+
+**Critical:** Non-blank check passes with ink_frac=0.0266 (vs 0.0 for the broken epoch_0200 trained with `torch.zeros` encoder input). The style conditioning fix is confirmed working.
+
+**Committed:** `c339b72` on `dev` branch.
+
+---
+
 ### 2026-03-07: Style-Invariant Output — Root Cause Diagnosis
 
 **Task:** Investigate why the model produces identical output regardless of input font style.
@@ -371,3 +394,34 @@ Decision: Two independent GradScalers (one per G/D optimizer) for AMP training. 
 **Decision recorded:** `.squad/decisions/inbox/major-onnx-export.md`
 
 **Key rule:** Whenever `use_compile: true` in `train_config.yaml`, checkpoints will have `_orig_mod.` prefixed keys. The export script now handles this transparently.
+
+---
+
+### 2026-03-08: Model Sanity Check Script — Blank Glyph Detection
+
+**Task:** Implement a fast Python ONNX sanity check to catch the blank-glyph bug that the browser smoke test missed.
+
+**Root cause of the gap:** The browser smoke test only checked relative MAD between two style inputs (~0.28 ≈ pass). The model was still responding *relatively* to style, but all absolute output values were clustered near -1.0 (all white/background). No check existed for absolute output quality.
+
+**Deliverables:**
+
+- `src/model/export/check_model.py` — 5 checks: output range, non-blank, style conditioning, character isolation, regression baseline (optional). Exit code 0/1 for CI.
+- `src/model/export/export_onnx.py` — Added `--check` flag; `export()` now returns the output path.
+- `src/model/TRAINING.md` — "## Model Sanity Check" section with usage, convention table, regression baseline workflow.
+- `.squad/decisions/inbox/major-blank-glyph-finding.md` — Diagnosis for Togusa.
+- `.squad/decisions/inbox/major-model-sanity-check.md` — Full implementation summary.
+
+**Key design decision — non-blank check:**
+
+Model output space: `+1.0` = black ink, `-1.0` = white background (postprocessing: `((1-output)/2)*255`).  
+Non-blank check: **at least 1 % of pixels must be above 0.0** (ink region).  
+A blank/all-background model (all output ≈ -1.0) has zero pixels above 0.0 → check fails.  
+The old smoke test missed this because it only compared *differences* between runs, not absolute values.
+
+**Regression baseline workflow:**
+After confirming a good model, `--save-baselines DIR` saves `.npy` files per input config.  
+Subsequent checks with `--baselines DIR` compare against them (MAD ≤ 0.1).
+
+**CI integration:**
+`python export/check_model.py <model.onnx>` exits 0/1.  
+`python export/export_onnx.py --checkpoint ... --check` chains export + check in one command.

@@ -3382,3 +3382,376 @@ ew ImageData(width: number, height: number) — Canvas API standard
 - ✅ All future tests using ImageData will work without additional mocking.
 - ✅ Pattern established for adding jsdom polyfills (use test-setup.ts, guard with 	ypeof).
 - ⚠️ If Vitest/jsdom adds native ImageData in the future, our guard ensures the mock is skipped.
+
+---
+# Finding: Blank Glyph Bug — Model Output Analysis
+
+**From:** Major (AI/ML Engineer)  
+**Date:** 2026-03-08  
+**For:** Togusa (Frontend) — cross-reference for browser smoke test investigation  
+
+---
+
+## What the sanity check reveals about blank glyphs
+
+The new `check_model.py` script directly tests the model output in Python (no browser involved).  
+Run it on the current `models/v1/generator.onnx` to get definitive evidence:
+
+```bash
+cd src/model
+python export/check_model.py models/v1/generator.onnx
+```
+
+---
+
+## The blank-glyph root cause (architectural, now fixed in code)
+
+The blank glyph bug has a **known architectural root cause** that was diagnosed and fixed in code on 2026-03-07, but the current ONNX model (`epoch_0200`) was trained with the **old, broken architecture**.  
+The fix requires retraining from scratch.
+
+### What went wrong
+
+`UNetGenerator.forward()` previously fed `torch.zeros(B, 1, 128, 128)` — a blank canvas — through the U-Net encoder.  This made all six skip connections (e1–e6) **identical constants** regardless of the input font.
+
+Style conditioning entered only at the 1×1 bottleneck via `cond_spatial`.  After 6 decoder stages each mixed with constant-zero skip connections, the style signal was overwhelmed.  The model learned to output the *average* glyph shape with no ink, driven entirely by the L1 loss against training targets whose per-pixel average is near background (-1.0).
+
+### What the sanity check would catch
+
+| Check | Expected result on epoch_0200 | Reason |
+|---|---|---|
+| Output range | ✅ PASS — values in [-1, 1] | INT8 quantisation preserves range |
+| Non-blank | ❌ **FAIL** — < 1 % of pixels above 0.0 | Model learned to output all-background (-1.0) |
+| Style conditioning | ✅ PASS — MAD ≈ 0.28 | Model still responds to style fill level slightly |
+| Char isolation | ❓ Likely FAIL or marginal | Char embedding has little effect post-collapse |
+
+The **non-blank check** is the key detector.  The old browser smoke test only checked relative MAD (style conditioning), which passed because the model does shift output values slightly with style — but the absolute output values are all near -1.0 = all white = blank glyph.
+
+---
+
+## The fix (already in code, requires retraining)
+
+`UNetGenerator.forward()` now receives `style_glyph_0` (the first style reference glyph) instead of `torch.zeros`.  All six skip connections carry real per-font structure.  Feature-matching loss and `lambda_l1=10` (down from 100) were also added.
+
+**Implication for Togusa:** The current ONNX model is architecturally broken — no inference-time fix is possible.  Once the retrained model is exported, use `check_model.py` to verify the non-blank check passes before browser integration.
+
+---
+
+## How to confirm the diagnosis right now
+
+```bash
+cd src/model
+python export/check_model.py models/v1/generator.onnx
+```
+
+Expected output if diagnosis is correct:
+
+```
+  ✅  PASS  Output range in [-1, 1]             min=...  max=...
+  ❌  FAIL  Non-blank (≥1% ink pixels)           ink_frac=0.0000  (threshold output>0.0)
+  ✅  PASS  Style conditioning (MAD > 0.01)      MAD=0.2810  ...
+  ❌  FAIL  Char isolation (MAD > 0.005)         MAD(0,1)=0.0001  ...
+```
+
+
+---
+# Decision: Retrained Generator Export — Style Conditioning Fix Confirmed
+
+**Date:** 2026-03-08  
+**Author:** Major (AI/ML Engineer)  
+**Status:** Confirmed and committed
+
+## Decision
+
+The retrained `models/v1/generator.onnx` (from `epoch_0200.pth`, trained with the fixed `UNetGenerator.forward()`) replaces the previous broken export. This model is the canonical v1 model for browser delivery.
+
+## Context
+
+The previous `generator.onnx` was trained with `torch.zeros` as the encoder input, making all 6 U-Net skip connections constant zeros. This caused blank white glyph output (all -1.0 in model space). The architecture was fixed to use `style_glyph_0` as encoder input, and a full 200-epoch retrain was completed.
+
+## Validation
+
+All 4 `check_model.py` checks pass on the new export:
+- Non-blank check: ink_frac=0.0266 (was 0.0 with the broken model)
+- Style conditioning MAD: 0.2823 (strong style sensitivity)
+- Char isolation MAD: 0.084–0.091 (distinct per-character output)
+- Output range: [-1.0, 1.0] ✅
+
+## Implications
+
+- **Togusa:** The `models/v1/generator.onnx` now produces non-blank, style-sensitive glyphs. The blank white glyph regression is resolved.
+- **Batou:** File size unchanged — still 53.1 MB uncompressed, ~15.9 MB brotli. No server-side changes needed.
+- **Future:** The check_model.py non-blank check (ink_frac ≥ 1%) is now the mandatory regression gate before any future model commit.
+
+
+---
+# Model Sanity Check — Implemented
+
+**From:** Major (AI/ML Engineer)  
+**Date:** 2026-03-08  
+**Status:** Done  
+
+---
+
+## Summary
+
+Implemented `src/model/export/check_model.py` — a fast Python sanity check script for exported ONNX models.  Runs in < 10 seconds using synthetic inputs only.  Added `--check` flag to `export_onnx.py` and documented usage in `TRAINING.md`.
+
+---
+
+## Deliverables
+
+| File | Change |
+|---|---|
+| `src/model/export/check_model.py` | New script — 5 checks, pass/fail summary, exit code |
+| `src/model/export/export_onnx.py` | Added `--check` flag; `export()` now returns path |
+| `src/model/TRAINING.md` | New section "## Model Sanity Check" with usage, convention table, examples |
+| `.squad/decisions/inbox/major-blank-glyph-finding.md` | Blank glyph diagnosis for Togusa |
+
+---
+
+## Checks implemented
+
+### 1. Output range ([-1, 1])
+Verifies min/max of a neutral inference run stay within [-1.0 ± 0.1, 1.0 ± 0.1].  The epsilon tolerates INT8 quantisation artefacts.
+
+### 2. Non-blank
+**This is the key check that would have caught the blank-glyph bug.**
+
+In model output space: `+1.0` = black ink, `-1.0` = white background (postprocessing: `((1-output)/2)*255`).  
+A blank glyph has all output near `-1.0` — zero ink pixels.  
+Check: ≥ 1 % of pixels must be above `0.0`.
+
+### 3. Style conditioning
+Runs two inferences with maximally contrasting style inputs (all +1.0 vs all -1.0).  
+MAD must exceed 0.01 — confirms the model is not ignoring style inputs.
+
+### 4. Character isolation
+Runs inferences with `char_index=0`, `char_index=1`, `char_index=65`.  
+MAD between any two must exceed 0.005 — confirms character embedding has effect.
+
+### 5. Regression baseline (optional)
+If `test_outputs/` contains `.npy` baseline files (saved with `--save-baselines`), compares current outputs against them.  MAD must stay ≤ 0.1.  Skipped gracefully if no baselines exist.
+
+---
+
+## Why the old smoke test missed the blank-glyph bug
+
+The browser smoke test checked relative MAD between two style inputs (similar to check #3 above).  That check **passed** (MAD ≈ 0.281) because the broken model still shifts output values slightly with style input.  But the absolute values were all near -1.0 (all white = blank), which required check #2 (non-blank) to detect.
+
+**Lesson:** Style conditioning alone is insufficient as a correctness signal.  Absolute output quality (non-blank, range) must be verified independently.
+
+---
+
+## Usage
+
+```bash
+# Quick check:
+python export/check_model.py models/v1/generator.onnx
+
+# After confirming model is correct, save baselines:
+python export/check_model.py models/v1/generator.onnx --save-baselines test_outputs/
+
+# Future checks with regression:
+python export/check_model.py models/v1/generator.onnx --baselines test_outputs/
+
+# Automatically after export:
+python export/export_onnx.py \
+    --checkpoint models/checkpoints/epoch_0200.pth \
+    --output models/v1/generator.onnx \
+    --check
+```
+
+---
+
+## Next steps
+
+1. Run `check_model.py` on the current `epoch_0200` export — expected to fail check #2 (non-blank), confirming the blank-glyph diagnosis.
+2. After retrain completes, run `check_model.py --save-baselines test_outputs/` to establish regression baselines for the fixed model.
+3. Consider adding `check_model.py` to the CI pipeline (it exits 1 on failure).
+
+
+---
+# Blank Cyrillic Glyph — Frontend Audit & Smoke Test Fix
+
+**Author:** Togusa (Frontend Dev)  
+**Date:** 2026-03-09  
+**Status:** Frontend fix applied — retraining required for full resolution  
+
+---
+
+## Root Cause Confirmed
+
+The blank glyph bug is **model-level**, not frontend-level.
+
+The `epoch_0200` ONNX model was trained with the **old, broken `UNetGenerator` architecture** that fed `torch.zeros(B,1,128,128)` through the U-Net encoder. All six skip connections were constant-zero regardless of input font. The model learned to minimise L1 loss by predicting near-all-background (-1.0), which postprocesses to 255 (white) on every pixel → blank canvas.
+
+Cross-referenced with Major's inbox finding (`major-blank-glyph-finding.md`): non-blank check expected to fail with < 1 % of pixels above 0.0 on `epoch_0200`.
+
+---
+
+## Frontend Code Audit — Everything is Correct
+
+A full audit of the inference pipeline found **no frontend code bugs**:
+
+| Component | Formula / Logic | Status |
+|-----------|----------------|--------|
+| `FontLoader.extractStyleGlyphs()` | `1 - brightness * 2` (white bg→-1, black ink→+1) | ✅ Correct |
+| `OnnxInference.generateGlyph()` | `((1 - outputData[i]) / 2) * 255` (+1→0 black, -1→255 white) | ✅ Correct |
+| `App.tsx` postprocessing | Same formula, `alpha = 255` hardcoded | ✅ Correct |
+| `inferenceWorker.ts` | `new Float32Array(outputData)` copy before return | ✅ Correct |
+| `ModelLoader.ts` | `new Float32Array(msg.output)` defensive copy on receive | ✅ Correct |
+
+No code changed between the model export (`ceab05d`) and the blank-output report (`git diff` was empty on all frontend inference files).
+
+---
+
+## Why the Smoke Test Gave a False Pass
+
+The style conditioning smoke test checked **relative** style response (MAD between `fill(+1.0)` and `fill(-1.0)` inputs). MAD = 0.281 confirmed the model responds differently to different style extremes.
+
+However, the model can produce slightly different near-all-background outputs and still pass a MAD > 0.01 threshold. Neither output needs to be non-blank for the relative test to pass.
+
+**The test lacked an absolute pixel content assertion.**
+
+---
+
+## Fix Applied (Frontend)
+
+Updated `src/frontend/e2e/style-conditioning-real.spec.ts`:
+
+1. **Style conditioning test** — added `minA`, `maxA`, `minB`, `maxB` to returned data and added:
+   ```javascript
+   expect(result.maxA).toBeGreaterThan(-0.5); // not all-background
+   expect(result.maxB).toBeGreaterThan(-0.5);
+   ```
+
+2. **New test**: `'non-blank: neutral style input must produce visible glyph pixels'`
+   - Uses `fill(0.0)` (neutral midtone) style input and `char_index=0` (А)
+   - Asserts `max > -0.5` (ink pixels present) and `std > 0.05` (structural variation)
+   - This test **will fail** on the `epoch_0200` model and **pass** on the correctly retrained model
+
+Total tests: was 20, now 21 (Chromium E2E). Unit tests unchanged (108/108 green).
+
+---
+
+## Action Required: Model Retraining
+
+**For Major:** The architectural fix (`UNetGenerator.forward()` now passes `style_glyph_0` instead of `torch.zeros`) is already committed. The next step is to:
+
+1. Retrain from scratch using the fixed architecture
+2. Export new ONNX model
+3. Run `python export/check_model.py models/v1/generator.onnx` to verify the **non-blank check passes**
+4. Re-run `npx playwright test style-conditioning-real.spec.ts` to verify all 5 real-model tests pass (including the new non-blank test)
+
+---
+
+## Decision
+
+**The smoke test must always include an absolute-value non-blank assertion alongside relative MAD.**  
+A MAD-only test is insufficient to detect mode-collapsed models that output all-background.
+
+
+---
+# Smoke Test Result: models/v1/generator.onnx (epoch_0200)
+
+**Date:** 2026-03-08  
+**Author:** Togusa  
+**Status:** ✅ GREEN — No issues found
+
+## Summary
+
+Full smoke test run against `models/v1/generator.onnx` (53.1 MB INT8, epoch_0200 retrain).
+
+All 128 tests pass. Style conditioning is confirmed working.
+
+## Test Results
+
+| Suite | Result | Count |
+|---|---|---|
+| Vitest unit tests | ✅ PASS | 108/108 |
+| Playwright E2E (stub model) | ✅ PASS | 17/17 |
+| Playwright E2E (real model) | ✅ PASS | 3/3 |
+| **Total** | **✅ PASS** | **128/128** |
+
+## Style Conditioning Validation
+
+The KEY test: `STYLE CONDITIONING: two maximally-different font styles produce different outputs`
+
+- **Font A** (styleGlyphs all +1.0) vs **Font B** (styleGlyphs all -1.0)
+- **Mean Absolute Difference:** 0.281117 (threshold: > 0.01) ✅
+- **areIdentical:** false ✅
+- **inputNames:** `style_glyphs`, `char_index` (matches contract) ✅
+
+The old broken model (pre-epoch_0200) produced identical outputs regardless of style input. The new model clearly responds to different style signals — **style conditioning is fixed**.
+
+## Model File
+
+- Path: `models/v1/generator.onnx`
+- Size: 53,084,867 bytes (53.1 MB)
+- Last modified: 2026-03-08 10:55:17
+- Quantization: INT8 dynamic
+
+## No Issues Found
+
+- No console errors related to model loading or inference
+- Model load time: within 5000 ms target (passes E2E assertion)
+- Per-glyph inference: within 500 ms WASM target (passes E2E assertion)
+- Output shape correct: [1, 1, 128, 128] ✅
+- Output range correct: [-1, 1] (±1e-6 for INT8 epsilon) ✅
+- Determinism: same inputs → bit-identical outputs ✅
+
+## ORT WASM Output Copy Note
+
+The real model test (`style-conditioning-real.spec.ts`) correctly uses `new Float32Array(tensor.data)` to explicitly copy ORT WASM output before comparison. This guards against the aliasing bug fixed in PR #40. Pattern is correctly followed throughout.
+
+
+---
+# Decision Inbox: Frontend Validation Complete — Model c339b72
+
+**Author:** Togusa  
+**Date:** 2026-03-09  
+**Status:** ✅ Complete  
+
+---
+
+## Summary
+
+Full frontend test suite ran against the corrected `models/v1/generator.onnx` (commit `c339b72`, retrained with correct `UNetGenerator.forward()` using `style_glyph_0` instead of `torch.zeros`).
+
+**All 129 tests pass.** Non-blank regression tests are green.
+
+---
+
+## Test Results
+
+| Suite | Count | Status |
+|-------|-------|--------|
+| Vitest unit tests | 108/108 | ✅ |
+| Playwright E2E (Chromium) | 21/21 | ✅ |
+| **Total** | **129/129** | **✅** |
+
+### Non-blank regression tests (the regressions added to catch epoch_0200 bug):
+
+- `non-blank: neutral style input must produce visible glyph pixels` → **PASS** (max=1.0, std=0.3015)
+- `STYLE CONDITIONING: two maximally-different font styles produce different outputs` → **PASS** (MAD=0.2874, maxA=1.0)
+
+---
+
+## Test Fix Applied
+
+**File:** `src/frontend/e2e/style-conditioning-real.spec.ts`
+
+Removed `expect(result.maxB).toBeGreaterThan(-0.5)` from the style conditioning test.
+
+**Reason:** Font B uses `fill(-1.0)` (all-background style). The correctly retrained model produces near-background output for an all-background style input — this is correct style conditioning behaviour, not a blank glyph bug. The assertion was a false positive introduced when diagnosing the epoch_0200 blank glyph issue.
+
+The dedicated `non-blank` test using `fill(0.0)` (neutral style) is the correct regression guard and continues to pass with strong metrics.
+
+---
+
+## Decision for Team
+
+**Non-blank detection should always use neutral/realistic style inputs (`fill(0.0)`)**, not maximally extreme synthetic inputs (`fill(-1.0)`). The all-background extreme legitimately produces low-ink output from a properly conditioned model.
+
+The `non-blank` test is now the canonical blank glyph regression guard.
+
