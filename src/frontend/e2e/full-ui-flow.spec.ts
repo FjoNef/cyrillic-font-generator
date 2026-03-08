@@ -21,9 +21,6 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-// Chromium-only: 53 MB model + 66 inferences is too slow for Firefox/WebKit in CI
-test.use({ browserName: 'chromium' });
-
 const REAL_MODEL_PATH = path.join(__dirname, '../../../models/v1/generator.onnx');
 const ORT_WASM_DIST = path.join(__dirname, '../node_modules/onnxruntime-web/dist');
 const TEST_FONT_PATH = path.join(__dirname, '../../../data/fonts/ANTQUAB.TTF');
@@ -31,6 +28,11 @@ const TEST_FONT_PATH = path.join(__dirname, '../../../data/fonts/ANTQUAB.TTF');
 // ── Fixture guard ─────────────────────────────────────────────────────────────
 
 test.describe('Full UI Flow E2E Test', () => {
+  // Chromium-only: 53 MB model + 66 WASM inferences too slow for CI on Firefox/WebKit
+  test.beforeEach(async ({ browserName }) => {
+    test.skip(browserName !== 'chromium', 'Chromium only: 53 MB model + 66 WASM inferences too slow for CI');
+  });
+
   test.beforeAll(() => {
     if (!fs.existsSync(REAL_MODEL_PATH)) {
       test.skip();
