@@ -230,3 +230,38 @@ Decision: Two independent GradScalers (one per G/D optimizer) for AMP training. 
 **Files changed:** `configs/train_config.yaml`, `data/dataset.py`, `data/build_cache.py`, `train/train.py`, `src/model/TRAINING.md`.
 
 **Decision:** `.squad/decisions.md` (Training Speed Optimization section)
+
+---
+
+### 2026-03-08: torch.compile + num_fonts Configuration (Issue #46)
+
+**Task:** Verify torch.compile works with Triton on Windows and add configurable font count option.
+
+**Environment:** PyTorch 2.10.0+cu128, Python 3.14.3, Windows 11, RTX 3070 Laptop (8GB VRAM).
+
+**Key Findings:**
+
+1. **torch.compile SUCCESS:** Triton now works on Windows (previously failed in issue #42). Smoke test passed — `torch.compile` compiles simple functions on CUDA tensors without errors.
+
+2. **Benchmark results (1000-sample synthetic, B=64, AMP on):**
+   - **Baseline (no compile):** 16.91s (epoch 1), 6.25s (epoch 2), 6.18s (epoch 3) → median **6.25s**
+   - **torch.compile:** 124.07s (epoch 1), 5.62s (epoch 2), 5.79s (epoch 3) → median **5.79s**
+   - **Speedup:** 1.08× (7.9% improvement)
+   - **Compilation overhead:** ~108s (first epoch only; amortized over 200 epochs: +0.54s/epoch)
+
+3. **Recommendation:** Keep `use_compile: false` by default. The ~8% speedup is below the 10% threshold, and the 124s first-epoch overhead is significant for short training runs. Enable manually for 200+ epoch runs where the amortized cost is negligible.
+
+4. **num_fonts config option:** Added to `train_config.yaml` (default: null). When set, limits dataset to first N fonts sorted alphabetically. Wired through `CyrillicFontDataset.__init__(num_fonts)` and `CachedFontDataset.__init__(num_fonts)`. Useful for quick experiments and debugging.
+
+5. **Design choice:** `num_fonts` limits the number of **font families** (not glyphs, not style references). This is the most semantically meaningful level for font generalization experiments. Each font still produces 66 samples (one per Cyrillic character).
+
+**Changes:**
+- `configs/train_config.yaml` — added `use_compile: false` and `num_fonts` (commented example)
+- `train/train.py` — torch.compile integration with graceful fallback; wire `num_fonts` to dataset construction
+- `data/dataset.py` — added `num_fonts` parameter to `CyrillicFontDataset` and `CachedFontDataset`
+- `TRAINING.md` — updated Strategy 4 (torch.compile) section with new benchmark results
+- `train/benchmark_compile.py` — automated benchmark script for compile testing
+
+**Git workflow:** Moved commit `aa89456` (training speed optimization) to feature branch `squad/46-training-triton-fonts`, reverted from `dev`, added new torch.compile + num_fonts work on top.
+
+**PR:** #47 (squad/46-training-triton-fonts → dev), closes #46.
