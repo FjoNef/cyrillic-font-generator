@@ -7,6 +7,7 @@ src/backend/**/obj/
 # Frontend
 src/frontend/node_modules/
 src/frontend/dist/
+src/frontend/public/ort-wasm/
 
 # Training data and model artefacts
 data/fonts/
