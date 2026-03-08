@@ -193,4 +193,41 @@ ONNX Runtime 1.20 auto-infers WASM path from import.meta.url of session initiali
 **PR:** #50 (`squad/fix-ort-wasm-missing-files` → `dev`)  
 **Merged:** Squash merge, commit be94cba  
 **Impact:** Zero regression risk. All ORT 1.20 variants now available for browser fallback chain.
+### 2026-03-09: ORT WASM 404 Fix — All Variants Must Be Copied
+
+**Task:** Fix 404 on `/ort-wasm/ort-wasm-simd-threaded.jsep.mjs` causing silent inference failure.  
+**Status:** ✅ FIXED — PR #50 (commit `0d9f2a3` on `squad/fix-ort-wasm-missing-files`)
+
+**Root Cause:**
+The copy script `src/frontend/scripts/copy-ort-wasm.cjs` only copied 2 files (base .mjs/.wasm pair). ORT 1.20 probes for multiple WASM backend variants based on browser capabilities:
+- **Base:** `ort-wasm-simd-threaded.{mjs,wasm}` — standard SIMD+threads backend
+- **JSEP:** `ort-wasm-simd-threaded.jsep.{mjs,wasm}` — JavaScript Execution Provider (WebGPU backend support)
+- **Asyncify:** `ort-wasm-simd-threaded.asyncify.{mjs,wasm}` — async operations support
+- **JSPI:** `ort-wasm-simd-threaded.jspi.{mjs,wasm}` — JavaScript Promise Integration
+
+When the jsep variant was requested but missing (404), the browser would silently fail or fall back to incorrect behavior.
+
+**Fix Applied:**
+Updated FILES array in `copy-ort-wasm.cjs` to include all 8 WASM variant files:
+```javascript
+const FILES = [
+  'ort-wasm-simd-threaded.mjs',
+  'ort-wasm-simd-threaded.wasm',
+  'ort-wasm-simd-threaded.jsep.mjs',
+  'ort-wasm-simd-threaded.jsep.wasm',
+  'ort-wasm-simd-threaded.asyncify.mjs',
+  'ort-wasm-simd-threaded.asyncify.wasm',
+  'ort-wasm-simd-threaded.jspi.mjs',
+  'ort-wasm-simd-threaded.jspi.wasm',
+];
+```
+
+**Verification:**
+All 8 files now present in `src/frontend/public/ort-wasm/` after running the copy script.
+
+**Key Rule:** Always copy ALL ORT WASM variants from `node_modules/onnxruntime-web/dist`, not just the base pair. ORT's capability probing will request different variants based on browser features.
+
+**Artifacts:**
+- PR #50: fix(inference): copy all ORT WASM variants to prevent 404s
+- Decision: `.squad/decisions/inbox/major-ort-wasm-all-variants.md`
 
