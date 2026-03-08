@@ -51,6 +51,46 @@
 **Key Pattern:**
 ORT 1.20 requires ALL 8 WASM variant files to be present to prevent 404s during browser capability probing. The copy script must include: base, jsep, asyncify, and jspi variants (2 files each). Pre-existing test failures on target branch should not block infrastructure fixes that don't touch the failing component.
 
+### 2026-03-08: PR #52 Review — CI E2E Backend Mock — APPROVED ✅
+
+**Task:** QA review of PR #52 (ci: mock backend API in Playwright to fix E2E ECONNREFUSED).
+
+**Verdict:** APPROVED ✅ — Mock is correct, assertion removal justified, all tests pass, CI green.
+
+**Changes Reviewed:**
+- `src/frontend/e2e/style-conditioning-real.spec.ts`: Added `/api/model/manifest` mock in `beforeEach`
+  - Returns JSON matching backend ModelEndpoints.cs exactly (version, filename, sizeBytes, sha256, downloadUrl)
+  - Eliminates ECONNREFUSED from proxy to non-existent backend in CI
+- Removed `maxB > -0.5` assertion from STYLE CONDITIONING test
+  - Font B (fill -1.0 = all-background style) produces maxB=-0.9959
+  - This is expected INT8 quantization edge-case behavior, not a real bug
+  - Dedicated non-blank regression test with neutral style (fill 0.0) remains in place
+
+**Verification:**
+- ✅ Mock JSON shape matches backend exactly: version, filename, sizeBytes, sha256, downloadUrl
+- ✅ Frontend (App.tsx line 46) only uses `downloadUrl` field — mock values for other fields are safe
+- ✅ Mock downloadUrl points to test-specific route that serves the real model from file system
+- ✅ 111 unit tests pass (vitest)
+- ✅ CI checks passing (Squad CI/test: 3m3s)
+- ✅ No gaps in E2E coverage: only style-conditioning-real.spec.ts navigates to React app, so only it needs manifest mock
+- ✅ Other E2E tests (performance.spec.ts, cross-browser-smoke.spec.ts) already mock `/api/model**` and don't exercise app's model loading
+
+**Assertion Removal Justification:**
+- Font B uses `fill(-1.0)` style input = all-background, no glyph pixels
+- Model has no structure to condition on → outputs near all-background (-0.9959)
+- This is expected quantization edge-case behavior, not a conditioning failure
+- The MAD > 0.01 assertion still validates that the model responds to style differences
+- Font A non-blank check (fill +1.0) retained in this test
+- Dedicated non-blank regression test (lines 312-373) uses realistic neutral style (fill 0.0) and remains in place
+
+**Review Status:**
+- Cannot formally approve via GitHub (user's own PR)
+- Approval posted as comment: https://github.com/FjoNef/cyrillic-font-generator/pull/52#issuecomment-4020026507
+- Decision document: `.squad/decisions/inbox/saito-pr52-review.md`
+
+**Key Pattern:**
+Playwright route interception at the page level cleanly solves backend dependencies in E2E tests. The mock manifest returns a custom downloadUrl that points to another intercepted route serving the real model from the file system — elegant solution that keeps the test self-contained while exercising the full inference path with the production model.
+
 ### 2026-03-08: PR #50 Merge Verification — ORT WASM All Variants — COMPLETE ✅
 
 **Task:** Execute final merge of PR #50 after approval.
