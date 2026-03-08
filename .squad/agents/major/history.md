@@ -112,3 +112,26 @@ await modelLoader.load(modelPath, ...);
 **Artifacts:**
 - Decision merged to decisions.md
 - Orchestration log: 2026-03-08T193433Z-major.md
+
+---
+
+### 2026-03-09: Issue #48 — Blank Cyrillic Glyphs Root Cause & Fix
+
+**Task:** Investigate blank Cyrillic glyphs in downloaded font (Latin worked, Cyrillic blank).  
+**Status:** ✅ FIXED — commit `cbabc67` on `squad/48-blank-cyrillic-glyphs`
+
+**Root Cause:**
+`ort.env.wasm.wasmPaths` was not set in `inferenceWorker.ts`. ORT 1.20 auto-infers the WASM file URL from its own script URL — unreliable inside a Vite-bundled worker chunk (hashed filename). Without valid WASM, ORT silently falls back to a JS path that does not implement INT8 QLinear ops correctly, producing all -1.0 (background) output for every glyph.
+
+**Fixes applied:**
+1. `ort.env.wasm.wasmPaths = '/ort-wasm/'` — must be set before any `InferenceSession.create()`
+2. `ort.env.wasm.numThreads = 1` — avoid nested proxy worker (we're already in a dedicated worker); also avoids SAB/COOP requirement
+3. SharedArrayBuffer guard for `styleGlyphs` before passing to `ort.Tensor` (mirrors OnnxInference.ts)
+4. `console.warn` when `max(output[0:512]) <= 0.0` — visible in DevTools without filtering
+5. `scripts/copy-ort-wasm.cjs` copies `ort-wasm-simd-threaded.{mjs,wasm}` from node_modules to `public/ort-wasm/`; run via `postinstall`/`dev`/`build`
+
+**Key rule:** ORT WASM files must be served from a stable non-hashed URL. Always use `public/ort-wasm/` + the copy script. Never rely on ORT's auto-detection inside a Vite worker.
+
+**All other 6 checklist items were already correct** (App.tsx pathname, worker message flow, canGenerate gate, tensor shapes, output copy, FontLoader normalisation).
+
+**Artifacts:** `.squad/decisions/inbox/major-blank-cyrillic-findings.md`
