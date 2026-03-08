@@ -1,12 +1,16 @@
 /**
- * Copies the ORT WASM EP files needed by inferenceWorker.ts into public/ort-wasm/.
+ * Copies ALL ORT WASM variant files into public/ort-wasm/.
  *
  * These files are NOT committed to git (public/ort-wasm/ is in .gitignore).
  * This script runs via `postinstall` so they are always present after `npm install`.
  *
- * Files needed for executionProviders: ['wasm'] in ORT 1.20:
- *   ort-wasm-simd-threaded.mjs  — inner worker script (loads the WASM binary)
- *   ort-wasm-simd-threaded.wasm — the WASM binary (~12 MB)
+ * ORT 1.20 probes for different WASM backend variants based on browser capabilities:
+ *   - Base: ort-wasm-simd-threaded.{mjs,wasm} — standard SIMD+threads backend
+ *   - JSEP: ort-wasm-simd-threaded.jsep.{mjs,wasm} — JavaScript Execution Provider
+ *   - Asyncify: ort-wasm-simd-threaded.asyncify.{mjs,wasm} — async operations support
+ *   - JSPI: ort-wasm-simd-threaded.jspi.{mjs,wasm} — JavaScript Promise Integration
+ *
+ * All 8 files must be present to prevent 404s during ORT's capability probing.
  */
 
 'use strict';
@@ -20,6 +24,12 @@ const DST = path.join(__dirname, '..', 'public', 'ort-wasm');
 const FILES = [
   'ort-wasm-simd-threaded.mjs',
   'ort-wasm-simd-threaded.wasm',
+  'ort-wasm-simd-threaded.jsep.mjs',
+  'ort-wasm-simd-threaded.jsep.wasm',
+  'ort-wasm-simd-threaded.asyncify.mjs',
+  'ort-wasm-simd-threaded.asyncify.wasm',
+  'ort-wasm-simd-threaded.jspi.mjs',
+  'ort-wasm-simd-threaded.jspi.wasm',
 ];
 
 fs.mkdirSync(DST, { recursive: true });

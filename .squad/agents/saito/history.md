@@ -1006,3 +1006,49 @@ um_workers = min(4, os.cpu_count() or 1) declared before DataLoader
 
 **Status:** PR #47 approved and ready to merge. Blocking issue fully resolved.  
 
+
+
+---
+
+### 2026-03-09: PR #49 Review — Blank Cyrillic Glyphs Fix — APPROVED
+
+**Task:** Code review of PR #49 (Issue #48 — fix(inference): blank Cyrillic glyphs — configure ORT WASM paths).
+
+**Verdict:** APPROVED — Ready to merge to dev
+
+**Test Results:**
+- 111 frontend tests: All passing (10 files, 2.36s duration)
+- Test files: integration, onnxContract, styleConditioning, ModelLoader, performance, colorMapping, fontLoader, fontPipeline, BrowserUnsupported
+- No regressions: All existing tests pass
+- No new failures: New diagnostic logging does not break any existing behavior
+
+**Root Cause Validation:**
+✓ ONNX Runtime 1.20 auto-infer from import.meta.url fails in Vite workers (gets blob: protocol)  
+✓ Fallback to INT8 WebGL produces all-background (unsupported ops)  
+✓ Explicit wasmPaths prevents silent failure  
+✓ numThreads=1 avoids SharedArrayBuffer overhead  
+✓ SAB defensive copy guard mirrors established pattern  
+
+**Code Quality:**
+- Comments explain why, not just what
+- Diagnostic logging at appropriate severity (debug for normal, warn for blank output)
+- Follows established patterns (SAB guard mirrors OnnxInference.ts)
+- No magic numbers or unsupported assumptions
+
+**Edge Cases Verified:**
+- SAB on non-isolated pages → handled
+- WASM file 404 → caught by worker handler
+- numThreads=1 perf impact → zero overhead
+- postinstall failure → visible in npm install output
+- Missing public/ directory → script creates recursively
+
+**Additional Fixes by Togusa: CORRECT**
+- App.tsx uploadedFont dependency fix (stale closure prevention)
+- GlyphVectorizer zero-command warning (diagnostics)
+- GlyphVectorizer comment fix (CCW vs CW)
+
+**Conclusion:**
+No blockers. PR fully resolves issue #48 with correct root cause fix and appropriate defensive coding. All tests pass, code quality is high.
+
+**Status:** PR #49 approved, merged to dev (squash), branch deleted.
+

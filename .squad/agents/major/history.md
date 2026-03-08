@@ -135,3 +135,78 @@ await modelLoader.load(modelPath, ...);
 **All other 6 checklist items were already correct** (App.tsx pathname, worker message flow, canGenerate gate, tensor shapes, output copy, FontLoader normalisation).
 
 **Artifacts:** `.squad/decisions/inbox/major-blank-cyrillic-findings.md`
+
+
+---
+
+### 2026-03-09: WASM Path Configuration — PR #49 Merged
+
+**Task:** Fix blank Cyrillic glyphs after Vite build — diagnose and repair browser ONNX inference.  
+**Status:** RESOLVED & MERGED
+
+**Root Cause Diagnosis:**
+ONNX Runtime 1.20 auto-infers WASM path from import.meta.url of session initialization script. Inside Vite-bundled Web Worker, import.meta.url resolves to blob: protocol, causing WASM auto-discovery to fail silently. Fallback to INT8 WebGL execution provider. WebGL does not support QLinear operations — all-background output (constant -1.0).
+
+**Five-Part Fix:**
+1. Explicit ort.env.wasm.wasmPaths = '/ort-wasm/' before InferenceSession.create()
+2. ort.env.wasm.numThreads = 1 (WASM inline, no nested proxy worker, avoids SharedArrayBuffer overhead)
+3. scripts/copy-ort-wasm.cjs — postinstall script copies WASM files from node_modules to public/ort-wasm/
+4. .gitignore updated for src/frontend/public/ort-wasm/
+5. SAB defensive guard (copy to plain ArrayBuffer if needed)
+
+**Companion Fixes by Togusa:**
+- App.tsx: Added uploadedFont to useCallback deps (stale closure fix)
+- GlyphVectorizer.ts: Zero-command warning for diagnostics
+- GlyphVectorizer.ts: Fixed misleading "CW" to "CCW" comment
+
+**Validation:**
+- 111 frontend tests: all pass
+- No regressions
+- Togusa full code audit: frontend pipeline confirmed correct, root cause definitely in browser inference
+
+**PR:** #49 — fix(inference): blank Cyrillic glyphs — configure ORT WASM paths  
+**Merged:** squad/48-blank-cyrillic-glyphs to dev (squash merge)  
+**Branch deleted**
+
+**Key Learning:** ORT 1.20 inside Vite workers requires explicit wasmPaths. Pattern: set BEFORE InferenceSession.create(), copy files on build/dev/postinstall hooks, use numThreads=1 to avoid SharedArrayBuffer in dedicated worker context.
+
+---
+
+### 2026-03-09: ORT WASM 404 Fix — All Variants Must Be Copied
+
+**Task:** Fix 404 on `/ort-wasm/ort-wasm-simd-threaded.jsep.mjs` causing silent inference failure.  
+**Status:** ✅ FIXED — PR #50 (commit `0d9f2a3` on `squad/fix-ort-wasm-missing-files`)
+
+**Root Cause:**
+The copy script `src/frontend/scripts/copy-ort-wasm.cjs` only copied 2 files (base .mjs/.wasm pair). ORT 1.20 probes for multiple WASM backend variants based on browser capabilities:
+- **Base:** `ort-wasm-simd-threaded.{mjs,wasm}` — standard SIMD+threads backend
+- **JSEP:** `ort-wasm-simd-threaded.jsep.{mjs,wasm}` — JavaScript Execution Provider (WebGPU backend support)
+- **Asyncify:** `ort-wasm-simd-threaded.asyncify.{mjs,wasm}` — async operations support
+- **JSPI:** `ort-wasm-simd-threaded.jspi.{mjs,wasm}` — JavaScript Promise Integration
+
+When the jsep variant was requested but missing (404), the browser would silently fail or fall back to incorrect behavior.
+
+**Fix Applied:**
+Updated FILES array in `copy-ort-wasm.cjs` to include all 8 WASM variant files:
+```javascript
+const FILES = [
+  'ort-wasm-simd-threaded.mjs',
+  'ort-wasm-simd-threaded.wasm',
+  'ort-wasm-simd-threaded.jsep.mjs',
+  'ort-wasm-simd-threaded.jsep.wasm',
+  'ort-wasm-simd-threaded.asyncify.mjs',
+  'ort-wasm-simd-threaded.asyncify.wasm',
+  'ort-wasm-simd-threaded.jspi.mjs',
+  'ort-wasm-simd-threaded.jspi.wasm',
+];
+```
+
+**Verification:**
+All 8 files now present in `src/frontend/public/ort-wasm/` after running the copy script.
+
+**Key Rule:** Always copy ALL ORT WASM variants from `node_modules/onnxruntime-web/dist`, not just the base pair. ORT's capability probing will request different variants based on browser features.
+
+**Artifacts:**
+- PR #50: fix(inference): copy all ORT WASM variants to prevent 404s
+- Decision: `.squad/decisions/inbox/major-ort-wasm-all-variants.md`
+
