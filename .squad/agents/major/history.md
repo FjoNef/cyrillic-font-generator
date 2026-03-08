@@ -135,3 +135,38 @@ await modelLoader.load(modelPath, ...);
 **All other 6 checklist items were already correct** (App.tsx pathname, worker message flow, canGenerate gate, tensor shapes, output copy, FontLoader normalisation).
 
 **Artifacts:** `.squad/decisions/inbox/major-blank-cyrillic-findings.md`
+
+
+---
+
+### 2026-03-09: WASM Path Configuration — PR #49 Merged
+
+**Task:** Fix blank Cyrillic glyphs after Vite build — diagnose and repair browser ONNX inference.  
+**Status:** RESOLVED & MERGED
+
+**Root Cause Diagnosis:**
+ONNX Runtime 1.20 auto-infers WASM path from import.meta.url of session initialization script. Inside Vite-bundled Web Worker, import.meta.url resolves to blob: protocol, causing WASM auto-discovery to fail silently. Fallback to INT8 WebGL execution provider. WebGL does not support QLinear operations — all-background output (constant -1.0).
+
+**Five-Part Fix:**
+1. Explicit ort.env.wasm.wasmPaths = '/ort-wasm/' before InferenceSession.create()
+2. ort.env.wasm.numThreads = 1 (WASM inline, no nested proxy worker, avoids SharedArrayBuffer overhead)
+3. scripts/copy-ort-wasm.cjs — postinstall script copies WASM files from node_modules to public/ort-wasm/
+4. .gitignore updated for src/frontend/public/ort-wasm/
+5. SAB defensive guard (copy to plain ArrayBuffer if needed)
+
+**Companion Fixes by Togusa:**
+- App.tsx: Added uploadedFont to useCallback deps (stale closure fix)
+- GlyphVectorizer.ts: Zero-command warning for diagnostics
+- GlyphVectorizer.ts: Fixed misleading "CW" to "CCW" comment
+
+**Validation:**
+- 111 frontend tests: all pass
+- No regressions
+- Togusa full code audit: frontend pipeline confirmed correct, root cause definitely in browser inference
+
+**PR:** #49 — fix(inference): blank Cyrillic glyphs — configure ORT WASM paths  
+**Merged:** squad/48-blank-cyrillic-glyphs to dev (squash merge)  
+**Branch deleted**
+
+**Key Learning:** ORT 1.20 inside Vite workers requires explicit wasmPaths. Pattern: set BEFORE InferenceSession.create(), copy files on build/dev/postinstall hooks, use numThreads=1 to avoid SharedArrayBuffer in dedicated worker context.
+

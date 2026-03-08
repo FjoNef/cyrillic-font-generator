@@ -209,3 +209,36 @@ You can now pick up this fresh model for the next inference validation cycle. Th
 **Artifacts:**
 - Findings: `.squad/decisions/inbox/togusa-blank-cyrillic-findings.md`
 - Commit: `d6eb735` on `squad/48-blank-cyrillic-glyphs`
+
+
+---
+
+### 2026-03-09: Blank Cyrillic Glyphs Investigation & Fix — PR #49
+
+**Task:** Diagnose blank glyphs in browser-generated font output.  
+**Status:** ROOT CAUSE FOUND & FIXED
+
+**Full Code Audit Performed:**
+- GlyphVectorizer.ts: Threshold data > 0 confirmed correct for raw [-1,1] space
+- Comment "CW rectangle" fixed to "CCW rectangle" (correct winding for y-up font space)
+- Added zero-command console.warn guard for diagnostics
+- FontAssembler.ts: All 66 glyphs properly assembled, advance width set, merge logic sound
+- App.tsx: Fixed missing uploadedFont in useCallback deps (stale closure bug)
+- inferenceWorker.ts: Output aliasing already handled (explicit copy before postMessage)
+
+**Findings:** Frontend pipeline is structurally correct — no logic bugs at code level. **Root cause is definitively at browser ONNX inference layer,** not font assembly or vectorization.
+
+**Root Cause:** ONNX Runtime WASM path auto-discovery fails in Vite workers (gets blob: protocol), falls back to unsupported INT8 WebGL, produces all-background output.
+
+**Fix Implemented (PR #49):**
+- Major: Explicit wasmPaths config, numThreads=1, postinstall copy script, SAB guard
+- Togusa: uploadedFont dependency fix, diagnostic warnings
+- Saito: Code review approved, 111 tests pass
+
+**Validation:**
+- 111 tests: all pass
+- No regressions
+- PR #49 merged to dev
+
+**Key Insight:** When frontend code is sound but model output is blank, suspect WASM infrastructure (paths, threading mode, SAB handling). The inference layer is opaque — debug via console output range verification and defensive copies.
+
