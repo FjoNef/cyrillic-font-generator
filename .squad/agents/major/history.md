@@ -344,3 +344,30 @@ Decision: Two independent GradScalers (one per G/D optimizer) for AMP training. 
 - `.squad/orchestration-log/2026-03-08T012713Z-major.md`
 - `.squad/log/2026-03-08T012713Z-pr47-conflict-resolution.md`
 - `.squad/decisions.md` (appended PR #47 conflict resolution decision)
+
+---
+
+### 2026-03-08: ONNX Re-Export — Post-Retrain (epoch_0200, style-conditioning fixed)
+
+**Task:** Export the fresh epoch_0200 checkpoint to `models/v1/generator.onnx` after the full retrain with fixed style conditioning.
+
+**Checkpoint:** `models/checkpoints/epoch_0200.pth` (latest, 2026-03-08 06:28:51, 291.8 MB)
+
+**Issue encountered:** `torch.compile` was enabled during training (`use_compile: true` in `train_config.yaml`). PyTorch wraps compiled modules in a `OptimizedModule` object; saved state dict keys carry `_orig_mod.` prefix (e.g. `_orig_mod.char_embedding.weight`). The export script called `load_state_dict()` on an unwrapped `UNetGenerator` — key mismatch caused `RuntimeError`.
+
+**Fix applied to `export_onnx.py`:** Added `_strip_orig_mod()` helper that removes the `_orig_mod.` prefix from all checkpoint keys before loading. Applied to both `style_encoder_state` and `generator_state`.
+
+**Export result:**
+- Format: INT8 dynamic quantization (primary path succeeded)
+- Size: 53.1 MB (same as prior export — model arch unchanged, only weights differ)
+- Estimated brotli delivery: ~15.9 MB ✅ (under 20 MB target)
+- Validation: onnxruntime CPU forward pass → shape (1, 1, 128, 128), range [-1.0, 1.0] ✅
+
+**Committed:** `ceab05d` on `dev`
+- `models/v1/generator.onnx` — new model from retrained checkpoint
+- `src/model/export/export_onnx.py` — `_strip_orig_mod()` fix
+- `src/model/configs/train_config.yaml` — un-commented `num_fonts: 180` and `fonts_cache_dir` (reflects actual retrain config)
+
+**Decision recorded:** `.squad/decisions/inbox/major-onnx-export.md`
+
+**Key rule:** Whenever `use_compile: true` in `train_config.yaml`, checkpoints will have `_orig_mod.` prefixed keys. The export script now handles this transparently.
