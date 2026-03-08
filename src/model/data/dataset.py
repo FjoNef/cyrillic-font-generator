@@ -27,7 +27,6 @@ Usage
 from __future__ import annotations
 
 import os
-import functools
 from pathlib import Path
 from typing import List, Tuple
 
@@ -253,92 +252,4 @@ class SyntheticFontDataset(Dataset):
         
         char_index = torch.tensor(idx % self.num_chars, dtype=torch.int64)
         
-        return style_glyphs, target_glyph, char_index
-
-
-# ---------------------------------------------------------------------------
-# Cached Dataset (pre-rendered .pt files — eliminates on-the-fly rendering)
-# ---------------------------------------------------------------------------
-
-@functools.lru_cache(maxsize=256)
-def _load_font_pt(cache_path: str) -> dict:
-    """
-    Load a per-font .pt cache file.  Results are memoised per worker process
-    (lru_cache operates within a single process) so each font is only loaded
-    from disk once per worker lifetime.
-    """
-    return torch.load(cache_path, map_location="cpu", weights_only=True)
-
-
-class CachedFontDataset(Dataset):
-    """
-    Pre-rendered font dataset.  Loads glyph tensors from .pt cache files
-    instead of rendering on the fly, reducing CPU data-loading overhead.
-
-    Build the cache first:
-        cd src/model
-        python data/build_cache.py --fonts_dir ../../data/fonts \\
-                                   --output ../../data/fonts_cache
-
-    Parameters
-    ----------
-    cache_dir : str | Path
-        Directory containing per-font ``<stem>.pt`` cache files produced by
-        ``data/build_cache.py``.
-    style_chars : list[str]
-        Latin reference characters. Must match what was used when building the
-        cache. Defaults to DEFAULT_STYLE_CHARS (["A","B","C","D","E","H","I","O","R","X"]).
-    cyrillic_chars : list[str]
-        Target Cyrillic characters. Defaults to CYRILLIC_CHARS (66 chars).
-    """
-
-    def __init__(
-        self,
-        cache_dir: str | Path,
-        style_chars: List[str] = DEFAULT_STYLE_CHARS,
-        cyrillic_chars: List[str] = CYRILLIC_CHARS,
-    ) -> None:
-        self.cache_dir = Path(cache_dir)
-        self.style_chars = style_chars
-        self.cyrillic_chars = cyrillic_chars
-
-        self._cache_files: List[str] = sorted(
-            str(p) for p in self.cache_dir.glob("*.pt")
-        )
-        if not self._cache_files:
-            raise RuntimeError(
-                f"No .pt cache files found in {cache_dir}. "
-                "Run `python data/build_cache.py` first."
-            )
-
-        # Each sample: (cache_file_path, cyrillic_char_index)
-        self._samples: List[Tuple[str, int]] = [
-            (fp, char_idx)
-            for fp in self._cache_files
-            for char_idx in range(len(cyrillic_chars))
-        ]
-
-    def __len__(self) -> int:
-        return len(self._samples)
-
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Returns
-        -------
-        style_glyphs : Tensor [N, 1, 128, 128]  float32  [-1, 1]
-        target_glyph : Tensor [1, 128, 128]      float32  [-1, 1]
-        char_index   : Tensor  scalar             int64
-        """
-        cache_path, char_idx = self._samples[idx]
-        data = _load_font_pt(cache_path)
-
-        style_glyphs = data["style_glyphs"]
-        target_glyph = data["target_glyphs"][char_idx]  # [1, H, W]
-
-        if data.get("uint8", False):
-            # Convert uint8 [0,255] → float32 [-1,1].
-            style_glyphs = style_glyphs.to(torch.float32) / 127.5 - 1.0
-            target_glyph = target_glyph.to(torch.float32) / 127.5 - 1.0
-
-        char_index = torch.tensor(char_idx, dtype=torch.int64)
         return style_glyphs, target_glyph, char_index

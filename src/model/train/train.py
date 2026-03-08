@@ -66,7 +66,7 @@ import yaml
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from data.dataset import CyrillicFontDataset, CachedFontDataset, SyntheticFontDataset
+from data.dataset import CyrillicFontDataset, SyntheticFontDataset
 from train.model import StyleEncoder, UNetGenerator, PatchDiscriminator
 
 
@@ -211,13 +211,6 @@ def train(
             num_samples=1000,
             num_style_glyphs=len(data_cfg["style_latin_chars"]),
             image_size=data_cfg["image_size"],
-        )
-    elif data_cfg.get("fonts_cache_dir"):
-        cache_dir = data_cfg["fonts_cache_dir"]
-        print(f"Using cached dataset from {cache_dir}")
-        dataset = CachedFontDataset(
-            cache_dir=cache_dir,
-            style_chars=data_cfg["style_latin_chars"],
         )
     else:
         dataset = CyrillicFontDataset(
