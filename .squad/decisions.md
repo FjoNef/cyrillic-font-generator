@@ -2088,6 +2088,114 @@ Excellent test — directly validates the fix and will catch future regressions.
 
 - 114/114 tests pass (113 baseline + 1 new regression test)
 - Regression test exercises the ModelLoader copy path
+
+---
+
+# PR #47 Merge Conflict Resolution
+
+**Date:** 2026-03-08  
+**By:** Major (AI/ML Engineer)  
+**Context:** PR #47 merge conflicts after training optimization revert on dev  
+**Issue:** #47 (merge conflicts)  
+**PR:** #47  
+
+---
+
+## Problem
+
+PR #47 (`feat(training): Triton/torch.compile support + configurable font count`) on branch `squad/46-training-triton-fonts` had merge conflicts with `dev` branch.
+
+**Root cause:**
+- PR #47 was built on top of training speed optimizations (cached dataset, batch size changes, profiling)
+- The `dev` branch HEAD (`1d8ec45`) reverted these optimizations (commit `aa89456`)
+- Result: 4 files with merge conflicts (train_config.yaml, train.py, dataset.py, TRAINING.md)
+
+---
+
+## Resolution Strategy
+
+Rebased the feature branch onto the latest `dev` and carefully extracted only the PR's intended features:
+
+**Preserved (PR #47 features):**
+1. **torch.compile support** — `use_compile` config flag (default: false), graceful fallback
+2. **num_fonts configuration** — limit dataset size for experiments
+3. **torch.compile benchmarking** — simplified TRAINING.md section with 1.08× speedup results
+
+**Removed (reverted dependencies):**
+1. **CachedFontDataset** — removed from dataset.py and train.py
+2. **fonts_cache_dir config** — removed from train_config.yaml
+3. **Detailed profiling sections** — removed from TRAINING.md (baseline, strategies 1-3, 5)
+4. **Batch size B=64 default** — reverted to B=32 per dev branch state
+
+---
+
+## Files Modified
+
+### 1. `src/model/configs/train_config.yaml`
+- **Kept:** `num_fonts` commented example
+- **Removed:** `fonts_cache_dir` option
+
+### 2. `src/model/train/train.py`
+- **Kept:** `num_fonts` wiring to `CyrillicFontDataset`
+- **Removed:** `CachedFontDataset` branch in dataset construction
+
+### 3. `src/model/data/dataset.py`
+- **Kept:** `CyrillicFontDataset` with `num_fonts` parameter
+- **Removed:** `CachedFontDataset` class, `_load_font_pt()` helper, `functools.lru_cache`
+
+### 4. `src/model/TRAINING.md`
+- **Kept:** torch.compile section (lines 206-231) with benchmark table
+- **Removed:** Performance Tuning section (baseline, strategies 1-5, recommended config)
+
+### 5. `src/model/tests/test_compile_and_num_fonts.py`
+- **Kept:** torch.compile smoke tests, num_fonts validation tests
+- **Removed:** `CachedFontDataset` import
+- **Skipped:** `test_cached_dataset_num_fonts_limit` (cached dataset removed)
+
+---
+
+## Verification
+
+**Tests:** All model tests passing
+```bash
+python -m pytest src/model/tests/ -v --tb=short
+# Result: 21 passed, 2 skipped, 14 warnings in 5.89s
+```
+
+**Git workflow:**
+```bash
+git rebase origin/dev                        # Resolved 4-file conflicts
+git add <resolved files>
+git rebase --continue                        # Applied remaining 6 commits
+git commit -m "fix(tests): remove CachedFontDataset test..."
+git push --force-with-lease origin squad/46-training-triton-fonts
+```
+
+**PR Status:** 
+- Before: `mergeStateStatus: CONFLICTING`, `mergeable: CONFLICTING`
+- After: `mergeStateStatus: UNSTABLE`, `mergeable: MERGEABLE` ✅
+
+---
+
+## Key Learning
+
+**When rebasing after upstream reverts:**
+1. Extract only the intended PR features
+2. Remove all dependencies on reverted code (imports, tests, config options)
+3. Simplify documentation to match the new minimal scope
+4. Update tests to skip or remove tests for reverted features
+5. Verify all tests pass before force-pushing
+
+**Conflict resolution pattern:**
+- Use `git checkout --ours` or `git checkout --theirs` as starting point
+- Manually merge only the intended changes
+- Avoid "both" conflict resolutions that keep reverted code
+
+---
+
+## Decision
+
+PR #47 successfully rebased and conflicts resolved. Ready for user to merge (DO NOT merge automatically per instructions).
 - Integration test suite covers 66-glyph generation flow
 - No test failures introduced by the change
 

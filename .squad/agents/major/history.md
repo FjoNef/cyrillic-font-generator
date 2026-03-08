@@ -265,3 +265,57 @@ Decision: Two independent GradScalers (one per G/D optimizer) for AMP training. 
 **Git workflow:** Moved commit `aa89456` (training speed optimization) to feature branch `squad/46-training-triton-fonts`, reverted from `dev`, added new torch.compile + num_fonts work on top.
 
 **PR:** #47 (squad/46-training-triton-fonts → dev), closes #46.
+
+---
+
+### 2026-03-08: PR #47 Merge Conflict Resolution
+
+**Task:** Resolve merge conflicts on PR #47 after `dev` branch revert.
+
+**Context:**
+- PR #47 (`squad/46-training-triton-fonts`) added torch.compile support and num_fonts configuration
+- `dev` branch HEAD at `1d8ec45` reverted training speed optimizations (commit `aa89456`)
+- Revert removed: cached dataset (`CachedFontDataset`), batch size changes, profiling sections
+- PR built on top of these reverted features → merge conflicts
+
+**Conflict Resolution:**
+1. **Rebased** `squad/46-training-triton-fonts` onto `origin/dev` (git rebase origin/dev)
+2. **Resolved conflicts** in 4 files:
+   - `train_config.yaml`: Kept `num_fonts` option, removed `fonts_cache_dir`
+   - `train.py`: Kept `num_fonts` wiring, removed `CachedFontDataset` branch
+   - `dataset.py`: Removed `CachedFontDataset` class and `_load_font_pt` helper
+   - `TRAINING.md`: Kept only torch.compile section (lines 206-231), removed all reverted profiling sections
+3. **Fixed tests**: Removed `CachedFontDataset` import and skipped the cached dataset test in `test_compile_and_num_fonts.py`
+4. **Verified**: All 21 tests pass (2 skipped: compile on Windows + cached dataset test)
+
+**Key Decisions:**
+- Preserved torch.compile support (core PR feature) with simplified documentation
+- Preserved num_fonts configuration (core PR feature)
+- Removed all references to reverted cached dataset feature
+- TRAINING.md simplified: removed detailed profiling tables, kept only torch.compile benchmark
+
+**Outcome:**
+- Branch rebased: 8 commits ahead of `origin/dev`
+- Force-pushed: `git push --force-with-lease origin squad/46-training-triton-fonts`
+- PR #47 status: **MERGEABLE** (conflicts resolved)
+- Tests passing: 21 passed, 2 skipped
+
+**Learning:** When rebasing after upstream reverts, carefully extract only the intended PR features and remove all dependencies on reverted code. Test coverage must be updated to match the resolved state.
+
+---
+
+### 2026-03-08T012713Z: PR #47 Merge Conflict Resolution (Scribe Log)
+
+**Cross-agent update:** PR #47 merge conflicts resolved via Scribe orchestration.
+
+**Summary:**
+- Rebased `squad/46-training-triton-fonts` onto `origin/dev`
+- Resolved 4-file conflicts (train_config.yaml, train.py, dataset.py, TRAINING.md)
+- Extracted torch.compile + num_fonts features; removed CachedFontDataset dependencies
+- All 21 tests pass (2 skipped: compile on Windows + cached dataset)
+- Force-pushed; PR now MERGEABLE
+
+**Artifacts:**
+- `.squad/orchestration-log/2026-03-08T012713Z-major.md`
+- `.squad/log/2026-03-08T012713Z-pr47-conflict-resolution.md`
+- `.squad/decisions.md` (appended PR #47 conflict resolution decision)

@@ -1,10 +1,16 @@
-docs: orchestration logs, session log, and decision inbox merge
+Scribe: Record Batou PR #47 test revision completion
 
-- Add orchestration logs for batou, saito, aramaki (2026-03-07T19:25:00Z)
-- Add session log for robust-model-path-fix
-- Merge decisions inbox (batou-robust-model-path, aramaki-pr38-review) → decisions.md
-- Delete processed inbox files
+- Merged .squad/decisions/inbox/batou-pr47-tests.md into .squad/decisions.md
+- Added orchestration log: 2026-03-08T011304Z-batou.md
+- Added session log: 2026-03-08T011304Z-pr47-tests-added.md
+- Updated .squad/agents/batou/history.md with revision completion entry
 
-PR #38 merged to dev. Issue #37 closed.
+Batou PR #47 test revision is complete:
+- Test file added: src/model/tests/test_compile_and_num_fonts.py
+- 8 tests total (7 pass, 1 skipped on CPU as expected)
+- All 22 existing tests pass (no regressions)
+- Pushed to squad/46-training-triton-fonts (commit 3bb4e04)
+- PR #47 comment posted
+- Unblocks Major and meets Saito's test coverage requirement
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
