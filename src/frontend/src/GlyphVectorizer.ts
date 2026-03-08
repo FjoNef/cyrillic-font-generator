@@ -11,15 +11,23 @@ const DEFAULT_ADVANCE_WIDTH = 600;
 /**
  * Vectorize a 128×128 Float32Array glyph (raw model output, range [-1,1]) into an opentype.Path.
  *
- * Ink convention: pixel value > 0 → black ink, else white background.
- * Coordinate mapping:
+ * Ink convention (RAW model output space, NOT display-pixel space):
+ *   +1.0 = black ink (foreground) → detected as ink (value > 0)
+ *   -1.0 = white background       → skipped (value ≤ 0)
+ *
+ * Note: the display postprocessing formula ((1-output)/2)*255 maps +1→0 (dark) and -1→255
+ * (bright), so in *display* space ink appears as LOW pixel values.  The vectorizer
+ * intentionally operates on the raw [-1,1] tensor BEFORE that transformation, so the
+ * correct threshold is `value > 0`, not `value < threshold`.
+ *
+ * Coordinate mapping (y-up font space, CCW contours = filled in CFF):
  *   - X: column 0 → 0 units, column 128 → advance width (scaled to target UPM)
  *   - Y: row 0 = top of image = ascender; row 128 = descender
  *       yTop of row r = ascender - r * yScale
  *       yBottom of row r = ascender - (r+1) * yScale
  *
  * Algorithm: scanline rectangles — for each row, find consecutive runs of ink pixels
- * and emit one closed rectangle path per run.
+ * and emit one closed CCW rectangle path per run.
  *
  * @param data Raw model output Float32Array [128*128], range [-1,1]
  * @param targetUpm Target font units per em (default: 1000). Used to scale the output coordinates.
@@ -54,7 +62,7 @@ export function vectorizeGlyph(data: Float32Array, targetUpm: number = DEFAULT_U
         const xLeft  = runStart * xScale;
         const xRight = col      * xScale;
 
-        // CW rectangle (matching existing codebase convention)
+        // CCW rectangle in y-up font space → filled outer contour in CFF/OTF
         path.moveTo(xLeft,  yBottom);
         path.lineTo(xRight, yBottom);
         path.lineTo(xRight, yTop);
@@ -64,6 +72,13 @@ export function vectorizeGlyph(data: Float32Array, targetUpm: number = DEFAULT_U
         runStart = -1;
       }
     }
+  }
+
+  if (path.commands.length === 0) {
+    console.warn('[GlyphVectorizer] vectorizeGlyph produced an empty path (0 commands). ' +
+      'Possible causes: all model output values ≤ 0 (all-background output), or wrong ' +
+      'data space (display values 0-255 passed instead of raw [-1,1]). ' +
+      'Check that data is raw model output where +1.0 = ink, -1.0 = background.');
   }
 
   return path;

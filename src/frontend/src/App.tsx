@@ -112,7 +112,7 @@ export default function App() {
       console.error('Generation failed:', error);
       setGenerationStatus('error');
     }
-  }, [styleGlyphs, fontName, reset, setGenerationStatus, setGenerationProgress, setGeneratedGlyph, setFontBuffer]);
+  }, [styleGlyphs, uploadedFont, fontName, reset, setGenerationStatus, setGenerationProgress, setGeneratedGlyph, setFontBuffer]);
 
   const handleDownload = useCallback(() => {
     if (!fontBuffer) return;
