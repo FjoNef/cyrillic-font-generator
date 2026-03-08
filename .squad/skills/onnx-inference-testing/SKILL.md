@@ -183,7 +183,92 @@ public async Task ModelDownload_AcceptsRangeRequests_Returns206()
 
 ---
 
-## Pattern 10 — WebApplicationFactory with Temp Model File
+## Pattern 11 — Python ONNX Sanity Check (5-Check Template)
+
+After every export, run a fast Python-side sanity check before browser testing.
+Uses only `onnxruntime` + `numpy`; no fonts, no training data required.  Completes in < 10 s.
+
+```python
+import numpy as np
+import onnxruntime as ort
+
+B, N, H, W = 1, 10, 128, 128
+N_CHARS = 66
+
+def _run(sess, style_fill, char_idx=0):
+    style = np.full((B, N, 1, H, W), fill_value=style_fill, dtype=np.float32)
+    char  = np.array([char_idx], dtype=np.int64)
+    return sess.run(None, {"style_glyphs": style, "char_index": char})[0]
+
+sess = ort.InferenceSession("models/v1/generator.onnx", providers=["CPUExecutionProvider"])
+out  = _run(sess, style_fill=0.0)
+
+# 1. Output range
+assert out.min() >= -1.1 and out.max() <= 1.1
+
+# 2. Non-blank (in model space: +1.0=black ink, -1.0=white bg)
+#    At least 1% of pixels must be in the ink region (above 0.0)
+ink_frac = np.mean(out > 0.0)
+assert ink_frac >= 0.01, f"Blank glyph! ink_frac={ink_frac:.4f}"
+
+# 3. Style conditioning
+out_w = _run(sess, style_fill=+1.0)
+out_b = _run(sess, style_fill=-1.0)
+assert np.mean(np.abs(out_w - out_b)) > 0.01
+
+# 4. Char isolation
+out_0   = _run(sess, style_fill=0.0, char_idx=0)
+out_max = _run(sess, style_fill=0.0, char_idx=N_CHARS - 1)
+assert np.mean(np.abs(out_0 - out_max)) > 0.005
+```
+
+⚠️ **The non-blank check is the most important.**  Style conditioning (check 3) can pass even when all output values are -1.0 (blank/white), because the model may still *shift* values relatively without producing actual ink.  The non-blank check catches all-blank output that relative checks miss.
+
+See `src/model/export/check_model.py` for the full implementation with pass/fail reporting and exit codes.
+
+---
+
+## Pattern 12 — Browser-Side Non-Blank Assertion (Playwright)
+
+**Always pair a relative MAD assertion with an absolute non-blank assertion in Playwright smoke tests.**
+
+A mode-collapsed model that outputs all-background (-1.0) will:
+- **PASS** a MAD > 0.01 check (tiny relative differences between extreme inputs still pass)
+- **FAIL** a max > -0.5 check (all pixels are background — blank white canvas)
+
+```typescript
+// ❌ INSUFFICIENT: only tests relative style response
+expect(result.meanAbsDiff).toBeGreaterThan(0.01);
+
+// ✅ COMPLETE: also checks absolute content (non-blank)
+// All-background output → postprocessing → 255 (white) → blank canvas
+// At least some pixels must be glyph-like (above -0.5) for visible output
+expect(result.maxOutput).toBeGreaterThan(-0.5);
+
+// And structural variation (not flat / mode-collapsed)
+expect(result.stdOutput).toBeGreaterThan(0.05);
+```
+
+**How to collect max/std inside page.evaluate:**
+```javascript
+let min = Infinity, max = -Infinity;
+let sum = 0, sum2 = 0;
+for (let i = 0; i < data.length; i++) {
+  if (data[i] < min) min = data[i];
+  if (data[i] > max) max = data[i];
+  sum += data[i];
+  sum2 += data[i] * data[i];
+}
+const mean = sum / data.length;
+const std = Math.sqrt(sum2 / data.length - mean * mean);
+return { min, max, std };
+```
+
+⚠️ Avoid `Math.max(...data)` / `Math.min(...data)` with spread for arrays > ~50 k elements — risk of call stack overflow in some environments. Use an explicit loop.
+
+See `src/frontend/e2e/style-conditioning-real.spec.ts` for full working example.
+
+---
 
 Inject a test model file so `ModelManifestCache` returns `Available = true`:
 

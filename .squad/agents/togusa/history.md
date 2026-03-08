@@ -57,6 +57,43 @@ You can now pick up this fresh model for the next inference validation cycle. Th
 
 ## Learnings
 
+### 2026-03-09: Blank Cyrillic Glyph — Root Cause & Smoke Test Fix
+
+- **Task:** Investigate blank Cyrillic glyph output after retrained `epoch_0200` model export. Audit full inference pipeline, identify root cause, fix or document.
+- **Status:** ✅ Frontend code confirmed clean. Non-blank smoke test assertion added. Model retraining flagged for Major.
+
+**Root cause (model-level, not frontend):**  
+`epoch_0200` was trained with the old broken `UNetGenerator.forward()` that used `torch.zeros` for the U-Net encoder input. All six U-Net skip connections were constant-zero regardless of font input. The model learned to minimise L1 loss by predicting near-all-background (-1.0) → postprocessing `((1-(-1))/2)*255 = 255` → all-white blank canvas.  
+Cross-confirmed by Major's inbox finding (`major-blank-glyph-finding.md`): expected < 1 % ink pixels on `epoch_0200`.
+
+**Why the smoke test gave a false pass:**  
+The style conditioning test checked MAD between `fill(+1.0)` and `fill(-1.0)` synthetic extremes (MAD=0.281). A model that outputs near-all-background but with tiny float variations can still pass MAD > 0.01. There was **no absolute pixel content assertion**.
+
+**Full pipeline audit — all correct:**  
+- `FontLoader.extractStyleGlyphs()`: `1 - brightness * 2` → white bg→-1, black ink→+1 ✅  
+- `OnnxInference.generateGlyph()` + `App.tsx`: `((1 - output) / 2) * 255` → +1→0 black, -1→255 white ✅  
+- Alpha channel: hardcoded 255 ✅  
+- ORT output copy: `new Float32Array(outputData)` in worker + defensive copy in ModelLoader ✅  
+- No frontend code changed between model export commit (`ceab05d`) and blank-output report ✅
+
+**Fix applied (frontend):**  
+Updated `src/frontend/e2e/style-conditioning-real.spec.ts`:
+1. Added `maxA`/`maxB` assertions to style conditioning test: `expect(result.maxA).toBeGreaterThan(-0.5)`
+2. Added new test: `'non-blank: neutral style input must produce visible glyph pixels'`  
+   — Uses `fill(0.0)` (neutral midtone) + `char_index=0` (А)  
+   — Asserts `max > -0.5` (ink present) and `std > 0.05` (structural variation)  
+   — This test WILL FAIL on `epoch_0200` and PASS on a correctly retrained model
+
+**Key pattern learned:**  
+**MAD-only smoke tests are insufficient.** A style-differentiated but mode-collapsed model passes MAD. Always add an absolute non-blank assertion (`max > threshold`, `std > threshold`) alongside relative MAD.
+
+**Key files:**
+- Test: `src/frontend/e2e/style-conditioning-real.spec.ts`
+- Decision: `.squad/decisions/inbox/togusa-blank-glyph-fix.md`
+- Cross-ref: `.squad/decisions/inbox/major-blank-glyph-finding.md`
+
+---
+
 ### 2026-03-07: Runtime Debug Instrumentation — Identical-Output Bug (post-PR #40)
 
 - **Task:** Add debug logging to inferenceWorker.ts to diagnose why output glyphs are still identical regardless of input font, even after PR #40's SharedArrayBuffer copy fix.

@@ -179,12 +179,26 @@ test.describe('Style Conditioning: Real Model Smoke Test', () => {
         const sampleA = Array.from(dataA.slice(0, 8));
         const sampleB = Array.from(dataB.slice(0, 8));
 
+        // Min / max per output — used for non-blank assertion
+        let minA = Infinity, maxA = -Infinity;
+        let minB = Infinity, maxB = -Infinity;
+        for (let i = 0; i < dataA.length; i++) {
+          if (dataA[i] < minA) minA = dataA[i];
+          if (dataA[i] > maxA) maxA = dataA[i];
+          if (dataB[i] < minB) minB = dataB[i];
+          if (dataB[i] > maxB) maxB = dataB[i];
+        }
+
         return {
           inputNames,
           meanAbsDiff,
           areIdentical,
           sampleA,
           sampleB,
+          minA,
+          maxA,
+          minB,
+          maxB,
         };
       });
 
@@ -193,6 +207,8 @@ test.describe('Style Conditioning: Real Model Smoke Test', () => {
       console.log(`[style-conditioning] Font B output sample: ${result.sampleB.map(v => v.toFixed(4)).join(', ')}`);
       console.log(`[style-conditioning] Mean absolute diff: ${result.meanAbsDiff.toFixed(6)}`);
       console.log(`[style-conditioning] Outputs identical: ${result.areIdentical}`);
+      console.log(`[style-conditioning] Font A range: [${result.minA.toFixed(4)}, ${result.maxA.toFixed(4)}]`);
+      console.log(`[style-conditioning] Font B range: [${result.minB.toFixed(4)}, ${result.maxB.toFixed(4)}]`);
 
       // Input names must match the documented contract
       expect(result.inputNames).toContain('style_glyphs');
@@ -204,6 +220,16 @@ test.describe('Style Conditioning: Real Model Smoke Test', () => {
       // MAD > 0.01 means the model is genuinely responding to style differences
       // A style-invariant model would score ~0.0 here
       expect(result.meanAbsDiff).toBeGreaterThan(0.01);
+
+      // ── Non-blank assertion ────────────────────────────────────────────────
+      // A blank (all-white) glyph canvas occurs when the model outputs all-background
+      // (-1.0), which postprocesses to 255 (white) and is invisible on a white canvas.
+      //
+      // A functioning model must produce at least some glyph-ink pixels (> -0.5)
+      // for BOTH style extremes.  If this fails, the model is outputting all-background
+      // regardless of style input — flag for Major (model training / quantization issue).
+      expect(result.maxA).toBeGreaterThan(-0.5);
+      expect(result.maxB).toBeGreaterThan(-0.5);
     }
   );
 
@@ -249,5 +275,82 @@ test.describe('Style Conditioning: Real Model Smoke Test', () => {
     });
 
     expect(result.identical).toBe(true);
+  });
+
+  // ── Non-blank glyph output ────────────────────────────────────────────────
+  //
+  // Regression test for the "blank Cyrillic glyph" bug:
+  //   Smoke test MAD checks only confirm that different style inputs produce
+  //   different outputs — they do NOT confirm that any output is non-blank.
+  //
+  //   A model that always outputs near all-background (-1.0) would:
+  //     • Pass the MAD test (tiny differences between extremes)
+  //     • Produce all-white (blank) canvases after postprocessing
+  //       ((1 - (-1)) / 2) * 255 = 255 → pure white, invisible glyph
+  //
+  // This test uses a neutral midtone style input (fill 0.0) to represent a
+  // realistic style signal and asserts that the output has visible glyph structure.
+
+  test('non-blank: neutral style input must produce visible glyph pixels', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const ort = (window as Record<string, unknown>).ort as {
+        InferenceSession: {
+          create(
+            buffer: ArrayBuffer,
+            opts: Record<string, unknown>
+          ): Promise<{
+            run(feeds: Record<string, unknown>): Promise<
+              Record<string, { data: Float32Array; dims: number[]; type: string }>
+            >;
+          }>;
+        };
+        Tensor: new (t: string, d: Float32Array | BigInt64Array, s: number[]) => unknown;
+      };
+
+      const resp = await fetch('/smoke-real-model/generator.onnx');
+      const buf = await resp.arrayBuffer();
+      const session = await ort.InferenceSession.create(buf, { executionProviders: ['wasm'] });
+
+      // Neutral style: midtone fill 0.0 (between glyph +1.0 and background -1.0).
+      // This is a more realistic signal than the synthetic ±1.0 extremes used in the
+      // style conditioning test.
+      const style = new Float32Array(1 * 10 * 1 * 128 * 128).fill(0.0);
+
+      const out = await session.run({
+        style_glyphs: new ort.Tensor('float32', style, [1, 10, 1, 128, 128]),
+        char_index: new ort.Tensor('int64', BigInt64Array.from([0n]), [1]), // А (first Cyrillic)
+      });
+
+      const tensor = out['generated_glyph'] ?? Object.values(out)[0];
+      const data = new Float32Array(tensor.data); // copy — ORT WASM aliasing gotcha
+
+      let min = Infinity, max = -Infinity;
+      let sum = 0, sum2 = 0;
+      for (let i = 0; i < data.length; i++) {
+        if (data[i] < min) min = data[i];
+        if (data[i] > max) max = data[i];
+        sum += data[i];
+        sum2 += data[i] * data[i];
+      }
+      const mean = sum / data.length;
+      const std = Math.sqrt(sum2 / data.length - mean * mean);
+
+      return { min, max, range: max - min, mean, std };
+    });
+
+    console.log(
+      `[non-blank] min=${result.min.toFixed(4)}, max=${result.max.toFixed(4)}, ` +
+      `range=${result.range.toFixed(4)}, mean=${result.mean.toFixed(4)}, std=${result.std.toFixed(4)}`
+    );
+
+    // The output must contain at least some ink pixels (max > -0.5).
+    // If max ≈ -1.0, the model is outputting all-background →
+    //   postprocessing gives 255 (white) everywhere → blank canvas.
+    expect(result.max).toBeGreaterThan(-0.5);
+
+    // The output must have structural variation (not flat / mode-collapsed).
+    // A properly conditioned generator should produce glyph strokes + background;
+    // std < 0.05 across 16 384 pixels indicates near-constant output.
+    expect(result.std).toBeGreaterThan(0.05);
   });
 });
