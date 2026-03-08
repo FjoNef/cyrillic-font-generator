@@ -24,10 +24,34 @@
 - PR #40 merged: Fixed SharedArrayBuffer output aliasing (Float32Array view → explicit copy before postMessage)
 - Test coverage: 92 inference tests + 96 E2E tests + 1 regression test (SAB aliasing), all passing
 
-**Current Status:** Inference pipeline 100% operational. Awaiting Major's model retraining with style conditioning fixes.
+**Current Status:** Inference pipeline 100% operational. ✅ **MAJOR UPDATE (2026-03-08):** Fresh ONNX model exported and validated. Ready for inference test cycle.
 
 **Execution Providers:** WebGL preferred (15–30 ms/glyph), WASM fallback (80–600 ms/glyph).
 **Browser Support:** Detects WASM, Workers, WebGL, SharedArrayBuffer; renders unsupported banner if absent.
+
+---
+
+## Cross-Agent Updates
+
+### 2026-03-08: Fresh ONNX Model Ready (Major)
+
+Major has successfully exported and validated a fresh ONNX model from the retrained checkpoint (epoch_0200). 
+
+**Model Details:**
+- **Checkpoint:** `models/checkpoints/epoch_0200.pth` (200 epoch full retrain with `use_compile: true`)
+- **Export:** `models/v1/generator.onnx` (53.1 MB, INT8 dynamic quantization)
+- **Forward pass validation:** ✅ Input (1,1,128,128) → Output (1,1,128,128) float32, values in [-1.0, 1.0]
+- **Compression estimate:** ~15.9 MB with Brotli
+- **Fix applied:** torch.compile `_orig_mod.` prefix stripping in export script (backward-compatible)
+
+**Implication for Togusa:**
+You can now pick up this fresh model for the next inference validation cycle. The 7 debug console.log statements already added to `inferenceWorker.ts` will serve as verification that the retrained model correctly processes style signals (Major's retraining should have fixed the style-invariant output issue).
+
+**Artifacts:**
+- Decision: `.squad/decisions.md` (ONNX Export section)
+- Orchestration: `.squad/orchestration-log/2026-03-08T105807Z-major.md`
+- Session log: `.squad/log/2026-03-08T105807Z-onnx-export.md`
+- Commit: `ceab05d` on `dev`
 
 ---
 
