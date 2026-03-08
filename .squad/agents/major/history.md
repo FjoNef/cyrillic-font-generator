@@ -278,3 +278,43 @@ Squad CI workflow ran `npm run test:e2e` without starting C# backend. Vite proxy
 
 **Key learning:** Playwright route interception at page level cleanly decouples E2E tests from backend services while preserving full inference validation with production models.
 
+---
+
+### 2026-03-08: OnnxInference WebGL+INT8 Incompatibility Fix (Issue #53)
+
+**Task:** Fix `OnnxInference.ts` WebGL backend bug causing all-background output for INT8 quantized models.  
+**Status:** ✅ FIXED — branch `squad/53-full-e2e-pipeline-fix`
+
+**Root Cause:**
+`OnnxInference.ts` line 60 used `executionProviders: ['webgl', 'wasm']`. The model is INT8 quantized (QLinear operations). WebGL backend does NOT support QLinear ops — when WebGL is used as primary provider, ORT silently produces all-background output (-1.0 everywhere) for INT8 models.
+
+**Fix Applied:**
+Changed `OnnxInference.ts` to use WASM-only:
+```typescript
+this.session = await ort.InferenceSession.create(buffer.buffer, {
+  executionProviders: ['wasm'],  // INT8 quantized model requires WASM only
+});
+```
+
+Added explanatory comment documenting why WebGL is excluded (QLinear incompatibility).
+
+**Verification:**
+- ✅ `inferenceWorker.ts` already correct (WASM-only since PR #49)
+- ✅ `ModelLoader.ts` correctly copies output (defensive against SAB reuse)
+- ✅ `copy-ort-wasm.cjs` copies all 8 WASM variant files (base, JSEP, asyncify, JSPI)
+- ✅ All 8 files present in `public/ort-wasm/`
+- ✅ SharedArrayBuffer guard already present in `OnnxInference.ts` lines 85-87
+- ✅ Output data consumed synchronously in `generateGlyph()` (implicit copy via Uint8ClampedArray)
+- ✅ All tests pass: `styleConditioning.test.ts` (6 tests), `onnxContract.test.ts` (38 tests), `integration.test.ts` (8 tests)
+
+**Related Issues:**
+- **Closes #41:** SharedArrayBuffer alias — already fixed in existing code (lines 85-87)
+- **Closes #48:** Blank Cyrillic glyphs — root cause was WebGL+INT8 in OnnxInference.ts
+
+**Key Learning:** INT8 quantized ONNX models (QLinear operations) are NOT compatible with ORT's WebGL backend. Always use `executionProviders: ['wasm']` for quantized models. The WebGL backend silently produces incorrect output rather than throwing an error.
+
+**Files Changed:**
+- `src/frontend/src/inference/OnnxInference.ts`: Changed executionProviders to ['wasm'], added explanatory comments
+
+**Note:** `browserSupport.ts` still detects WebGL capability and returns `['webgl', 'wasm']` in its result — this is for informational/UI purposes only. The actual inference code (OnnxInference.ts and inferenceWorker.ts) both hardcode WASM-only for INT8 compatibility.
+

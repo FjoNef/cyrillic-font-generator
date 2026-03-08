@@ -13,14 +13,15 @@ import * as ort from 'onnxruntime-web';
  *     generated_glyph  [1, 1, 128, 128]  float32  in [-1, 1]
  *                      +1 = glyph ink, -1 = background
  *
- * Execution providers: WebGL preferred, WASM fallback.
+ * Execution providers: WASM only (WebGL does not support INT8 quantized models).
  */
 export class OnnxInference {
   private session: ort.InferenceSession | null = null;
 
   /**
    * Fetch the model with progress tracking, then create an InferenceSession.
-   * Uses WebGL backend when available, falls back to WASM.
+   * Uses WASM backend exclusively — INT8 quantized models require WASM; WebGL
+   * does not support QLinear operations and silently produces all-background output.
    *
    * @param modelUrl    URL to the .onnx model file
    * @param onProgress  Optional callback receiving load percentage 0–100
@@ -56,8 +57,10 @@ export class OnnxInference {
       offset += chunk.length;
     }
 
+    // INT8 quantized model requires WASM — WebGL does not support QLinear ops
+    // and silently produces all-background output when mixed with WASM fallback.
     this.session = await ort.InferenceSession.create(buffer.buffer, {
-      executionProviders: ['webgl', 'wasm'],
+      executionProviders: ['wasm'],
     });
 
     onProgress?.(100);
