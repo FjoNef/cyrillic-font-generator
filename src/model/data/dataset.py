@@ -129,6 +129,9 @@ class CyrillicFontDataset(Dataset):
         Glyph render resolution in pixels (square).  Default: 128.
     cyrillic_chars : list[str], optional
         Target Cyrillic characters.  Defaults to CYRILLIC_CHARS (66 chars).
+    num_fonts : int | None, optional
+        If set, limit to the first N fonts (sorted alphabetically).
+        Useful for quick experiments. Default: None (use all fonts).
     """
 
     def __init__(
@@ -137,6 +140,7 @@ class CyrillicFontDataset(Dataset):
         style_chars: List[str] = DEFAULT_STYLE_CHARS,
         image_size: int = IMAGE_SIZE,
         cyrillic_chars: List[str] = CYRILLIC_CHARS,
+        num_fonts: int | None = None,
     ) -> None:
         self.fonts_dir = Path(fonts_dir)
         self.style_chars = style_chars
@@ -144,11 +148,17 @@ class CyrillicFontDataset(Dataset):
         self.cyrillic_chars = cyrillic_chars
 
         required_chars = style_chars + cyrillic_chars
-        self.font_paths: List[str] = [
+        all_font_paths: List[str] = [
             str(p)
             for p in self.fonts_dir.rglob("*.?tf")   # .ttf and .otf
             if _font_has_coverage(str(p), required_chars)
         ]
+        
+        # Apply num_fonts limit if specified (take first N fonts alphabetically).
+        if num_fonts is not None and num_fonts > 0:
+            all_font_paths = sorted(all_font_paths)[:num_fonts]
+        
+        self.font_paths = all_font_paths
 
         if not self.font_paths:
             raise RuntimeError(

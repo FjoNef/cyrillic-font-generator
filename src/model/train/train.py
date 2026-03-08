@@ -51,11 +51,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 try:
-    from torch.amp import GradScaler, autocast as _autocast_fn  # PyTorch ≥ 2.0
+    from torch.amp import GradScaler as _GradScaler_fn, autocast as _autocast_fn  # PyTorch ≥ 2.0
 
     def autocast(enabled: bool = True):  # type: ignore[misc]
         """Thin wrapper so call sites use autocast(enabled=...) regardless of torch version."""
         return _autocast_fn("cuda", enabled=enabled)
+    def GradScaler(enabled: bool = True):  # type: ignore[misc]
+        """Thin wrapper so call sites use GradScaler(enabled=...) regardless of torch version."""
+        return _GradScaler_fn("cuda", enabled=enabled)
 except ImportError:  # pragma: no cover
     from torch.cuda.amp import GradScaler, autocast  # type: ignore[assignment]
 from torch.utils.data import DataLoader, random_split
@@ -213,10 +216,15 @@ def train(
             image_size=data_cfg["image_size"],
         )
     else:
+        num_fonts = data_cfg.get("num_fonts")
+        print(f"Using on-the-fly rendered dataset from {data_cfg['fonts_dir']}")
+        if num_fonts is not None:
+            print(f"  Limiting to {num_fonts} fonts")
         dataset = CyrillicFontDataset(
             fonts_dir=data_cfg["fonts_dir"],
             style_chars=data_cfg["style_latin_chars"],
             image_size=data_cfg["image_size"],
+            num_fonts=num_fonts,
         )
     val_size = max(1, int(0.05 * len(dataset)))
     train_size = len(dataset) - val_size
@@ -250,6 +258,27 @@ def train(
     discriminator = PatchDiscriminator(
         ndf=model_cfg["patch_discriminator_ndf"]
     ).to(device)
+    
+    # --- torch.compile (optional) ---
+    use_compile = train_cfg.get("use_compile", False)
+    if use_compile:
+        if not hasattr(torch, "compile"):
+            print("[!] torch.compile not available (PyTorch < 2.0). Skipping.")
+            use_compile = False
+        elif device.type != "cuda":
+            print("[!] torch.compile requires CUDA on Windows. Skipping (CPU mode).")
+            use_compile = False
+        else:
+            print("[*] Compiling Generator and Discriminator with torch.compile...")
+            print("    (First epoch will be slower due to compilation overhead)")
+            try:
+                generator = torch.compile(generator)
+                discriminator = torch.compile(discriminator)
+                print("    ✓ Compilation successful")
+            except Exception as e:
+                print(f"[!] torch.compile failed: {e}")
+                print("    Falling back to eager mode")
+                use_compile = False
     
     print(f"[+] Models loaded on {device}")
 

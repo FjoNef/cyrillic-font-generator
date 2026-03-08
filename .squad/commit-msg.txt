@@ -1,10 +1,12 @@
-docs: orchestration logs, session log, and decision inbox merge
+docs(squad): scribe orchestration & conflict resolution logs
 
-- Add orchestration logs for batou, saito, aramaki (2026-03-07T19:25:00Z)
-- Add session log for robust-model-path-fix
-- Merge decisions inbox (batou-robust-model-path, aramaki-pr38-review) → decisions.md
-- Delete processed inbox files
+Artifacts:
+- .squad/orchestration-log/2026-03-08T012713Z-major.md
+- .squad/log/2026-03-08T012713Z-pr47-conflict-resolution.md
+- .squad/decisions.md (appended PR #47 conflict resolution)
+- .squad/agents/major/history.md (updated with rebase summary)
+- Merged inbox: major-pr47-conflict-resolution.md → decisions.md
 
-PR #38 merged to dev. Issue #37 closed.
+Summary: PR #47 merge conflicts resolved, ready for merge.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

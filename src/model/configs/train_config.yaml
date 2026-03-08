@@ -5,6 +5,11 @@ data:
   fonts_dir: "data/fonts"
   image_size: 128                  # Glyph render resolution (pixels, square)
   num_style_glyphs: 10             # Number of Latin reference glyphs fed to StyleEncoder
+  
+  # Optional: limit the number of font families used for training.
+  # When set, only the first N fonts (sorted alphabetically) are included.
+  # Useful for quick training experiments or debugging. If null/unset, all fonts are used.
+  # num_fonts: 10
 
   # Latin glyphs used as style reference (rendered from the input font).
   # These 10 were chosen for maximum structural diversity (ascenders, descenders,
@@ -37,6 +42,13 @@ training:
   lambda_fm: 10                    # discriminator feature-matching loss weight
   checkpoint_interval: 10          # Save checkpoint every N epochs
   log_interval: 100                # Log losses every N batches
+  
+  # torch.compile support: compile Generator and Discriminator for faster training.
+  # Requires PyTorch 2.0+ and Triton (CUDA only). On first run, compilation takes
+  # ~30-60s; subsequent epochs are faster. Set to false for debugging or CPU training.
+  # Note: On Windows, torch.compile requires CUDA (Triton backend); CPU fallback uses
+  # C++ compiler which may not be available.
+  use_compile: false               # Default: false (conservative; compile time overhead on first run)
 
 # --- Output ---
 output:

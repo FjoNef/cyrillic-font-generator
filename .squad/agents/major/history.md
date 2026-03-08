@@ -230,3 +230,92 @@ Decision: Two independent GradScalers (one per G/D optimizer) for AMP training. 
 **Files changed:** `configs/train_config.yaml`, `data/dataset.py`, `data/build_cache.py`, `train/train.py`, `src/model/TRAINING.md`.
 
 **Decision:** `.squad/decisions.md` (Training Speed Optimization section)
+
+---
+
+### 2026-03-08: torch.compile + num_fonts Configuration (Issue #46)
+
+**Task:** Verify torch.compile works with Triton on Windows and add configurable font count option.
+
+**Environment:** PyTorch 2.10.0+cu128, Python 3.14.3, Windows 11, RTX 3070 Laptop (8GB VRAM).
+
+**Key Findings:**
+
+1. **torch.compile SUCCESS:** Triton now works on Windows (previously failed in issue #42). Smoke test passed — `torch.compile` compiles simple functions on CUDA tensors without errors.
+
+2. **Benchmark results (1000-sample synthetic, B=64, AMP on):**
+   - **Baseline (no compile):** 16.91s (epoch 1), 6.25s (epoch 2), 6.18s (epoch 3) → median **6.25s**
+   - **torch.compile:** 124.07s (epoch 1), 5.62s (epoch 2), 5.79s (epoch 3) → median **5.79s**
+   - **Speedup:** 1.08× (7.9% improvement)
+   - **Compilation overhead:** ~108s (first epoch only; amortized over 200 epochs: +0.54s/epoch)
+
+3. **Recommendation:** Keep `use_compile: false` by default. The ~8% speedup is below the 10% threshold, and the 124s first-epoch overhead is significant for short training runs. Enable manually for 200+ epoch runs where the amortized cost is negligible.
+
+4. **num_fonts config option:** Added to `train_config.yaml` (default: null). When set, limits dataset to first N fonts sorted alphabetically. Wired through `CyrillicFontDataset.__init__(num_fonts)` and `CachedFontDataset.__init__(num_fonts)`. Useful for quick experiments and debugging.
+
+5. **Design choice:** `num_fonts` limits the number of **font families** (not glyphs, not style references). This is the most semantically meaningful level for font generalization experiments. Each font still produces 66 samples (one per Cyrillic character).
+
+**Changes:**
+- `configs/train_config.yaml` — added `use_compile: false` and `num_fonts` (commented example)
+- `train/train.py` — torch.compile integration with graceful fallback; wire `num_fonts` to dataset construction
+- `data/dataset.py` — added `num_fonts` parameter to `CyrillicFontDataset` and `CachedFontDataset`
+- `TRAINING.md` — updated Strategy 4 (torch.compile) section with new benchmark results
+- `train/benchmark_compile.py` — automated benchmark script for compile testing
+
+**Git workflow:** Moved commit `aa89456` (training speed optimization) to feature branch `squad/46-training-triton-fonts`, reverted from `dev`, added new torch.compile + num_fonts work on top.
+
+**PR:** #47 (squad/46-training-triton-fonts → dev), closes #46.
+
+---
+
+### 2026-03-08: PR #47 Merge Conflict Resolution
+
+**Task:** Resolve merge conflicts on PR #47 after `dev` branch revert.
+
+**Context:**
+- PR #47 (`squad/46-training-triton-fonts`) added torch.compile support and num_fonts configuration
+- `dev` branch HEAD at `1d8ec45` reverted training speed optimizations (commit `aa89456`)
+- Revert removed: cached dataset (`CachedFontDataset`), batch size changes, profiling sections
+- PR built on top of these reverted features → merge conflicts
+
+**Conflict Resolution:**
+1. **Rebased** `squad/46-training-triton-fonts` onto `origin/dev` (git rebase origin/dev)
+2. **Resolved conflicts** in 4 files:
+   - `train_config.yaml`: Kept `num_fonts` option, removed `fonts_cache_dir`
+   - `train.py`: Kept `num_fonts` wiring, removed `CachedFontDataset` branch
+   - `dataset.py`: Removed `CachedFontDataset` class and `_load_font_pt` helper
+   - `TRAINING.md`: Kept only torch.compile section (lines 206-231), removed all reverted profiling sections
+3. **Fixed tests**: Removed `CachedFontDataset` import and skipped the cached dataset test in `test_compile_and_num_fonts.py`
+4. **Verified**: All 21 tests pass (2 skipped: compile on Windows + cached dataset test)
+
+**Key Decisions:**
+- Preserved torch.compile support (core PR feature) with simplified documentation
+- Preserved num_fonts configuration (core PR feature)
+- Removed all references to reverted cached dataset feature
+- TRAINING.md simplified: removed detailed profiling tables, kept only torch.compile benchmark
+
+**Outcome:**
+- Branch rebased: 8 commits ahead of `origin/dev`
+- Force-pushed: `git push --force-with-lease origin squad/46-training-triton-fonts`
+- PR #47 status: **MERGEABLE** (conflicts resolved)
+- Tests passing: 21 passed, 2 skipped
+
+**Learning:** When rebasing after upstream reverts, carefully extract only the intended PR features and remove all dependencies on reverted code. Test coverage must be updated to match the resolved state.
+
+---
+
+### 2026-03-08T012713Z: PR #47 Merge Conflict Resolution (Scribe Log)
+
+**Cross-agent update:** PR #47 merge conflicts resolved via Scribe orchestration.
+
+**Summary:**
+- Rebased `squad/46-training-triton-fonts` onto `origin/dev`
+- Resolved 4-file conflicts (train_config.yaml, train.py, dataset.py, TRAINING.md)
+- Extracted torch.compile + num_fonts features; removed CachedFontDataset dependencies
+- All 21 tests pass (2 skipped: compile on Windows + cached dataset)
+- Force-pushed; PR now MERGEABLE
+
+**Artifacts:**
+- `.squad/orchestration-log/2026-03-08T012713Z-major.md`
+- `.squad/log/2026-03-08T012713Z-pr47-conflict-resolution.md`
+- `.squad/decisions.md` (appended PR #47 conflict resolution decision)

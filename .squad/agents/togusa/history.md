@@ -104,3 +104,32 @@ Major's investigation revealed the root cause is **NOT** a frontend tensor path 
 
 Decision: Conditional SAB copy strategy (not unconditional) to avoid 640 KB unnecessary allocation on normal test paths. Consistent with PR #40 output fix. Decision merged to decisions.md. PR #44 ready for review.
 
+---
+
+### 2026-03-07: ImageData Mock Fix for Vitest jsdom (PR #47 CI)
+
+- **Task:** Fix `ReferenceError: ImageData is not defined` in styleConditioning.test.ts (6 tests failing in PR #47 CI).
+- **Status:** ✅ Fixed. Committed to `squad/46-training-triton-fonts` (sha: 7863589).
+
+**Root Cause:**
+- `OnnxInference.generateGlyph()` line 111 uses `new ImageData(pixels, size, size)` to construct browser ImageData objects.
+- jsdom (Vitest's default test environment) does not provide a native `ImageData` constructor.
+- The test file already had `@vitest-environment jsdom` directive, but jsdom lacks Canvas API constructors.
+
+**Fix Applied:**
+- Added minimal `ImageData` class mock to `src/frontend/src/test-setup.ts` (lines 38-53).
+- Supports both Canvas API constructors:
+  1. `new ImageData(data: Uint8ClampedArray, width: number, height: number)`
+  2. `new ImageData(width: number, height: number)`
+- Mock only applied if `globalThis.ImageData` is undefined (guards against future jsdom/happy-dom upgrades).
+- Pattern consistent with existing `Path2D` and `getImageData` mocks in same file.
+
+**Verification:**
+- styleConditioning.test.ts: 6/6 passing (previously 0/6)
+- Full frontend suite: 108/108 passing (no regressions)
+
+**Key Files:**
+- Fix: `src/frontend/src/test-setup.ts`
+- Test: `src/frontend/src/inference/__tests__/styleConditioning.test.ts`
+- Production: `src/frontend/src/inference/OnnxInference.ts` (unchanged)
+

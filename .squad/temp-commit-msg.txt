@@ -1,9 +1,0 @@
-squad(orchestration): log major #42 & togusa #41, merge inbox decisions
-
-- Orchestration logs: major (GPU training perf opts), togusa (SAB alias fix)
-- Session log: ralph round 2
-- Merged decisions: AMP strategy, SAB conditional-copy pattern
-- Deleted inbox files after merge
-- Updated major/history.md, togusa/history.md with completion notes
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

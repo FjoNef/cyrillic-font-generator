@@ -26,3 +26,5 @@ Thumbs.db
 # User added
 .squad-v054-backup
 .github/agents-v540-backup
+**/__pycache__/
+models/logs/*
