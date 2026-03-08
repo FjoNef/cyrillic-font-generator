@@ -54,7 +54,7 @@ training:
   # ~30-60s; subsequent epochs are faster. Set to false for debugging or CPU training.
   # Note: On Windows, torch.compile requires CUDA (Triton backend); CPU fallback uses
   # C++ compiler which may not be available.
-  use_compile: false               # Default: false (conservative; compile time overhead on first run)
+  use_compile: true               # Default: false (conservative; compile time overhead on first run)
 
 # --- Output ---
 output:

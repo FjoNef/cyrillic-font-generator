@@ -217,10 +217,14 @@ def train(
         )
     elif data_cfg.get("fonts_cache_dir"):
         cache_dir = data_cfg["fonts_cache_dir"]
+        num_fonts = data_cfg.get("num_fonts")
         print(f"Using cached dataset from {cache_dir}")
+        if num_fonts is not None:
+            print(f"  Limiting to {num_fonts} fonts")
         dataset = CachedFontDataset(
             cache_dir=cache_dir,
             style_chars=data_cfg["style_latin_chars"],
+            num_fonts=num_fonts,
         )
     else:
         num_fonts = data_cfg.get("num_fonts")

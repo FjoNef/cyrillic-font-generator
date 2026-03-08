@@ -300,6 +300,9 @@ class CachedFontDataset(Dataset):
         cache. Defaults to DEFAULT_STYLE_CHARS (["A","B","C","D","E","H","I","O","R","X"]).
     cyrillic_chars : list[str]
         Target Cyrillic characters. Defaults to CYRILLIC_CHARS (66 chars).
+    num_fonts : int | None, optional
+        If set, limit to the first N fonts (sorted alphabetically by cache filename).
+        Useful for quick experiments. Default: None (use all cache files).
     """
 
     def __init__(
@@ -307,19 +310,25 @@ class CachedFontDataset(Dataset):
         cache_dir: str | Path,
         style_chars: List[str] = DEFAULT_STYLE_CHARS,
         cyrillic_chars: List[str] = CYRILLIC_CHARS,
+        num_fonts: int | None = None,
     ) -> None:
         self.cache_dir = Path(cache_dir)
         self.style_chars = style_chars
         self.cyrillic_chars = cyrillic_chars
 
-        self._cache_files: List[str] = sorted(
+        all_cache_files: List[str] = sorted(
             str(p) for p in self.cache_dir.glob("*.pt")
         )
-        if not self._cache_files:
+        if not all_cache_files:
             raise RuntimeError(
                 f"No .pt cache files found in {cache_dir}. "
                 "Run `python data/build_cache.py` first."
             )
+
+        if num_fonts is not None and num_fonts > 0:
+            all_cache_files = all_cache_files[:num_fonts]
+
+        self._cache_files: List[str] = all_cache_files
 
         # Each sample: (cache_file_path, cyrillic_char_index)
         self._samples: List[Tuple[str, int]] = [
