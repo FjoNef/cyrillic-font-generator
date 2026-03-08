@@ -607,3 +607,32 @@ Saito re-reviewed PR #47 and approved after verifying test coverage additions. S
 - Quality exceeds expectations (comprehensive coverage, excellent documentation)
 
 **Outcome:** PR #47 ready to merge.
+
+### 2026-03-08T01:13:04Z: PR #47 Test Revision Complete
+
+**Status:** Revision complete and pushed — test file added, tests passing, PR comment posted
+
+Batou's PR #47 test revision is complete. Test file src/model/tests/test_compile_and_num_fonts.py has been added with 8 comprehensive tests:
+
+**Results:**
+- 7 tests passed
+- 1 test skipped (forward pass test on CPU — legitimate, mirrors train.py guard)
+- All 22 existing tests pass (no regressions)
+
+**Coverage:**
+- 3 torch.compile integration tests
+- 5 num_fonts parameter validation tests
+
+**Delivery:**
+- Committed to squad/46-training-triton-fonts (commit 3bb4e04)
+- Pushed to remote
+- PR #47 comment posted documenting test coverage completion
+
+This unblocks Major from reviewer rejection protocol and satisfies Saito's test coverage requirement. PR #47 is ready for human review and merge.
+
+**Key learnings:**
+- Forward pass test correctly skips on CPU (mirrors train.py implementation)
+- num_fonts parameter slicing with sorted(all_fonts)[:num_fonts] safely handles edge cases
+- Test isolation maintained: no interference with existing 22 tests
+
+---

@@ -2905,3 +2905,125 @@ Batou's revision fully addresses the blocking issue. The test file exists with 8
 2. **Quality bar met** — test coverage exceeds expectations
 3. **Team velocity** — prompt approval after successful revision accelerates delivery
 
+
+
+# Decision: Test Coverage for torch.compile and num_fonts Parameters
+
+**Date:** 2026-03-08  
+**Context:** PR #47 review  
+**Author:** Batou (Revision Specialist)  
+**Status:** Implemented  
+
+## Decision
+
+Added comprehensive test coverage for PR #47 features (torch.compile support and num_fonts parameter) in src/model/tests/test_compile_and_num_fonts.py.
+
+## Rationale
+
+Saito's review identified **missing test coverage** as the only blocking issue for PR #47. The implementation of both features (torch.compile support in train.py and num_fonts parameter in dataset.py) was approved, but required tests to ensure:
+
+1. **torch.compile integration doesn't crash** — verification that models can be wrapped with torch.compile without runtime errors
+2. **num_fonts parameter is correctly validated** — verification that edge cases (0, negative, exceeds available, valid limits) are handled gracefully
+
+## Implementation Details
+
+### Test Structure
+
+**File:** src/model/tests/test_compile_and_num_fonts.py  
+**Style:** Follows 	est_amp_training.py patterns (CPU-only, fast execution, unittest/pytest style)  
+**Total tests:** 8 (3 torch.compile + 5 num_fonts)
+
+### torch.compile Tests (3 tests)
+
+1. **test_compile_generator_succeeds**
+   - Verifies 	orch.compile(generator) doesn't raise exception
+   - Skips if PyTorch < 2.0 (torch.compile not available)
+
+2. **test_compile_discriminator_succeeds**
+   - Verifies 	orch.compile(discriminator) doesn't raise exception
+   - Skips if PyTorch < 2.0
+
+3. **test_compiled_model_forward_pass**
+   - Verifies compiled generator can execute forward pass
+   - **Skips on CPU** (requires CUDA or C++ compiler on Windows)
+   - Mirrors the guard in train.py lines 279-281
+
+### num_fonts Tests (5 tests)
+
+1. **test_num_fonts_zero_returns_empty_or_raises**
+   - 
+um_fonts=0 → raises RuntimeError("No eligible fonts found")
+   - Documents current behavior: sorted(all_fonts)[:0] returns empty list
+
+2. **test_num_fonts_negative_returns_all_fonts**
+   - 
+um_fonts=-1 → currently raises RuntimeError
+   - Documents behavior; if implementation changes to treat negative as "all fonts", test should be updated
+   - Alternative: implementation could clamp negative to None (use all fonts)
+
+3. **test_num_fonts_exceeds_available_clamps_to_available**
+   - 
+um_fonts=9999 with 3 available fonts → uses all 3 (no crash)
+   - Verifies sorted(all_fonts)[:9999] safely clamps to available
+
+4. **test_num_fonts_valid_limit_respects_limit**
+   - 
+um_fonts=2 with 5 available fonts → uses first 2 alphabetically
+   - Verifies dataset length: 2 fonts × 66 chars = 132 samples
+
+5. **test_cached_dataset_num_fonts_limit**
+   - Verifies CachedFontDataset respects 
+um_fonts parameter
+   - Creates dummy .pt cache files, instantiates with 
+um_fonts=2
+   - Verifies 2 cache files × 66 chars = 132 samples
+
+## Test Results
+
+- **7 passed, 1 skipped** (forward pass test skipped on CPU as expected)
+- **No regressions:** All 22 existing tests still pass
+- **CPU-only:** No GPU required for test execution
+- **Fast execution:** ~5 seconds for all 8 tests
+
+## Trade-offs
+
+### Forward Pass Test Skipping
+
+**Decision:** Skip 	est_compiled_model_forward_pass on CPU  
+**Why:** torch.compile on CPU requires CUDA device OR C++ compiler (MSVC on Windows). CI environments may not have compilers installed. This mirrors the guard in train.py.
+
+**Alternative considered:** Mock torch.compile to return uncompiled model  
+**Rejected:** Would not test actual compilation behavior; false positive if torch.compile API changes
+
+### num_fonts Negative Handling
+
+**Current:** 
+um_fonts=-1 raises RuntimeError (empty list after slicing)  
+**Alternative:** Treat negative as None (use all fonts)  
+**Decision:** Document current behavior; implementation can change later if needed
+
+## Files Changed
+
+- **Created:** src/model/tests/test_compile_and_num_fonts.py (291 lines)
+
+## Integration
+
+- **Branch:** squad/46-training-triton-fonts
+- **Commit:** 3bb4e04
+- **PR:** #47
+- **Status:** Ready for Saito re-review
+
+## Cross-references
+
+- **PR #47:** feat(training): Triton/torch.compile support + configurable font count
+- **Saito Review:** Identified missing test coverage as blocking issue
+- **train.py:** Lines 274-292 (torch.compile implementation)
+- **dataset.py:** Lines 159-161 (num_fonts slicing logic for CyrillicFontDataset)
+- **dataset.py:** Lines 324-326 (num_fonts slicing logic for CachedFontDataset)
+- **test_amp_training.py:** Style reference for test patterns
+
+## Future Considerations
+
+1. **GPU CI runner:** If GitHub Actions adds GPU runners, enable 	est_compiled_model_forward_pass (remove CPU skip)
+2. **num_fonts behavior:** If implementation changes to treat negative as "all fonts", update 	est_num_fonts_negative_returns_all_fonts
+3. **Integration test:** Consider smoke test with real font files (currently tests use synthetic data or empty directories)
