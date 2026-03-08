@@ -24,7 +24,11 @@ import * as ort from 'onnxruntime-web';
 // ORT 1.20 uses ort-wasm-simd-threaded.mjs (worker shim) + ort-wasm-simd-threaded.wasm
 // (binary). Without this, ORT tries to infer the path from its own bundled script URL,
 // which is wrong inside a Vite worker chunk and causes silent WASM load failure.
-ort.env.wasm.wasmPaths = '/ort-wasm/';
+//
+// Use absolute URL to prevent Vite 5 from intercepting as a static-analysis import.
+// ORT 1.20 dynamically imports runtime .mjs files (e.g., .jsep.mjs for WebGPU probing).
+// Vite 5 intercepts relative paths during bundling; absolute origin URLs bypass this.
+ort.env.wasm.wasmPaths = `${self.location.origin}/ort-wasm/`;
 
 // Run WASM single-threaded: we are already inside a dedicated worker, so spinning up
 // a nested proxy worker is unnecessary overhead. numThreads=1 also avoids the
