@@ -1213,3 +1213,30 @@ PR fully addresses Issue #51 with clean, self-contained solution. Assertion remo
 
 **Status:** PR #52 approved and merged to dev (commit 15373af, branch deleted).
 
+
+### 2026-03-08: PR #55 Test Implementation — ORT WASM Loading Test — COMPLETED ✅
+
+**Task:** Create E2E test for ORT JSEP Vite 5 dynamic import fix (Agent-35 follow-up after PR #54 review).
+
+**Context:** Major (Agent-32) fixed Vite 5 hard-error by adding ort-wasm-runtime-external plugin + absolute wasmPaths. Needed: test that validates fix and catches regression if plugin removed.
+
+**Implementation (Commit 17df6f9):**
+
+**New File:** src/frontend/e2e/ort-wasm-loading.spec.ts
+
+**Test Coverage:**
+- Verifies ORT WASM files load successfully from public/ort-wasm/
+- Tests that Vite plugin correctly externalizes /ort-wasm/*.mjs paths
+- Confirms absolute wasmPaths prevent Vite static-analysis interception
+- Runs alongside existing E2E tests (style-conditioning-real.spec.ts, performance.spec.ts, cross-browser-smoke.spec.ts)
+
+**Quality Gate:**
+- ✅ Test passes with Major's Vite plugin fix
+- ✅ Test would fail without the plugin (validates fix effectiveness)
+- ✅ No false positives or brittle assertions
+
+**PR Created:** #55 — test(e2e): add ORT WASM loading test to catch Vite public-import errors
+
+**Orchestration Log:** .squad/orchestration-log/20260308-234906Z-agent-35-saito.md
+
+**Key Pattern:** Dynamic imports of /public assets in Vite-bundled code require both (1) Vite plugin to mark as external AND (2) E2E test to catch regression. Tests should validate that the fix prevents the specific error (Vite interception) rather than just checking that code runs.

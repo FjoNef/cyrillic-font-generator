@@ -374,3 +374,20 @@ ort.env.wasm.wasmPaths = ${self.location.origin}/ort-wasm/;
 - Decision: `.squad/decisions/inbox/major-ort-jsep-fix.md`
 
 **Key Learning:** Vite 5 aggressively intercepts dynamic imports during dev and build. Files in `/public` that are loaded at runtime via `import()` must be explicitly marked as external via Vite plugin, or Vite will hard-error. Using absolute URLs (`self.location.origin`) in runtime code prevents Vite from attempting static resolution.
+
+### 2026-03-08: ORT JSEP Vite 5 Dynamic Import Fix — Agent-32
+
+**Task:** Fix Vite 5 hard-error when ORT 1.20 dynamically imports JSEP module from /public/ort-wasm/.
+
+**Problem:** ORT 1.20 dynamically imports /ort-wasm/ort-wasm-simd-threaded.jsep.mjs at runtime for WebGPU JSEP feature detection. Vite 5 intercepts this dynamic import(), resolves it against the module graph, finds the target is in /public, and throws hard error.
+
+**Solution — Two-Part Fix (Commit c7a8ce8):**
+
+1. **Vite Plugin:** Added pre-enforce plugin to externalize /ort-wasm/*.mjs paths in vite.config.ts
+2. **Absolute wasmPaths:** Changed inferenceWorker.ts to use absolute URL to prevent Vite static-analysis resolution
+
+**Key Learning:** Vite 5 aggressively intercepts dynamic imports. Files in /public loaded at runtime via import() must be explicitly marked external via Vite plugin, or Vite will error.
+
+**Test Coverage:** Agent-35 wrote ort-wasm-loading.spec.ts E2E test
+
+**Orchestration Log:** .squad/orchestration-log/20260308-234522Z-agent-32-major.md

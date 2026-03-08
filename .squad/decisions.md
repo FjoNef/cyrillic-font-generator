@@ -4180,3 +4180,22 @@ The root cause is definitively at the browser ONNX inference layer, not in font 
 
 APPROVE and merge to dev. This PR fully resolves issue #48 (blank Cyrillic glyph output) with a correct root cause fix and appropriate defensive coding (SAB guard, blank-output warning). Additional fixes by Togusa address real bugs and improve diagnostics. All tests pass. Code quality is high.
 
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+---
+
