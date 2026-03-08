@@ -31,7 +31,7 @@ import torch.nn as nn
 _MODEL_ROOT = Path(__file__).resolve().parents[1]  # …/src/model
 sys.path.insert(0, str(_MODEL_ROOT))
 
-from data.dataset import CyrillicFontDataset, CachedFontDataset  # noqa: E402
+from data.dataset import CyrillicFontDataset  # noqa: E402
 from train.model import StyleEncoder, UNetGenerator, PatchDiscriminator  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -141,8 +141,7 @@ class TestTorchCompile:
 
 class TestNumFontsParameter:
     """
-    Verify num_fonts parameter is correctly handled by CyrillicFontDataset and
-    CachedFontDataset:
+    Verify num_fonts parameter is correctly handled by CyrillicFontDataset:
       - num_fonts=0 should return empty dataset or raise ValueError
       - num_fonts=-1 (negative) should be handled consistently
       - num_fonts exceeding available fonts should clamp gracefully
@@ -258,6 +257,7 @@ class TestNumFontsParameter:
             f"Expected ['fontA.ttf', 'fontB.ttf'], got {result}"
         )
 
+    @pytest.mark.skip(reason="CachedFontDataset removed in conflict resolution with reverted training optimizations")
     def test_cached_dataset_num_fonts_limit(self, tmp_path: Path) -> None:
         """
         CachedFontDataset respects num_fonts parameter (limits cache files loaded).
