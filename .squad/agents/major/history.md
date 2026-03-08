@@ -170,3 +170,27 @@ ONNX Runtime 1.20 auto-infers WASM path from import.meta.url of session initiali
 
 **Key Learning:** ORT 1.20 inside Vite workers requires explicit wasmPaths. Pattern: set BEFORE InferenceSession.create(), copy files on build/dev/postinstall hooks, use numThreads=1 to avoid SharedArrayBuffer in dedicated worker context.
 
+---
+
+### 2026-03-08: ORT WASM Copy Script — Expand to All 8 Variants (PR #50)
+
+**Task:** Fix 404 errors when browser probes for ORT WASM variant files during inference initialization.
+
+**Status:** ✅ APPROVED & MERGED to dev by Saito
+
+**Problem:** ORT 1.20 probes for 4 WASM variants (base, JSEP, asyncify, JSPI) — 2 files per variant (`.mjs` + `.wasm`). Copy script was only copying base variant (2 files). Browser 404s on variant probes.
+
+**Solution:** Expand `FILES` array in `src/frontend/scripts/copy-ort-wasm.cjs` from 2 entries to 8 entries. All variants now copied during `postinstall`, `dev`, and `build` hooks.
+
+**Changes:**
+- `src/frontend/scripts/copy-ort-wasm.cjs`: 2 → 8 files (base, JSEP, asyncify, JSPI)
+
+**Verification:**
+- ✅ All 8 files present in `src/frontend/public/ort-wasm/`
+- ✅ 111 unit tests pass
+- ⚠️ E2E failures pre-existing on dev (style-conditioning model issue, unrelated)
+
+**PR:** #50 (`squad/fix-ort-wasm-missing-files` → `dev`)  
+**Merged:** Squash merge, commit be94cba  
+**Impact:** Zero regression risk. All ORT 1.20 variants now available for browser fallback chain.
+
