@@ -304,7 +304,32 @@ Decision: Two independent GradScalers (one per G/D optimizer) for AMP training. 
 
 ---
 
-### 2026-03-08T012713Z: PR #47 Merge Conflict Resolution (Scribe Log)
+### 2026-03-08: Restore Reverted Training Speed Optimization
+
+**Task:** Revert the revert commit `1d8ec45` (which accidentally removed the training speed optimization `aa89456`) back onto `dev`.
+
+**Context:**
+- Revert commit `1d8ec45` was applied to `dev` before PR #47 was merged
+- PR #47 (`c67a03b`) had already been merged at `dev` HEAD when this restore was requested
+- PR #47 conflict resolution had stripped `CachedFontDataset` references from its own files
+
+**Actions:**
+
+1. Ran `git revert 1d8ec45 --no-edit`
+2. Resolved 2 conflicts:
+   - `TRAINING.md`: Kept full Performance Tuning profiling section (from optimization); updated Strategy 4 with real torch.compile benchmarks from PR #47 (works on Windows now, was "FAILED" in original)
+   - `train_config.yaml`: Kept BOTH `num_fonts` comment (PR #47) AND `fonts_cache_dir` comment (optimization)
+3. Auto-merged: `dataset.py` (CachedFontDataset restored), `train.py`, profiling scripts, `build_cache.py`
+4. Post-revert: Added `num_fonts` parameter to `CachedFontDataset` (was missing; PR #47 was supposed to wire it but stripped the class during conflict resolution)
+5. Re-enabled `test_cached_dataset_num_fonts_limit` test (was skipped post-conflict)
+
+**Final state:** 22 tests pass, 1 skipped (compile on CPU). `dev` pushed to `origin/dev` at `d2519bc`.
+
+**Key Lesson:** When a revert is followed by additional PRs that strip the reverted feature's code (conflict resolution), a second revert creates compound conflicts. Must carefully re-add follow-on features (like `num_fonts` in `CachedFontDataset`) that were dropped during the intermediate PR's conflict resolution.
+
+---
+
+
 
 **Cross-agent update:** PR #47 merge conflicts resolved via Scribe orchestration.
 
