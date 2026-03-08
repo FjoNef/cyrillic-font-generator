@@ -318,3 +318,59 @@ Added explanatory comment documenting why WebGL is excluded (QLinear incompatibi
 
 **Note:** `browserSupport.ts` still detects WebGL capability and returns `['webgl', 'wasm']` in its result — this is for informational/UI purposes only. The actual inference code (OnnxInference.ts and inferenceWorker.ts) both hardcode WASM-only for INT8 compatibility.
 
+
+---
+
+### 2026-03-08: Vite 5 JSEP Dynamic Import Error Fix (Issue #57)
+
+**Task:** Fix Vite 5 hard error when ORT 1.20 dynamically imports JSEP module at runtime.  
+**Status:** ✅ FIXED — branch `squad/57-fix-ort-wasm-vite-error`
+
+**Root Cause:**
+ORT 1.20 dynamically imports `/ort-wasm/ort-wasm-simd-threaded.jsep.mjs` at runtime for WebGPU JSEP (JavaScript Execution Provider) feature detection. Vite 5 intercepts this dynamic `import()`, resolves it against its module graph, finds the file is in `/public`, and throws a hard error:
+
+```
+Failed to load url /ort-wasm/ort-wasm-simd-threaded.jsep.mjs
+(resolved id: /ort-wasm/ort-wasm-simd-threaded.jsep.mjs).
+This file is in /public and will be copied as-is during build without going 
+through the plugin transforms, and therefore should not be imported from source 
+code. It can only be referenced via HTML tags.
+```
+
+Vite 5 treats `/public` as static-only and rejects any dynamic imports targeting files in that directory. ORT's feature-detection probes trigger this check even when we're using `executionProviders: ['wasm']` (WASM-only, no WebGPU).
+
+**Fix Applied (two-part):**
+
+**Part 1 — Vite plugin to externalize ORT runtime .mjs files:**
+Added `ort-wasm-runtime-external` Vite plugin with `enforce: 'pre'` and a `resolveId` hook that marks any `/ort-wasm/*.mjs` path as external. This tells Vite's bundler "don't process these — let the browser load them directly from the public folder."
+
+```typescript
+{
+  name: 'ort-wasm-runtime-external',
+  enforce: 'pre',
+  resolveId(source) {
+    // ORT 1.20 dynamically imports WASM runtime shims from /ort-wasm/.
+    // These live in /public and must NOT go through Vite's module pipeline.
+    if (/\/ort-wasm\/.*\.m?js/.test(source)) {
+      return { id: source, external: true };
+    }
+  },
+}
+```
+
+**Part 2 — Absolute URL for wasmPaths in inferenceWorker.ts:**
+Changed `ort.env.wasm.wasmPaths` from `'/ort-wasm/'` to `self.location.origin + '/ort-wasm/'` to use a fully-qualified URL. This prevents Vite's static analysis from attempting any path resolution during bundling.
+
+```typescript
+ort.env.wasm.wasmPaths = ${self.location.origin}/ort-wasm/;
+```
+
+**Files Changed:**
+- `src/frontend/vite.config.ts`: Added `ort-wasm-runtime-external` plugin
+- `src/frontend/src/inference/worker/inferenceWorker.ts`: Changed wasmPaths to absolute URL
+
+**Artifacts:**
+- Commit: `c7a8ce8` on `squad/57-fix-ort-wasm-vite-error`
+- Decision: `.squad/decisions/inbox/major-ort-jsep-fix.md`
+
+**Key Learning:** Vite 5 aggressively intercepts dynamic imports during dev and build. Files in `/public` that are loaded at runtime via `import()` must be explicitly marked as external via Vite plugin, or Vite will hard-error. Using absolute URLs (`self.location.origin`) in runtime code prevents Vite from attempting static resolution.
