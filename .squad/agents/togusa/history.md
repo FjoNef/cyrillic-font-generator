@@ -186,3 +186,26 @@ You can now pick up this fresh model for the next inference validation cycle. Th
 **Artifacts:**
 - Decision merged to decisions.md
 - Orchestration log: 2026-03-08T193433Z-togusa.md
+
+---
+
+### 2026-03-09: Issue #48 — Blank Cyrillic Glyphs Investigation
+
+**Task:** Investigate why AI-generated Cyrillic glyphs are blank in the downloaded font despite font-merge (Latin glyphs) working.  
+**Status:** ✅ Investigated, fixes committed to `squad/48-blank-cyrillic-glyphs`.
+
+**Key findings:**
+
+1. **Threshold `> 0` is CORRECT.** GlyphVectorizer receives raw model output in `[-1, 1]` where `+1.0 = ink`, `−1.0 = background`. Checking `data > 0` correctly detects ink. The display postprocessing formula `((1-output)/2)*255` maps ink to dark (0) only for the canvas preview — the vectorizer intentionally operates on the raw tensor, so `> 0` is right.
+
+2. **Most likely root cause: model producing all-background output.** If the model outputs values ≤ 0 for all pixels, `vectorizeGlyph` finds no ink and writes empty paths → blank glyphs. The fix adds a `console.warn` that fires immediately when this happens, surfacing the root cause at runtime. Cross-reference with existing `inferenceWorker.ts` debug logs (`output range first 100px`).
+
+3. **Fixed misleading comment.** The old comment said `"CW rectangle"` but the rectangle path (lower-left→lower-right→upper-right→upper-left) is **CCW in y-up font space**, which is the correct winding for filled CFF outer contours. Corrected.
+
+4. **Fixed missing `uploadedFont` dep in `useCallback`.** `handleGenerate` was missing `uploadedFont` from its dependency array. In practice harmless (because `fontName` — which IS in deps — is always set atomically with `uploadedFont`), but a correctness defect. Fixed.
+
+**Critical pattern learned:** When a font shows blank glyph slots, suspect model output range before suspecting vectorizer code. The new zero-path `console.warn` makes this immediately diagnosable without code changes.
+
+**Artifacts:**
+- Findings: `.squad/decisions/inbox/togusa-blank-cyrillic-findings.md`
+- Commit: `d6eb735` on `squad/48-blank-cyrillic-glyphs`
