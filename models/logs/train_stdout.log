@@ -1,0 +1,33 @@
+[*] Training device: cuda
+    GPU: NVIDIA GeForce RTX 3070 Laptop GPU
+    CUDA version: 12.8
+    cuDNN version: 91002
+Dataset: 45207 train / 2379 val samples
+[+] Models loaded on cuda
+  [OK] Resumed from models\checkpoints\epoch_0010.pth (epoch 10)
+   GPU memory: 0.70GB allocated / 0.96GB reserved
+Epoch 0011 | G=10.8376  D=0.3149  L1=8.2930
+   GPU memory: 0.98GB allocated / 4.73GB reserved
+Epoch 0012 | G=10.8145  D=0.3128  L1=8.2146
+   GPU memory: 0.98GB allocated / 4.73GB reserved
+Epoch 0013 | G=10.8938  D=0.3023  L1=8.2079
+   GPU memory: 0.97GB allocated / 4.73GB reserved
+Epoch 0014 | G=10.8267  D=0.3080  L1=8.1601
+   GPU memory: 0.97GB allocated / 4.73GB reserved
+Epoch 0015 | G=10.9468  D=0.2920  L1=8.1333
+   GPU memory: 0.98GB allocated / 4.73GB reserved
+Epoch 0016 | G=10.9325  D=0.2850  L1=8.0927
+   GPU memory: 0.98GB allocated / 4.73GB reserved
+Epoch 0017 | G=10.9149  D=0.2931  L1=8.0345
+   GPU memory: 0.97GB allocated / 4.73GB reserved
+Epoch 0018 | G=11.0456  D=0.2684  L1=8.0577
+   GPU memory: 0.97GB allocated / 4.73GB reserved
+Epoch 0019 | G=11.0408  D=0.2680  L1=8.0020
+   GPU memory: 0.98GB allocated / 4.73GB reserved
+Epoch 0020 | G=11.1089  D=0.2587  L1=7.9903
+  [SAVED] Checkpoint saved -> models\checkpoints\epoch_0020.pth
+   GPU memory: 0.98GB allocated / 4.73GB reserved
+Epoch 0021 | G=11.0965  D=0.2667  L1=7.9603
+   GPU memory: 0.97GB allocated / 4.73GB reserved
+Epoch 0022 | G=11.1228  D=0.2599  L1=7.9301
+   GPU memory: 0.97GB allocated / 4.73GB reserved

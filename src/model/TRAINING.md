@@ -202,3 +202,30 @@ Override via CLI: `--batch_size 48`
 
 Actual times depend on font count (dataset size), disk speed, and power limit.
 Always measure on your own hardware after setting High Performance power mode.
+
+---
+
+## torch.compile Support
+
+**Status (2026-03-08):** ✓ WORKING with Triton installed on Windows.
+
+**Benchmark results (1000-sample synthetic, B=64, AMP on, cudnn.benchmark on):**
+
+| Config | Epoch 1 (includes compile) | Epoch 2 | Epoch 3 | Median |
+|---|---|---|---|---|
+| Baseline (no compile) | 16.91 s | 6.25 s | 6.18 s | **6.25 s** |
+| torch.compile | 124.07 s | 5.62 s | 5.79 s | **5.79 s** |
+
+**Speedup:** 1.08× (7.9% improvement)  
+**Compilation overhead:** ~108 s (first epoch only; amortized over 200 epochs: +0.54 s/epoch)  
+**Recommendation:** ⚠️ Marginal benefit (<10% speedup); keep `use_compile: false` by default to avoid first-epoch overhead. Enable manually for long training runs (200+ epochs).
+
+Enable in `configs/train_config.yaml`:
+
+```yaml
+training:
+  use_compile: true  # Requires PyTorch 2.0+ and Triton on CUDA
+```
+
+The training script includes graceful fallback: if compilation fails (e.g., on CPU or if Triton is unavailable), training continues in eager mode.
+
