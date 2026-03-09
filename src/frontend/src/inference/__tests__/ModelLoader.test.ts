@@ -93,8 +93,14 @@ describe('ModelLoader', () => {
   it('should handle worker error events', async () => {
     const loadPromise = modelLoader.load('/api/model');
 
-    // Trigger onerror
-    mockWorker.onerror({ message: 'Worker crashed' });
+    // Trigger onerror with an ErrorEvent (has message/filename/lineno)
+    const errEvent = new ErrorEvent('error', {
+      message: 'Worker crashed',
+      filename: 'worker.js',
+      lineno: 42,
+      colno: 1,
+    });
+    mockWorker.onerror(errEvent);
 
     await expect(loadPromise).rejects.toThrow('Worker error: Worker crashed');
   });

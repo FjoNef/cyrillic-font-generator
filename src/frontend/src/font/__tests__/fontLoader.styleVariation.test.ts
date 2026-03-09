@@ -71,7 +71,7 @@ function makeMockFont() {
     charToGlyph: vi.fn().mockReturnValue({
       getPath: vi.fn().mockReturnValue({
         fill: 'black',
-        toSVG: vi.fn().mockReturnValue('M 0 0 L 50 0 L 50 50 L 0 50 Z'),
+        toPathData: vi.fn().mockReturnValue('M 0 0 L 50 0 L 50 50 L 0 50 Z'),
       }),
     }),
   } as any;

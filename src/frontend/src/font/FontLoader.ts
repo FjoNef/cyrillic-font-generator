@@ -40,7 +40,7 @@ export class FontLoader {
       const path = glyph.getPath(RENDER_PADDING, baseline, RENDER_SIZE - RENDER_PADDING * 2);
       path.fill = 'black';
 
-      const path2d = new Path2D(path.toSVG(2));
+      const path2d = new Path2D(path.toPathData(2));
       ctx.fillStyle = 'black';
       ctx.fill(path2d);
 

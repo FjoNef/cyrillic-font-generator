@@ -23,7 +23,7 @@ describe('FontLoader', () => {
         charToGlyph: (char: string) => ({
           getPath: (x: number, y: number, size: number) => ({
             fill: 'black',
-            toSVG: () => 'M 0 0 L 100 0 L 100 100 L 0 100 Z',
+            toPathData: () => 'M 0 0 L 100 0 L 100 100 L 0 100 Z',
           }),
         }),
       };
