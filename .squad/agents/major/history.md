@@ -392,6 +392,67 @@ ort.env.wasm.wasmPaths = ${self.location.origin}/ort-wasm/;
 
 **Orchestration Log:** .squad/orchestration-log/20260308-234522Z-agent-32-major.md
 
+---
+
+### 2026-03-09: ORT JSEP Proxy Fix — The REAL Root Cause (Issue #57 Final Fix)
+
+**Task:** Diagnose why Cyrillic glyphs remain blank despite all previous fixes (WebGL→WASM, Vite plugin, wasmPaths).  
+**Status:** ✅ FIXED — commit `c4b3e00` on `squad/57-fix-ort-wasm-vite-error`
+
+**The REAL Root Cause:**
+
+The Vite plugin `ort-wasm-runtime-external` that was added in commit `c7a8ce8` was INEFFECTIVE. Here's why:
+
+1. **Vite's `resolveId` hook only runs during BUNDLING**, not at runtime
+2. **ORT does the dynamic `import()` at RUNTIME** in the browser
+3. When ORT tries `import('/ort-wasm/ort-wasm-simd-threaded.jsep.mjs')` in the browser, Vite's **dev server** intercepts it
+4. The dev server sees it's a .mjs file, tries to process it as a module, realizes it's in `/public`, and throws the hard error
+
+**The Vite plugin cannot help** because:
+- `resolveId` runs during `vite build` or when Vite parses source files
+- Runtime dynamic imports from the browser bypass the plugin system entirely
+- The error happens in Vite's **dev server middleware**, not the bundler
+
+**The CORRECT Fix:**
+
+```typescript
+// In inferenceWorker.ts, BEFORE InferenceSession.create():
+ort.env.wasm.proxy = false;
+```
+
+This tells ORT: "Don't use a proxy worker for WASM execution, and don't probe for JSEP/WebGPU support."
+
+Without `proxy: false`, ORT 1.20 automatically tries to probe for JSEP by dynamically importing the .jsep.mjs file, which triggers the Vite dev server error.
+
+**Why This Works:**
+- We're already in a dedicated Web Worker (inferenceWorker.ts)
+- We're using `executionProviders: ['wasm']` (CPU-only)
+- We don't need WebGPU (INT8 quantized model requires CPU WASM)
+- Setting `proxy: false` disables the entire proxy/JSEP subsystem
+- ORT falls back to standard WASM execution without any feature probing
+
+**Key Learning:**
+
+When working with ONNX Runtime Web 1.20+ and Vite 5:
+1. If using WASM-only execution in a Web Worker, **always set `ort.env.wasm.proxy = false`**
+2. Vite plugins cannot intercept runtime dynamic imports from the browser
+3. The `/public` folder is for static assets — any JavaScript that uses `import()` on those files will error in dev
+4. ORT's JSEP probing is automatic and cannot be disabled via session options alone
+
+**Files Changed:**
+- `src/frontend/src/inference/worker/inferenceWorker.ts`: Added `ort.env.wasm.proxy = false`
+
+**Previous Attempts (Ineffective):**
+- Vite plugin `ort-wasm-runtime-external` (resolveId hook) — doesn't run at runtime
+- Changing wasmPaths to use `self.location.origin` — correct but insufficient
+- Copying all 8 WASM variant files — necessary but not the root cause fix
+
+**Artifacts:**
+- Commit: `c4b3e00` on `squad/57-fix-ort-wasm-vite-error`
+- Decision: `.squad/decisions/inbox/major-ort-jsep-proxy-fix.md`
+
+
+
 ## 2025-01-26: Model Size Reduction Investigation
 
 **Task:** Investigate model size reduction options and create a smaller-but-real model for E2E testing.
