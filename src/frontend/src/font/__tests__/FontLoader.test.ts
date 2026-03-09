@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FontLoader } from '../FontLoader';
 
 /**
@@ -12,7 +12,60 @@ import { FontLoader } from '../FontLoader';
  * - Font output structure validation
  */
 
+const RENDER_SIZE = 128;
+
+/** Mock canvas context that supports all methods FontLoader uses for manual path drawing. */
+function createMockCanvasContext(hasInk = false) {
+  let pixels = new Uint8ClampedArray(RENDER_SIZE * RENDER_SIZE * 4).fill(255);
+  return {
+    clearRect: vi.fn(),
+    fillRect: vi.fn(() => {
+      pixels = new Uint8ClampedArray(RENDER_SIZE * RENDER_SIZE * 4).fill(255);
+    }),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    bezierCurveTo: vi.fn(),
+    quadraticCurveTo: vi.fn(),
+    closePath: vi.fn(),
+    fill: vi.fn(() => {
+      if (hasInk) {
+        for (let y = 20; y < 108; y++) {
+          for (let x = 10; x < 118; x++) {
+            const idx = (y * RENDER_SIZE + x) * 4;
+            pixels[idx] = pixels[idx + 1] = pixels[idx + 2] = 0;
+          }
+        }
+      }
+    }),
+    getImageData: vi.fn().mockImplementation(() => ({ data: pixels })),
+    set fillStyle(_v: string) {},
+    get fillStyle() { return ''; },
+  };
+}
+
 describe('FontLoader', () => {
+  let createElementSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'canvas') {
+        const ctx = createMockCanvasContext(true);
+        return {
+          width: RENDER_SIZE,
+          height: RENDER_SIZE,
+          getContext: vi.fn().mockReturnValue(ctx),
+        } as any;
+      }
+      createElementSpy.mockRestore();
+      return document.createElement(tag);
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('extractStyleGlyphs', () => {
     it('should extract 10 style glyphs as Float32Array', async () => {
       const loader = new FontLoader();
@@ -20,10 +73,27 @@ describe('FontLoader', () => {
       // Create a mock font with minimal glyph data
       const mockFont: any = {
         unitsPerEm: 1000,
+        ascender: 800,
+        descender: -200,
         charToGlyph: (char: string) => ({
+          path: {
+            commands: [
+              { type: 'M', x: 10, y: 10 },
+              { type: 'L', x: 100, y: 10 },
+              { type: 'L', x: 100, y: 100 },
+              { type: 'L', x: 10, y: 100 },
+              { type: 'Z' },
+            ],
+          },
           getPath: (x: number, y: number, size: number) => ({
             fill: 'black',
-            toSVG: () => 'M 0 0 L 100 0 L 100 100 L 0 100 Z',
+            commands: [
+              { type: 'M', x: x, y: y - size },
+              { type: 'L', x: x + size, y: y - size },
+              { type: 'L', x: x + size, y: y },
+              { type: 'L', x: x, y: y },
+              { type: 'Z' },
+            ],
           }),
         }),
       };

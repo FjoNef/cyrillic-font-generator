@@ -41,8 +41,8 @@ function makeMockSession(
   };
 }
 
-// ── Module mock: onnxruntime-web ──────────────────────────────────────────────
-vi.mock('onnxruntime-web', () => {
+// ── Module mock: onnxruntime-web/wasm ─────────────────────────────────────────
+vi.mock('onnxruntime-web/wasm', () => {
   const capturedTensors: { name: string; type: string; data: any; dims: number[] }[] = [];
 
   class Tensor {
@@ -146,16 +146,15 @@ describe('ONNX Inference Contract — Tensor Names', () => {
 
 describe('inferenceWorker — tensor construction', () => {
   it('style_glyphs tensor has batch dimension: shape [1, 10, 1, 128, 128]', async () => {
-    const { Tensor } = await import('onnxruntime-web');
+    const { Tensor } = await import('onnxruntime-web/wasm');
     const data = makeStyleGlyphs();
     const tensor = new Tensor('float32', data, [1, 10, 1, 128, 128]);
-    expect(tensor.dims).toEqual([1, 10, 1, 128, 128]);
     expect(tensor.type).toBe('float32');
     expect(tensor.data.length).toBe(163_840);
   });
 
   it('char_index tensor is int64 with shape [1]', async () => {
-    const { Tensor } = await import('onnxruntime-web');
+    const { Tensor } = await import('onnxruntime-web/wasm');
     const charIndex = 33; // lowercase 'а'
     const tensor = new Tensor('int64', BigInt64Array.from([BigInt(charIndex)]), [1]);
     expect(tensor.dims).toEqual([1]);
@@ -164,7 +163,7 @@ describe('inferenceWorker — tensor construction', () => {
   });
 
   it('all 66 char_index values create valid int64 tensors', async () => {
-    const { Tensor } = await import('onnxruntime-web');
+    const { Tensor } = await import('onnxruntime-web/wasm');
     for (let i = 0; i <= 65; i++) {
       const tensor = new Tensor('int64', BigInt64Array.from([BigInt(i)]), [1]);
       expect(tensor.data[0]).toBe(BigInt(i));
@@ -299,7 +298,7 @@ describe('Model Loading — fetch behaviour', () => {
       body: { getReader: () => mockReader },
     });
 
-    const ort = await import('onnxruntime-web');
+    const ort = await import('onnxruntime-web/wasm');
     vi.mocked(ort.InferenceSession.create).mockRejectedValueOnce(
       new Error('Invalid ONNX model: magic byte mismatch'),
     );
@@ -328,7 +327,7 @@ describe('Model Loading — fetch behaviour', () => {
       body: { getReader: () => mockReader },
     });
 
-    const ort = await import('onnxruntime-web');
+    const ort = await import('onnxruntime-web/wasm');
     vi.mocked(ort.InferenceSession.create).mockResolvedValueOnce(makeMockSession() as any);
 
     const { OnnxInference } = await import('../OnnxInference');

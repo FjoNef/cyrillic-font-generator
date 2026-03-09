@@ -1,4 +1,61 @@
-import * as ort from 'onnxruntime-web';
+// Capture top-level errors during worker initialization
+self.addEventListener('error', (event) => {
+  console.error('[inferenceWorker] Top-level error during initialization:', {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    error: event.error,
+  });
+  self.postMessage({
+    type: 'error',
+    message: `Worker initialization failed: ${event.message ?? event.error ?? 'unknown'}`,
+  });
+});
+
+self.addEventListener('unhandledrejection', (event) => {
+  console.error('[inferenceWorker] Unhandled promise rejection:', event.reason);
+  self.postMessage({
+    type: 'error',
+    message: `Unhandled rejection: ${event.reason}`,
+  });
+});
+
+// ⚠️ CRITICAL: Import env first, configure it, THEN import the rest of ORT.
+//
+// ORT 1.24.x default bundle (ort.bundle.min.mjs) hardcodes loading
+// 'ort-wasm-simd-threaded.jsep.mjs' (the JSEP/WebGPU variant) regardless of
+// executionProviders config or ort.env.wasm.proxy setting. The JSEP WASM variant
+// silently produces all-background output for INT8 QLinear ops (used by the
+// production 50.6 MB INT8 quantized model).
+//
+// 'onnxruntime-web/wasm' resolves to ort.wasm.bundle.min.mjs, which hardcodes
+// 'ort-wasm-simd-threaded.mjs' (standard non-JSEP variant). This correctly handles
+// all INT8 QLinear operations.
+//
+// The FP32 mini model works with either bundle because it has no QLinear ops.
+// The INT8 production model REQUIRES the non-JSEP variant to produce non-blank output.
+import { env } from 'onnxruntime-web/wasm';
+
+// ⚠️ Must be set BEFORE any InferenceSession is created or WASM modules are loaded.
+// ORT 1.24.x (ort.wasm.bundle.min.mjs) dynamically imports ort-wasm-simd-threaded.mjs
+// at runtime using the wasmPaths prefix. Without this, ORT infers the path from its own
+// bundled script URL (blob: inside a Vite worker), which is wrong and causes silent failure.
+//
+// Use absolute URL to prevent Vite 5 from intercepting as a static-analysis import.
+env.wasm.wasmPaths = `${self.location.origin}/ort-wasm/`;
+
+// ⚠️ TEMPORARILY disable threading (numThreads = 1) to avoid nested worker issues in Vite.
+// The ort-wasm-simd-threaded.mjs module tries to spawn sub-workers for threading, which
+// fails when Vite bundles the worker. Single-threaded mode uses ort-wasm-simd.mjs instead.
+env.wasm.numThreads = 1;
+
+// Disable proxy worker: we are already in a dedicated worker and don't need a nested proxy.
+// In ORT 1.24.x, proxy = true would create a second nested worker — wasteful and unnecessary.
+env.wasm.proxy = false;
+
+// Now import the rest after configuration
+import * as ort from 'onnxruntime-web/wasm';
 
 /**
  * Web Worker for ONNX model inference.
@@ -7,6 +64,11 @@ import * as ort from 'onnxruntime-web';
  * WASM files are served from /ort-wasm/ (copied there by scripts/copy-ort-wasm.cjs).
  * Setting wasmPaths explicitly prevents ORT from trying to infer the path from its own
  * script URL, which is unreliable inside a Vite-bundled worker.
+ *
+ * ⚠️ Import path matters: 'onnxruntime-web/wasm' (not 'onnxruntime-web').
+ * ORT 1.24.x default bundle hardcodes loading the JSEP (WebGPU) WASM variant, which
+ * silently produces blank output for INT8 QLinear ops. The /wasm sub-path bundle
+ * uses the standard non-JSEP WASM variant that correctly handles INT8.
  *
  * Message protocol:
  * - Host → Worker:
@@ -19,17 +81,6 @@ import * as ort from 'onnxruntime-web';
  *   { type: 'result', output: Float32Array, requestId: string }
  *   { type: 'error', message: string, requestId?: string }
  */
-
-// ⚠️ Must be set BEFORE any InferenceSession is created.
-// ORT 1.20 uses ort-wasm-simd-threaded.mjs (worker shim) + ort-wasm-simd-threaded.wasm
-// (binary). Without this, ORT tries to infer the path from its own bundled script URL,
-// which is wrong inside a Vite worker chunk and causes silent WASM load failure.
-ort.env.wasm.wasmPaths = '/ort-wasm/';
-
-// Run WASM single-threaded: we are already inside a dedicated worker, so spinning up
-// a nested proxy worker is unnecessary overhead. numThreads=1 also avoids the
-// SharedArrayBuffer requirement (COOP/COEP headers) that not every dev env satisfies.
-ort.env.wasm.numThreads = 1;
 
 let session: ort.InferenceSession | null = null;
 
@@ -127,9 +178,13 @@ async function runInference(
 
   // DEBUG: verify inputs vary between font loads and that char_index is correct
   console.debug('[inferenceWorker] char_index:', charIndex);
-  console.debug('[inferenceWorker] style_glyphs first 5 values:', Array.from(safeStyleGlyphs.slice(0, 5)));
+  // Sample glyph center (y≈80 = inside ink area for capital letters at baseline=120)
+  // "first 5 values" are top-left background — not representative of ink presence
+  const centerOffset = 80 * 128; // row 80 of first glyph
+  const firstGlyphMax = Math.max(...Array.from(safeStyleGlyphs.slice(0, 128 * 128)));
+  console.debug('[inferenceWorker] style_glyphs first glyph MAX (full scan):', firstGlyphMax.toFixed(4));
+  console.debug('[inferenceWorker] style_glyphs center row (y=80) sample:', Array.from(safeStyleGlyphs.slice(centerOffset, centerOffset + 5)));
   console.debug('[inferenceWorker] style_glyphs tensor shape:', styleTensor.dims);
-  console.debug('[inferenceWorker] char_index tensor shape:', indexTensor.dims, 'dtype:', indexTensor.type);
 
   const feeds: Record<string, ort.Tensor> = {
     style_glyphs: styleTensor,
@@ -146,20 +201,20 @@ async function runInference(
   console.debug('[inferenceWorker] outputTensor.name/key resolved:', Object.keys(results)[0]);
   console.debug('[inferenceWorker] outputTensor first 5 raw values:', Array.from(outputData.slice(0, 5)));
 
-  // Blank-output detection: if all sampled pixels are at or near -1.0 (background),
-  // the model ran but produced no ink. Common causes: wrong WASM backend (WebGL + INT8
-  // silently returns all-background), or stale pre-fix model weights.
-  const sampleSize = Math.min(outputData.length, 512);
+  // Blank-output detection: scan the FULL output (16384 pixels for 128×128).
+  // Glyph ink typically starts around row 30-40 (pixel 3840+) — sampling only the
+  // first 512 px would miss all ink and falsely diagnose blank output.
   let maxVal = -Infinity;
-  for (let i = 0; i < sampleSize; i++) maxVal = Math.max(maxVal, outputData[i]);
+  for (let i = 0; i < outputData.length; i++) maxVal = Math.max(maxVal, outputData[i]);
+  const inkCount = Array.from(outputData).filter(v => v > 0.0).length;
   if (maxVal <= 0.0) {
     console.warn(
       `[inferenceWorker] ⚠️ Blank output for char_index=${charIndex}: ` +
-      `max(first ${sampleSize} px) = ${maxVal.toFixed(4)}. ` +
+      `max(full ${outputData.length} px) = ${maxVal.toFixed(4)}. ` +
       'Possible cause: wrong WASM files, WebGL+INT8 fallback, or pre-fix model.',
     );
   }
-  console.debug('[inferenceWorker] output max (first 512 px):', maxVal.toFixed(4));
+  console.debug(`[inferenceWorker] output max (full scan): ${maxVal.toFixed(4)}, ink pixels (>0): ${inkCount}/${outputData.length}`);
 
   // ⚠️ Critical: copy output before returning.
   //

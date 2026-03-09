@@ -75,7 +75,19 @@ export class ModelLoader {
       };
 
       this.worker.onerror = (err) => {
-        reject(new Error(`Worker error: ${err.message}`));
+        // ErrorEvent has message, filename, lineno, colno
+        // Plain Event (when worker script fails to load) has only type
+        const details = err instanceof ErrorEvent
+          ? `${err.message} (${err.filename}:${err.lineno}:${err.colno})`
+          : `[${err.type}] script load failure - check console`;
+        console.error('[ModelLoader] Worker onerror:', {
+          type: err.type,
+          message: (err as ErrorEvent).message,
+          filename: (err as ErrorEvent).filename,
+          lineno: (err as ErrorEvent).lineno,
+          colno: (err as ErrorEvent).colno,
+        });
+        reject(new Error(`Worker error: ${details}`));
       };
 
       // Trigger load

@@ -9,7 +9,7 @@ data:
   # Optional: limit the number of font families used for training.
   # When set, only the first N fonts (sorted alphabetically) are included.
   # Useful for quick training experiments or debugging. If null/unset, all fonts are used.
-  num_fonts: 180
+  # num_fonts: 180
 
   # Optional: path to pre-rendered .pt cache directory (from data/build_cache.py).
   # When set, CachedFontDataset is used instead of on-the-fly PIL rendering,

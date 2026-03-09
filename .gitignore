@@ -29,3 +29,4 @@ Thumbs.db
 .github/agents-v540-backup
 **/__pycache__/
 models/logs/*
+data/fonts_cache/

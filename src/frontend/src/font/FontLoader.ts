@@ -35,14 +35,51 @@ export class FontLoader {
       ctx.fillRect(0, 0, RENDER_SIZE, RENDER_SIZE);
 
       const glyph = font.charToGlyph(STYLE_CHARS[i]);
-      const baseline = RENDER_SIZE - RENDER_PADDING;
+      
+      if (i === 0) {
+        console.debug(`[FontLoader] Glyph '${STYLE_CHARS[i]}': hasContours=${glyph.path?.commands?.length || 0} commands`);
+      }
+      
+      // Calculate fontSize to fit glyph (including descenders) in canvas
+      const availableHeight = RENDER_SIZE - RENDER_PADDING * 2;
+      const fontHeight = font.ascender - font.descender; // total height in font units
+      const fontSize = (availableHeight / fontHeight) * font.unitsPerEm;
+      const scale = fontSize / font.unitsPerEm;
+      const ascender = font.ascender * scale;
+      const baseline = RENDER_PADDING + ascender;
 
-      const path = glyph.getPath(RENDER_PADDING, baseline, RENDER_SIZE - RENDER_PADDING * 2);
-      path.fill = 'black';
-
-      const path2d = new Path2D(path.toSVG(2));
+      const path = glyph.getPath(RENDER_PADDING, baseline, fontSize);
+      
+      // Manually draw path using canvas 2D API (Path2D has issues in this environment)
+      ctx.beginPath();
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const cmd of path.commands) {
+        if (cmd.type === 'M') {
+          ctx.moveTo(cmd.x, cmd.y);
+          minX = Math.min(minX, cmd.x); maxX = Math.max(maxX, cmd.x);
+          minY = Math.min(minY, cmd.y); maxY = Math.max(maxY, cmd.y);
+        } else if (cmd.type === 'L') {
+          ctx.lineTo(cmd.x, cmd.y);
+          minX = Math.min(minX, cmd.x); maxX = Math.max(maxX, cmd.x);
+          minY = Math.min(minY, cmd.y); maxY = Math.max(maxY, cmd.y);
+        } else if (cmd.type === 'C') {
+          ctx.bezierCurveTo(cmd.x1, cmd.y1, cmd.x2, cmd.y2, cmd.x, cmd.y);
+          minX = Math.min(minX, cmd.x, cmd.x1, cmd.x2); maxX = Math.max(maxX, cmd.x, cmd.x1, cmd.x2);
+          minY = Math.min(minY, cmd.y, cmd.y1, cmd.y2); maxY = Math.max(maxY, cmd.y, cmd.y1, cmd.y2);
+        } else if (cmd.type === 'Q') {
+          ctx.quadraticCurveTo(cmd.x1, cmd.y1, cmd.x, cmd.y);
+          minX = Math.min(minX, cmd.x, cmd.x1); maxX = Math.max(maxX, cmd.x, cmd.x1);
+          minY = Math.min(minY, cmd.y, cmd.y1); maxY = Math.max(maxY, cmd.y, cmd.y1);
+        } else if (cmd.type === 'Z') {
+          ctx.closePath();
+        }
+      }
       ctx.fillStyle = 'black';
-      ctx.fill(path2d);
+      ctx.fill();
+
+      if (i === 0) {
+        console.debug(`[FontLoader] Glyph '${STYLE_CHARS[i]}': bbox [${minX.toFixed(1)}, ${minY.toFixed(1)}] to [${maxX.toFixed(1)}, ${maxY.toFixed(1)}], canvas: [0,0] to [${RENDER_SIZE},${RENDER_SIZE}]`);
+      }
 
       const imageData = ctx.getImageData(0, 0, RENDER_SIZE, RENDER_SIZE);
       const offset = i * RENDER_SIZE * RENDER_SIZE;
@@ -54,6 +91,14 @@ export class FontLoader {
         result[offset + px] = 1 - brightness * 2; // invert: white bg → -1
       }
     }
+    
+    // DEBUG: Verify style extraction produced meaningful data
+    const sampleValues = Array.from(result.slice(0, 20));
+    const minVal = Math.min(...sampleValues);
+    const maxVal = Math.max(...sampleValues);
+    const lastGlyph = font.charToGlyph(STYLE_CHARS[STYLE_CHARS.length - 1]);
+    console.debug(`[FontLoader] DEBUG: Last glyph commands=${lastGlyph.path?.commands?.length || 0}`);
+    console.debug(`[FontLoader] Extracted style glyphs: ${STYLE_CHARS.join('')}. Sample values (first 20): min=${minVal.toFixed(3)}, max=${maxVal.toFixed(3)}`);
 
     return result;
   }

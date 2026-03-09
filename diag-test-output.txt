@@ -1,0 +1,2495 @@
+
+[1A[2K[WebServer] The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+[1A[2K[WebServer] (node:23804) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/fjodo/RiderProjects/cyrillic-font-generator/src/frontend/postcss.config.js is not specified and it doesn't parse as CommonJS.
+[WebServer] Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+[WebServer] To eliminate this warning, add "type": "module" to C:\Users\fjodo\RiderProjects\cyrillic-font-generator\src\frontend\package.json.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 4 workers
+
+[1A[2K[1/4] [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[1A[2K[2/4] [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[1A[2K[3/4] [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:237:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: deterministic across two runs
+[1A[2K[4/4] [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:144:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: output is non-blank (max > -0.5)
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Worker-Diag] === Starting generator.onnx worker pipeline diagnostic ===
+
+[1A[2K[Worker-Diag] Model: C:\Users\fjodo\RiderProjects\cyrillic-font-generator\models\v1\generator.onnx
+
+[1A[2K[Worker-Diag] Model size: 50.6 MB
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [FontUpload] Processing file: ANTQUAB.TTF (151000 bytes)
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [FontUpload] Processing file: ANTQUAB.TTF (151000 bytes)
+
+[1A[2K[Browser DEBUG]: [FontUpload] Font parsed successfully. Family: Book Antiqua
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [FontUpload] Font parsed successfully. Family: Book Antiqua
+
+[1A[2K[Browser DEBUG]: [FontLoader] Extracted style glyphs: ABCDEHIORX. Sample values (first 20): min=-1.000, max=-1.000
+
+[1A[2K[Browser DEBUG]: [FontUpload] Style glyphs extracted: 163840 values (expected: 163840 = 10*128*128)
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [FontLoader] Extracted style glyphs: ABCDEHIORX. Sample values (first 20): min=-1.000, max=-1.000
+
+[1A[2K[Browser DEBUG]: [FontUpload] Style glyphs extracted: 163840 values (expected: 163840 = 10*128*128)
+
+[1A[2K[Worker-Diag] Font uploaded: ANTQUAB.TTF
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[Browser ERROR]: [0;93m2026-03-09 01:17:50.359299 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser ERROR]: [0;93m2026-03-09 01:17:50.372699 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Worker-Diag] тЬУ Production model loaded (53 MB generator.onnx)
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 0
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 0
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Worker-Diag] тЬУ Generation started
+
+[1A[2K[Worker-Diag] Waiting for first 3 inference results from workerтАж
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:144:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: output is non-blank (max > -0.5)
+[Direct-ORT] ===== generator.onnx diagnostic report =====
+
+[1A[2K[Direct-ORT] inputNames: style_glyphs, char_index
+
+[1A[2K[Direct-ORT] output shape: 1├Ч1├Ч128├Ч128, dtype: float32
+
+[1A[2K[Direct-ORT] output range: [-1.0000, 1.0000]
+
+[1A[2K[Direct-ORT] output mean=-0.9464, std=0.3015, range=2.0000
+
+[1A[2K[Direct-ORT] ink pixels (>0): 436/16384 (2.7%)
+
+[1A[2K[Direct-ORT] first 8 raw values: -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [App] Glyph 0 (char '╨Р', index 0) тАФ output stats (first 100px): min=-1.0000, max=-1.0000, avg=-1.0000
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 1
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [App] Glyph 0 (char '╨Р', index 0) тАФ output stats (first 100px): min=-1.0000, max=-1.0000, avg=-1.0000
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 1
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999999403953552, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [App] Glyph 1 (char '╨С', index 1) тАФ output stats (first 100px): min=-1.0000, max=-1.0000, avg=-1.0000
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 2
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999999403953552, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [App] Glyph 1 (char '╨С', index 1) тАФ output stats (first 100px): min=-1.0000, max=-1.0000, avg=-1.0000
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 2
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [App] Glyph 2 (char '╨Т', index 2) тАФ output stats (first 100px): min=-1.0000, max=-1.0000, avg=-1.0000
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [App] Glyph 2 (char '╨Т', index 2) тАФ output stats (first 100px): min=-1.0000, max=-1.0000, avg=-1.0000
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 3
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 3
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 4
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 4
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 5
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 5
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 6
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 6
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 7
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 7
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 8
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 8
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 9
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 9
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 10
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 10
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 11
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 11
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 12
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 12
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 13
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 13
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 14
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 14
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 15
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 15
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 16
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 16
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 17
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 17
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 18
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 18
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 19
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 19
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 20
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 20
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 21
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 21
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 22
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 22
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 23
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 23
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 24
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 24
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 25
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 25
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 26
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 26
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 27
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 27
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 28
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 28
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 29
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 29
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 30
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 30
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 31
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 31
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 32
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 32
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 33
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 33
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999999403953552, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999999403953552, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 34
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 34
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 35
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 35
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 36
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 36
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 37
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 37
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 38
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 38
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 39
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 39
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 40
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 40
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 41
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 41
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 42
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 42
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 43
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 43
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 44
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 44
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 45
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 45
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 46
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 46
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 47
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 47
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] char_index: 48
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] char_index: 48
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 49
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 49
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 50
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 50
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 51
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 51
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 52
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 52
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 53
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 53
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 54
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 54
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 55
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 55
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 56
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 56
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 57
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 57
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 58
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997019767761, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 58
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999996423721313, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 59
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999996423721313, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 59
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 60
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 60
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 61
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998211860657, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 61
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 62
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 62
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999999403953552, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 63
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999999403953552, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 63
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 64
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 65
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999997615814209, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9999
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index: 65
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs first 5 values: [-1, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] style_glyphs tensor shape: [1, 10, 1, 128, 128]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] char_index tensor shape: [1] dtype: int64
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [App] Starting font assembly with 66 glyphs. Expected: 66
+
+[1A[2K[Browser DEBUG]: [FontAssembler] Added 0 non-blank Cyrillic glyphs, 66 blank glyphs out of 66 total
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] outputTensor.name/key resolved: generated_glyph
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] outputTensor first 5 raw values: [-0.9999998807907104, -1, -1, -1, -1]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] output max (first 512 px): -0.9998
+
+[1A[2K[Browser DEBUG]: [App] Starting font assembly with 66 glyphs. Expected: 66
+
+[1A[2K[Browser DEBUG]: [FontAssembler] Added 0 non-blank Cyrillic glyphs, 66 blank glyphs out of 66 total
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [App] Font assembly complete. Buffer size: 168300 bytes
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [App] Font assembly complete. Buffer size: 168300 bytes
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[Browser ERROR]: [0;93m2026-03-09 01:18:40.538299 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser ERROR]: [0;93m2026-03-09 01:18:40.539299 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser ERROR]: [0;93m2026-03-09 01:18:51.623300 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser ERROR]: [0;93m2026-03-09 01:18:51.652399 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[Browser DEBUG]: [vite] connected.
+
+[1A[2K[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser ERROR]: [0;93m2026-03-09 01:19:13.143300 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser ERROR]: [0;93m2026-03-09 01:19:13.146299 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[Browser ERROR]: [0;93m2026-03-09 01:19:19.370198 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser ERROR]: [0;93m2026-03-09 01:19:19.374300 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[Browser LOG]: [vite] server connection lost. Polling for restart...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser LOG]: [vite] server connection lost. Polling for restart...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connecting...
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [vite] connected.
+
+[1A[2K[Browser ERROR]: [0;93m2026-03-09 01:19:25.363499 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser ERROR]: [0;93m2026-03-09 01:19:25.381299 [W:onnxruntime:Default, cpuid_info.cc:95 LogEarlyWarning] Unknown CPU vendor. cpuinfo_vendor value: 0[m
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K[chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels
+[Browser DEBUG]: [inferenceWorker] session.inputNames: [style_glyphs, char_index]
+
+[1A[2K[Browser DEBUG]: [inferenceWorker] session.outputNames: [generated_glyph]
+
+[1A[2K  1) [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels 
+
+    TimeoutError: page.waitForFunction: Timeout 300000ms exceeded.
+
+      393 |     // Wait for at least 3 raw result tensors to arrive (captures first few glyphs quickly)
+      394 |     console.log('[Worker-Diag] Waiting for first 3 inference results from workerтАж');
+    > 395 |     await page.waitForFunction(
+          |                ^
+      396 |       () => ((window as any).__inferenceResults?.length ?? 0) >= 3,
+      397 |       undefined,
+      398 |       { timeout: 300_000 }, // 5 min for first few inferences
+        at C:\Users\fjodo\RiderProjects\cyrillic-font-generator\src\frontend\e2e\generator-onnx-diagnostic.spec.ts:395:16
+
+    Error Context: test-results\generator-onnx-diagnostic--17034-tain-non-blank-glyph-pixels-chromium\error-context.md
+
+
+[1A[2K  2) [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels 
+
+    TimeoutError: page.waitForFunction: Timeout 300000ms exceeded.
+
+      503 |
+      504 |     // Wait for at least 5 results (enough chars to see variation)
+    > 505 |     await page.waitForFunction(
+          |                ^
+      506 |       () => ((window as any).__inferenceResults?.length ?? 0) >= 5,
+      507 |       undefined,
+      508 |       { timeout: 300_000 },
+        at C:\Users\fjodo\RiderProjects\cyrillic-font-generator\src\frontend\e2e\generator-onnx-diagnostic.spec.ts:505:16
+
+    Error Context: test-results\generator-onnx-diagnostic--27aad-oduces-different-ink-levels-chromium\error-context.md
+
+
+[1A[2K  2 failed
+    [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:370:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels 
+    [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:493:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels 
+  2 passed (5.1m)

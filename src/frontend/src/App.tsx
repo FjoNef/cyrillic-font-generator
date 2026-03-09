@@ -86,6 +86,14 @@ export default function App() {
         // Run inference → Float32Array [-1,1]
         const output = await modelLoader.infer(styleGlyphs, index);
 
+        // DEBUG: Log output statistics for first 3 glyphs
+        // Scan full output — glyph ink starts at row ~30 (pixel 3840), NOT at row 0
+        if (i < 3) {
+          const fullMax = Math.max(...Array.from(output));
+          const inkCount = Array.from(output).filter(v => v > 0).length;
+          console.debug(`[App] Glyph ${i} (char '${char}', index ${index}) — output: max=${fullMax.toFixed(4)}, ink pixels (>0): ${inkCount}/${output.length}`);
+        }
+
         // Store raw output for font assembly
         rawGlyphs.set(index, output);
 
@@ -105,7 +113,19 @@ export default function App() {
       }
 
       // Assemble OTF from already-generated raw glyphs (no re-inference)
+      console.debug(`[App] Starting font assembly with ${rawGlyphs.size} glyphs. Expected: 66`);
+      
+      // DEBUG: Verify all 66 glyphs were stored correctly
+      const missingIndices = [];
+      for (let i = 0; i < 66; i++) {
+        if (!rawGlyphs.has(i)) missingIndices.push(i);
+      }
+      if (missingIndices.length > 0) {
+        console.error(`[App] Missing glyphs at indices: ${missingIndices.join(', ')}`);
+      }
+      
       const buffer = assembleFontFromGlyphs(rawGlyphs, uploadedFont, fontName ?? 'Generated Cyrillic');
+      console.debug(`[App] Font assembly complete. Buffer size: ${buffer.byteLength} bytes`);
       setFontBuffer(buffer);
       setGenerationStatus('done');
     } catch (error) {
@@ -116,6 +136,9 @@ export default function App() {
 
   const handleDownload = useCallback(() => {
     if (!fontBuffer) return;
+    
+    console.debug(`[App] Font download triggered. Buffer size: ${fontBuffer.byteLength} bytes, Font name: "${fontName}"`);
+    
     const safeName = (fontName ?? 'generated-cyrillic').replace(/\s+/g, '-').toLowerCase();
     downloadFont(fontBuffer, `${safeName}.otf`);
   }, [fontBuffer, fontName]);

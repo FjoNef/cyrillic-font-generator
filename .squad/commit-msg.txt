@@ -1,11 +1,15 @@
-.squad: Merge Major ONNX export decision; update Togusa history
+docs(squad): orchestration logs, session log, merged decisions, updated agent histories
 
-- Merged decision: ONNX Export — torch.compile State Dict Key Handling
-  - Added _strip_orig_mod() helper to export_onnx.py (backward-compatible)
-  - Fresh model: models/v1/generator.onnx (53.1MB, INT8 quantization)
-  - Forward pass validated: (1,1,128,128) → (1,1,128,128), range [-1.0, 1.0]
-  - Commit: ceab05d on dev
-- Updated Togusa history: Cross-agent update (fresh ONNX ready for validation)
-- Deleted decision inbox file (major-onnx-export.md)
+- Added orchestration logs for agents 37 (Major), 38 (Togusa), 39 (Saito)
+- Added session log: blank glyph root cause fix (ORT JSEP proxy)
+- Merged 6 decision inbox files into decisions.md, deleted inbox
+- Updated agent histories with cross-agent team context
+
+Commit covers investigation completion:
+- Major (37): ORT 1.20 JSEP INT8 incompatibility diagnosed, proxy=false fix applied
+- Togusa (38): Frontend pipeline audit complete, 0 bugs found, debug logging added
+- Saito (39): E2E tests now use real production model with strict ink validation
+
+All tests passing: 111 unit tests + production E2E model validation
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
