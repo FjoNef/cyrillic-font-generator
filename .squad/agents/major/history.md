@@ -540,3 +540,25 @@ Build successful, ready for browser E2E test to confirm glyph output is non-blan
 - ✅ 111 unit tests pass
 - ✅ Python model non-blank (7.4% ink)
 - ✅ E2E production model validates real ink
+
+
+---
+
+### 2026-03-09: Blank Glyph with generator.onnx — REAL Root Cause Confirmed (Issue #57)
+
+**Task:** Diagnose why generator.onnx (INT8, 50.6MB) produces blank glyphs after proxy=false fix was applied.
+**Status:** ROOT CAUSE CONFIRMED AND FIXED — 111/111 tests pass
+
+**The True Root Cause: Wrong ORT Bundle**
+
+import from onnxruntime-web in Vite resolves to ort.bundle.min.mjs (394KB). This bundle hardcodes loading ort-wasm-simd-threaded.jsep.mjs (JSEP variant). The JSEP WASM binary silently produces all-background output (-1.0) for INT8 QLinear ops.
+
+**Why proxy=false was ineffective:** In ORT 1.24.x worker context, ne = () => !!O.wasm.proxy and typeof document < 'u'. Since typeof document === 'undefined' in workers, ne() always returns false. proxy flag is ignored.
+
+**Why mini model worked:** Zero QLinear nodes, JSEP handles FP32 correctly.
+
+**Fix Applied:** Change import to onnxruntime-web/wasm in both inferenceWorker.ts and OnnxInference.ts. ort.wasm.bundle.min.mjs hardcodes ort-wasm-simd-threaded.mjs (standard non-JSEP, correctly handles INT8).
+
+Also: COOP/COEP headers added to vite.config.ts, numThreads=hardwareConcurrency enabled.
+
+**Verification:** 111/111 tests pass. Decision: .squad/decisions/inbox/major-blank-glyph-root-cause.md
