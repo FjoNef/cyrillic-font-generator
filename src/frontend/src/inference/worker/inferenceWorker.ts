@@ -1,4 +1,18 @@
-import * as ort from 'onnxruntime-web';
+// ⚠️ CRITICAL: Import from 'onnxruntime-web/wasm', NOT 'onnxruntime-web'.
+//
+// ORT 1.24.x default bundle (ort.bundle.min.mjs) hardcodes loading
+// 'ort-wasm-simd-threaded.jsep.mjs' (the JSEP/WebGPU variant) regardless of
+// executionProviders config or ort.env.wasm.proxy setting. The JSEP WASM variant
+// silently produces all-background output for INT8 QLinear ops (used by the
+// production 50.6 MB INT8 quantized model).
+//
+// 'onnxruntime-web/wasm' resolves to ort.wasm.bundle.min.mjs, which hardcodes
+// 'ort-wasm-simd-threaded.mjs' (standard non-JSEP variant). This correctly handles
+// all INT8 QLinear operations.
+//
+// The FP32 mini model works with either bundle because it has no QLinear ops.
+// The INT8 production model REQUIRES the non-JSEP variant to produce non-blank output.
+import * as ort from 'onnxruntime-web/wasm';
 
 /**
  * Web Worker for ONNX model inference.
@@ -7,6 +21,11 @@ import * as ort from 'onnxruntime-web';
  * WASM files are served from /ort-wasm/ (copied there by scripts/copy-ort-wasm.cjs).
  * Setting wasmPaths explicitly prevents ORT from trying to infer the path from its own
  * script URL, which is unreliable inside a Vite-bundled worker.
+ *
+ * ⚠️ Import path matters: 'onnxruntime-web/wasm' (not 'onnxruntime-web').
+ * ORT 1.24.x default bundle hardcodes loading the JSEP (WebGPU) WASM variant, which
+ * silently produces blank output for INT8 QLinear ops. The /wasm sub-path bundle
+ * uses the standard non-JSEP WASM variant that correctly handles INT8.
  *
  * Message protocol:
  * - Host → Worker:
@@ -21,31 +40,19 @@ import * as ort from 'onnxruntime-web';
  */
 
 // ⚠️ Must be set BEFORE any InferenceSession is created.
-// ORT 1.20 uses ort-wasm-simd-threaded.mjs (worker shim) + ort-wasm-simd-threaded.wasm
-// (binary). Without this, ORT tries to infer the path from its own bundled script URL,
-// which is wrong inside a Vite worker chunk and causes silent WASM load failure.
+// ORT 1.24.x (ort.wasm.bundle.min.mjs) dynamically imports ort-wasm-simd-threaded.mjs
+// at runtime using the wasmPaths prefix. Without this, ORT infers the path from its own
+// bundled script URL (blob: inside a Vite worker), which is wrong and causes silent failure.
 //
 // Use absolute URL to prevent Vite 5 from intercepting as a static-analysis import.
-// ORT 1.20 dynamically imports runtime .mjs files (e.g., .jsep.mjs for WebGPU probing).
-// Vite 5 intercepts relative paths during bundling; absolute origin URLs bypass this.
 ort.env.wasm.wasmPaths = `${self.location.origin}/ort-wasm/`;
 
-// CRITICAL FIX: Disable JSEP proxy to prevent ORT from dynamically importing .jsep.mjs files.
-// ORT 1.20 probes for WebGPU support by trying to dynamically import() the JSEP module.
-// Vite 5 dev server intercepts this import(), sees it's in /public, and hard-errors.
-// We don't need WebGPU (using CPU WASM), so disabling the proxy prevents the probe entirely.
-ort.env.wasm.proxy = false;
+// Use hardware concurrency for multi-threaded inference (COOP/COEP headers enable SharedArrayBuffer).
+// Fall back to 4 if hardwareConcurrency is unavailable in worker context.
+ort.env.wasm.numThreads = (self as any).navigator?.hardwareConcurrency ?? 4;
 
-// Run WASM single-threaded: we are already inside a dedicated worker, so spinning up
-// a nested proxy worker is unnecessary overhead. numThreads=1 also avoids the
-// SharedArrayBuffer requirement (COOP/COEP headers) that not every dev env satisfies.
-ort.env.wasm.numThreads = 1;
-
-// Disable JSEP (WebGPU) variant selection. ORT 1.20 auto-selects ort-wasm-simd-threaded.jsep.mjs
-// if it detects WebGPU capability, even when executionProviders: ['wasm'] is specified.
-// The JSEP variant has compatibility issues with INT8 quantized models and can produce
-// incorrect output. Explicitly disable proxy mode to force ORT to use the standard
-// ort-wasm-simd-threaded.{mjs,wasm} variant instead.
+// Disable proxy worker: we are already in a dedicated worker and don't need a nested proxy.
+// In ORT 1.24.x, proxy = true would create a second nested worker — wasteful and unnecessary.
 ort.env.wasm.proxy = false;
 
 let session: ort.InferenceSession | null = null;

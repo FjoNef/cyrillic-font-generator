@@ -11,6 +11,12 @@
  *   - JSPI: ort-wasm-simd-threaded.jspi.{mjs,wasm} — JavaScript Promise Integration
  *
  * All 8 files must be present to prevent 404s during ORT's capability probing.
+ *
+ * NOTE: Non-threaded fallback files (ort-wasm-simd.{mjs,wasm}) are not available in
+ * onnxruntime-web 1.24.x. The threaded WASM files work with COOP/COEP headers enabled
+ * (which enable SharedArrayBuffer support). Environments without COOP/COEP will not be
+ * able to use multi-threaded inference but can still run with numThreads=1 when the
+ * headers are set.
  */
 
 'use strict';

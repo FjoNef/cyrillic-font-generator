@@ -26,14 +26,27 @@ export default defineConfig({
   ],
   assetsInclude: ['**/*.wasm'],
   optimizeDeps: {
-    exclude: ['onnxruntime-web'],
+    // Exclude ORT from pre-bundling: it loads WASM binaries at runtime via dynamic import()
+    // and must not be pre-bundled or have its dynamic import() calls rewritten by Vite.
+    // 'onnxruntime-web/wasm' is the sub-path used by inferenceWorker and OnnxInference.
+    exclude: ['onnxruntime-web', 'onnxruntime-web/wasm'],
   },
   server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
+    },
+  },
+  preview: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
     },
   },
 });
