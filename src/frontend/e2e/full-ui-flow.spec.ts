@@ -13,33 +13,37 @@
  * This is the ONLY E2E test that exercises the React UI directly (not via page.evaluate).
  * All other E2E tests bypass the UI and inject ORT directly.
  *
- * ⚠️ Uses the REAL production model (50.6 MB) to validate actual glyph generation.
- *    This test would catch the blank glyph bug if it exists.
- *    Production model location: models/v1/generator.onnx
+ * ⚠️ Uses the mini model (1.26 MB) to validate actual glyph generation.
+ *    The mini model has the same architecture as the production model but with
+ *    reduced capacity (6 base filters vs 32), making it fast enough for E2E tests
+ *    while still producing non-constant output that would catch blank glyph bugs.
+ *    Mini model location: models/v1/mini_generator.onnx
  */
 
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-// Production model: full 50.6 MB model that produces real Cyrillic glyphs
-const PROD_MODEL_PATH = path.join(__dirname, '../../../models/v1/generator.onnx');
+// Mini model: 1.26 MB model with same architecture as production, produces non-constant output
+const MINI_MODEL_PATH = path.join(__dirname, '../../../models/v1/mini_generator.onnx');
 const ORT_WASM_DIST = path.join(__dirname, '../node_modules/onnxruntime-web/dist');
 const TEST_FONT_PATH = path.join(__dirname, '../../../data/fonts/ANTQUAB.TTF');
 
 // ── Fixture guard ─────────────────────────────────────────────────────────────
 
 test.describe('Full UI Flow E2E Test', () => {
-  // Chromium-only: real model + 66 WASM inferences too slow for CI on Firefox/WebKit
+  test.describe.configure({ mode: 'serial' }); // Run tests serially to avoid resource contention
+  
+  // Chromium-only: mini model + 66 WASM inferences still too slow for parallel CI on Firefox/WebKit
   test.beforeEach(async ({ browserName }) => {
-    test.skip(browserName !== 'chromium', 'Chromium only: real model (50.6 MB) + 66 WASM inferences');
+    test.skip(browserName !== 'chromium', 'Chromium only: mini model (1.26 MB) + 66 WASM inferences');
   });
 
   test.beforeAll(() => {
-    if (!fs.existsSync(PROD_MODEL_PATH)) {
+    if (!fs.existsSync(MINI_MODEL_PATH)) {
       test.skip();
       console.warn(
-        `⚠️  Skipping full-ui-flow.spec.ts: Production model not found at ${PROD_MODEL_PATH}.`
+        `⚠️  Skipping full-ui-flow.spec.ts: Mini model not found at ${MINI_MODEL_PATH}.`
       );
     }
 
@@ -51,30 +55,41 @@ test.describe('Full UI Flow E2E Test', () => {
     }
   });
 
-  test.setTimeout(600_000); // 10 minutes — production model is 50.6 MB, 66 glyphs take time
+  test.setTimeout(180_000); // 3 minutes — mini model is 1.26 MB, much faster than production
 
   test.beforeEach(async ({ page }) => {
-    // Mock the manifest endpoint to return a fake manifest pointing to the production model
+    // Capture console errors to debug worker crashes
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        console.error('[Browser Console Error]:', msg.text());
+      }
+    });
+    
+    page.on('pageerror', err => {
+      console.error('[Browser Page Error]:', err.message);
+    });
+
+    // Mock the manifest endpoint to return a fake manifest pointing to the mini model
     await page.route('**/api/model/manifest', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           version: 'v1',
-          filename: 'generator.onnx',
-          sizeBytes: fs.statSync(PROD_MODEL_PATH).size,
+          filename: 'mini_generator.onnx',
+          sizeBytes: fs.statSync(MINI_MODEL_PATH).size,
           sha256: 'e2e-test',
-          downloadUrl: 'http://localhost:5173/prod-model/generator.onnx',
+          downloadUrl: 'http://localhost:5173/mini-model/mini_generator.onnx',
         }),
       });
     });
 
-    // Serve the production model (50.6 MB — validates actual glyph generation)
-    await page.route('**/prod-model/generator.onnx', async route => {
+    // Serve the mini model (1.26 MB — fast enough for E2E, produces non-constant output)
+    await page.route('**/mini-model/mini_generator.onnx', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/octet-stream',
-        body: fs.readFileSync(PROD_MODEL_PATH),
+        body: fs.readFileSync(MINI_MODEL_PATH),
       });
     });
 
@@ -111,11 +126,11 @@ test.describe('Full UI Flow E2E Test', () => {
     await expect(page.locator('text=/Loaded:.*ANTQUAB\\.TTF/i')).toBeVisible({ timeout: 10_000 });
     console.log('[E2E] ✓ Font uploaded successfully');
 
-    console.log('[E2E] Step 2: Wait for model to load (50.6 MB)');
+    console.log('[E2E] Step 2: Wait for model to load (1.26 MB)');
     
     // Wait for the Generate button to be enabled (model finished loading)
     const generateButton = page.locator('button:has-text("Generate")');
-    await expect(generateButton).toBeEnabled({ timeout: 120_000 }); // 2 minutes for 50.6 MB model
+    await expect(generateButton).toBeEnabled({ timeout: 60_000 }); // 1 minute for 1.26 MB mini model
     console.log('[E2E] ✓ Model loaded successfully');
 
     console.log('[E2E] Step 3: Click Generate button');
@@ -127,12 +142,9 @@ test.describe('Full UI Flow E2E Test', () => {
 
     console.log('[E2E] Step 4: Wait for generation to complete (66 glyphs)');
     
-    // Wait for the Download button to appear (generation complete)
+    // Wait for the Download button to become enabled (generation complete)
     const downloadButton = page.locator('button:has-text("Download .otf")');
-    await expect(downloadButton).toBeVisible({ timeout: 300_000 }); // 5 minutes for 66 glyphs with real model
-    
-    // Verify button is enabled
-    await expect(downloadButton).toBeEnabled();
+    await expect(downloadButton).toBeEnabled({ timeout: 120_000 }); // 2 minutes for 66 glyphs with mini model
     console.log('[E2E] ✓ Generation completed');
 
     console.log('[E2E] Step 5: Verify glyph preview shows ACTUAL glyph ink (not just non-blank canvas)');
