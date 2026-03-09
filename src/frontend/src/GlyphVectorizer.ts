@@ -48,6 +48,21 @@ export function vectorizeGlyph(data: Float32Array, targetUpm: number = DEFAULT_U
   const xScale = advanceWidth / IMG_SIZE;
   const yScale = (ascender - descender) / IMG_SIZE;
 
+  // DEBUG: Sample output values to detect all-background output
+  const sampleSize = Math.min(data.length, 100);
+  let minVal = Infinity;
+  let maxVal = -Infinity;
+  let inkPixelCount = 0;
+  
+  for (let i = 0; i < sampleSize; i++) {
+    minVal = Math.min(minVal, data[i]);
+    maxVal = Math.max(maxVal, data[i]);
+  }
+  
+  for (let i = 0; i < data.length; i++) {
+    if (data[i] > 0) inkPixelCount++;
+  }
+
   for (let row = 0; row < IMG_SIZE; row++) {
     const yTop    = ascender - row       * yScale;
     const yBottom = ascender - (row + 1) * yScale;
@@ -75,10 +90,18 @@ export function vectorizeGlyph(data: Float32Array, targetUpm: number = DEFAULT_U
   }
 
   if (path.commands.length === 0) {
-    console.warn('[GlyphVectorizer] vectorizeGlyph produced an empty path (0 commands). ' +
-      'Possible causes: all model output values ≤ 0 (all-background output), or wrong ' +
-      'data space (display values 0-255 passed instead of raw [-1,1]). ' +
-      'Check that data is raw model output where +1.0 = ink, -1.0 = background.');
+    console.warn(
+      `[GlyphVectorizer] vectorizeGlyph produced an empty path (0 commands). ` +
+      `Data stats: min=${minVal.toFixed(4)}, max=${maxVal.toFixed(4)}, ink pixels (>0): ${inkPixelCount}/${data.length}. ` +
+      `Possible causes: all model output values ≤ 0 (all-background output), or wrong ` +
+      `data space (display values 0-255 passed instead of raw [-1,1]). ` +
+      `Check that data is raw model output where +1.0 = ink, -1.0 = background.`
+    );
+  } else {
+    console.debug(
+      `[GlyphVectorizer] Generated ${path.commands.length} path commands. ` +
+      `Data stats: min=${minVal.toFixed(4)}, max=${maxVal.toFixed(4)}, ink pixels: ${inkPixelCount}/${data.length}`
+    );
   }
 
   return path;

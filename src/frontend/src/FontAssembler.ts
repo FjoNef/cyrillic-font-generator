@@ -86,11 +86,23 @@ export function assembleFontFromGlyphs(
   }
 
   // 3. Add AI-generated Cyrillic glyphs
+  let addedCyrillicCount = 0;
+  let blankCyrillicCount = 0;
+  
   for (const { index, unicode } of CYRILLIC_CHARS) {
     const imageData = glyphImages.get(index);
     const glyphPath = imageData
       ? vectorizeGlyph(imageData, upm)
       : new opentype.Path(); // fallback blank if missing
+
+    if (!imageData) {
+      console.warn(`[FontAssembler] Missing image data for Cyrillic index ${index} (U+${unicode.toString(16).toUpperCase()})`);
+    } else if (glyphPath.commands.length === 0) {
+      console.warn(`[FontAssembler] Empty path for Cyrillic index ${index} (U+${unicode.toString(16).toUpperCase()}) — model likely output all-background`);
+      blankCyrillicCount++;
+    } else {
+      addedCyrillicCount++;
+    }
 
     const glyph = new opentype.Glyph({
       name: `uni${unicode.toString(16).toUpperCase().padStart(4, '0')}`,
@@ -101,6 +113,8 @@ export function assembleFontFromGlyphs(
 
     glyphs.push(glyph);
   }
+  
+  console.debug(`[FontAssembler] Added ${addedCyrillicCount} non-blank Cyrillic glyphs, ${blankCyrillicCount} blank glyphs out of ${CYRILLIC_CHARS.length} total`);
 
   // Create merged font
   const font = new opentype.Font({
@@ -144,11 +158,23 @@ function createStandaloneCyrillicFont(
   const glyphs: opentype.Glyph[] = [notdefGlyph];
 
   // Add one glyph per Cyrillic character, in charset order
+  let addedCyrillicCount = 0;
+  let blankCyrillicCount = 0;
+  
   for (const { index, unicode } of CYRILLIC_CHARS) {
     const imageData = glyphImages.get(index);
     const glyphPath = imageData
       ? vectorizeGlyph(imageData, UPM)
       : new opentype.Path(); // fallback blank if missing
+
+    if (!imageData) {
+      console.warn(`[FontAssembler:standalone] Missing image data for Cyrillic index ${index} (U+${unicode.toString(16).toUpperCase()})`);
+    } else if (glyphPath.commands.length === 0) {
+      console.warn(`[FontAssembler:standalone] Empty path for Cyrillic index ${index} (U+${unicode.toString(16).toUpperCase()}) — model likely output all-background`);
+      blankCyrillicCount++;
+    } else {
+      addedCyrillicCount++;
+    }
 
     const glyph = new opentype.Glyph({
       name: `uni${unicode.toString(16).toUpperCase().padStart(4, '0')}`,
@@ -159,6 +185,8 @@ function createStandaloneCyrillicFont(
 
     glyphs.push(glyph);
   }
+  
+  console.debug(`[FontAssembler:standalone] Added ${addedCyrillicCount} non-blank Cyrillic glyphs, ${blankCyrillicCount} blank glyphs out of ${CYRILLIC_CHARS.length} total`);
 
   const font = new opentype.Font({
     familyName,

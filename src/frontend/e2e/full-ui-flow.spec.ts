@@ -6,25 +6,24 @@
  * 2. Wait for model to load
  * 3. Click Generate button
  * 4. Wait for 66 Cyrillic glyphs to be generated
- * 5. Verify glyph preview shows non-blank canvases
+ * 5. Verify glyph preview shows ACTUAL glyph ink (not just non-blank canvas)
  * 6. Download the font
  * 7. Verify the downloaded font contains Cyrillic glyphs
  *
  * This is the ONLY E2E test that exercises the React UI directly (not via page.evaluate).
  * All other E2E tests bypass the UI and inject ORT directly.
  *
- * ⚠️ Uses a smoke ONNX model (tiny constant-output model with correct signatures).
- *    Real inference quality is tested in style-conditioning-real.spec.ts.
- *    Smoke model location: models/v1/smoke_generator.onnx
+ * ⚠️ Uses the REAL production model (50.6 MB) to validate actual glyph generation.
+ *    This test would catch the blank glyph bug if it exists.
+ *    Production model location: models/v1/generator.onnx
  */
 
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-// Smoke model: tiny constant-output ONNX with correct input/output signatures (~64 KB vs 53 MB)
-// Real model path (for reference): models/v1/generator.onnx
-const SMOKE_MODEL_PATH = path.join(__dirname, '../../../models/v1/smoke_generator.onnx');
+// Production model: full 50.6 MB model that produces real Cyrillic glyphs
+const PROD_MODEL_PATH = path.join(__dirname, '../../../models/v1/generator.onnx');
 const ORT_WASM_DIST = path.join(__dirname, '../node_modules/onnxruntime-web/dist');
 const TEST_FONT_PATH = path.join(__dirname, '../../../data/fonts/ANTQUAB.TTF');
 
@@ -33,15 +32,14 @@ const TEST_FONT_PATH = path.join(__dirname, '../../../data/fonts/ANTQUAB.TTF');
 test.describe('Full UI Flow E2E Test', () => {
   // Chromium-only: real model + 66 WASM inferences too slow for CI on Firefox/WebKit
   test.beforeEach(async ({ browserName }) => {
-    test.skip(browserName !== 'chromium', 'Chromium only: smoke model + 66 WASM inferences');
+    test.skip(browserName !== 'chromium', 'Chromium only: real model (50.6 MB) + 66 WASM inferences');
   });
 
   test.beforeAll(() => {
-    if (!fs.existsSync(SMOKE_MODEL_PATH)) {
+    if (!fs.existsSync(PROD_MODEL_PATH)) {
       test.skip();
       console.warn(
-        `⚠️  Skipping full-ui-flow.spec.ts: Smoke model not found at ${SMOKE_MODEL_PATH}. ` +
-        'Run src/model/export/create_smoke_model.py before running this test.'
+        `⚠️  Skipping full-ui-flow.spec.ts: Production model not found at ${PROD_MODEL_PATH}.`
       );
     }
 
@@ -53,10 +51,10 @@ test.describe('Full UI Flow E2E Test', () => {
     }
   });
 
-  test.setTimeout(120_000); // 2 minutes — smoke model is tiny, but WASM init still needs time
+  test.setTimeout(600_000); // 10 minutes — production model is 50.6 MB, 66 glyphs take time
 
   test.beforeEach(async ({ page }) => {
-    // Mock the manifest endpoint to return a fake manifest pointing to the real model
+    // Mock the manifest endpoint to return a fake manifest pointing to the production model
     await page.route('**/api/model/manifest', async route => {
       await route.fulfill({
         status: 200,
@@ -64,19 +62,19 @@ test.describe('Full UI Flow E2E Test', () => {
         body: JSON.stringify({
           version: 'v1',
           filename: 'generator.onnx',
-          sizeBytes: fs.statSync(SMOKE_MODEL_PATH).size,
+          sizeBytes: fs.statSync(PROD_MODEL_PATH).size,
           sha256: 'e2e-test',
-          downloadUrl: 'http://localhost:5173/smoke-model/generator.onnx',
+          downloadUrl: 'http://localhost:5173/prod-model/generator.onnx',
         }),
       });
     });
 
-    // Serve the smoke model (tiny, fast — real model tested by style-conditioning-real.spec.ts)
-    await page.route('**/smoke-model/generator.onnx', async route => {
+    // Serve the production model (50.6 MB — validates actual glyph generation)
+    await page.route('**/prod-model/generator.onnx', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/octet-stream',
-        body: fs.readFileSync(SMOKE_MODEL_PATH),
+        body: fs.readFileSync(PROD_MODEL_PATH),
       });
     });
 
@@ -101,6 +99,8 @@ test.describe('Full UI Flow E2E Test', () => {
   });
 
   test('full user flow: upload → generate → verify preview → download → verify font', async ({ page }) => {
+    test.slow(); // Mark as slow for CI awareness
+    
     console.log('[E2E] Step 1: Upload font file');
     
     // Find the hidden file input and upload the test font
@@ -111,11 +111,11 @@ test.describe('Full UI Flow E2E Test', () => {
     await expect(page.locator('text=/Loaded:.*ANTQUAB\\.TTF/i')).toBeVisible({ timeout: 10_000 });
     console.log('[E2E] ✓ Font uploaded successfully');
 
-    console.log('[E2E] Step 2: Wait for model to load');
+    console.log('[E2E] Step 2: Wait for model to load (50.6 MB)');
     
     // Wait for the Generate button to be enabled (model finished loading)
     const generateButton = page.locator('button:has-text("Generate")');
-    await expect(generateButton).toBeEnabled({ timeout: 30_000 }); // 30s is plenty for tiny smoke model
+    await expect(generateButton).toBeEnabled({ timeout: 120_000 }); // 2 minutes for 50.6 MB model
     console.log('[E2E] ✓ Model loaded successfully');
 
     console.log('[E2E] Step 3: Click Generate button');
@@ -129,13 +129,13 @@ test.describe('Full UI Flow E2E Test', () => {
     
     // Wait for the Download button to appear (generation complete)
     const downloadButton = page.locator('button:has-text("Download .otf")');
-    await expect(downloadButton).toBeVisible({ timeout: 90_000 }); // 90s max with smoke model
+    await expect(downloadButton).toBeVisible({ timeout: 300_000 }); // 5 minutes for 66 glyphs with real model
     
     // Verify button is enabled
     await expect(downloadButton).toBeEnabled();
     console.log('[E2E] ✓ Generation completed');
 
-    console.log('[E2E] Step 5: Verify glyph preview shows non-blank content');
+    console.log('[E2E] Step 5: Verify glyph preview shows ACTUAL glyph ink (not just non-blank canvas)');
     
     // Check that canvases are rendered in the preview section
     const canvases = page.locator('canvas');
@@ -143,36 +143,57 @@ test.describe('Full UI Flow E2E Test', () => {
     expect(canvasCount).toBeGreaterThan(0);
     console.log(`[E2E] Found ${canvasCount} preview canvases`);
 
-    // Sample 5 canvases and verify they have non-white pixels
+    // Sample 5 canvases and validate they have ACTUAL glyph ink (dark pixels forming letters)
     const numToCheck = Math.min(5, canvasCount);
-    let nonBlankCount = 0;
+    const glyphSamples: { darkPixelCount: number; totalPixels: number; avgBrightness: number }[] = [];
 
     for (let i = 0; i < numToCheck; i++) {
       const canvas = canvases.nth(i);
-      const hasInk = await canvas.evaluate((el: HTMLCanvasElement) => {
+      const stats = await canvas.evaluate((el: HTMLCanvasElement) => {
         const ctx = el.getContext('2d');
-        if (!ctx) return false;
+        if (!ctx) return null;
         
         const imageData = ctx.getImageData(0, 0, el.width, el.height);
         const pixels = imageData.data;
         
-        // Check if any pixel is NOT pure white (255, 255, 255)
+        let darkPixels = 0;
+        let totalBrightness = 0;
+        
         for (let j = 0; j < pixels.length; j += 4) {
-          if (pixels[j] < 250 || pixels[j + 1] < 250 || pixels[j + 2] < 250) {
-            return true; // Found a non-white pixel
+          const brightness = (pixels[j] + pixels[j + 1] + pixels[j + 2]) / 3;
+          totalBrightness += brightness;
+          
+          // Count dark pixels (< 100 brightness) as actual ink
+          if (brightness < 100) {
+            darkPixels++;
           }
         }
-        return false;
+        
+        return {
+          darkPixelCount: darkPixels,
+          totalPixels: pixels.length / 4,
+          avgBrightness: totalBrightness / (pixels.length / 4),
+        };
       });
 
-      if (hasInk) {
-        nonBlankCount++;
+      if (stats) {
+        glyphSamples.push(stats);
+        console.log(`[E2E] Canvas ${i}: ${stats.darkPixelCount} dark pixels, avg brightness ${stats.avgBrightness.toFixed(1)}`);
       }
     }
 
-    console.log(`[E2E] ${nonBlankCount}/${numToCheck} sampled canvases have visible ink`);
-    expect(nonBlankCount).toBeGreaterThan(0); // At least one canvas should have ink
-    console.log('[E2E] ✓ Glyph preview contains non-blank content');
+    // At least 3 out of 5 sampled glyphs should have actual ink (>50 dark pixels)
+    const glyphsWithInk = glyphSamples.filter(s => s.darkPixelCount > 50);
+    console.log(`[E2E] ${glyphsWithInk.length}/${numToCheck} sampled glyphs have actual ink`);
+    expect(glyphsWithInk.length).toBeGreaterThanOrEqual(3);
+
+    // Glyphs should NOT all look identical (catches constant-output models like smoke model)
+    const darkPixelCounts = glyphSamples.map(s => s.darkPixelCount);
+    const variance = Math.max(...darkPixelCounts) - Math.min(...darkPixelCounts);
+    console.log(`[E2E] Dark pixel variance: ${variance} (should be > 0 for real glyphs)`);
+    expect(variance).toBeGreaterThan(0); // Different chars → different ink amounts
+    
+    console.log('[E2E] ✓ Glyph preview contains ACTUAL letter ink, not constant output');
 
     console.log('[E2E] Step 6: Download font');
     
@@ -226,7 +247,7 @@ test.describe('Full UI Flow E2E Test', () => {
     console.log('[E2E] Testing model load error handling');
 
     // Override the route to return 404
-    await page.route('**/smoke-model/generator.onnx', async route => {
+    await page.route('**/prod-model/generator.onnx', async route => {
       await route.fulfill({
         status: 404,
         contentType: 'text/plain',
@@ -250,6 +271,8 @@ test.describe('Full UI Flow E2E Test', () => {
   });
 
   test('progress tracking: generation progress updates correctly', async ({ page }) => {
+    test.slow(); // Mark as slow for CI awareness
+    
     console.log('[E2E] Testing generation progress tracking');
 
     // Upload font
@@ -259,7 +282,7 @@ test.describe('Full UI Flow E2E Test', () => {
 
     // Wait for model to load
     const generateButton = page.locator('button:has-text("Generate")');
-    await expect(generateButton).toBeEnabled({ timeout: 30_000 });
+    await expect(generateButton).toBeEnabled({ timeout: 120_000 }); // 2 minutes for 50.6 MB model
 
     // Click generate
     await generateButton.click();
@@ -272,12 +295,10 @@ test.describe('Full UI Flow E2E Test', () => {
       sawProgress = true;
       console.log('[E2E] Progress: generation status visible (in-progress button shown)');
     } catch {
-      // With very fast inference (smoke model), the generating status might transition
-      // to done before Playwright observes it. Fall through and check for completion.
+      // With real model, generation is slower so we should always catch this
     }
 
-    // Also try to catch a specific progress step (best-effort; smoke model may complete too fast
-    // for React to render intermediate states)
+    // Try to catch a specific progress step
     if (!sawProgress) {
       for (let i = 1; i <= 66; i++) {
         const isVisible = await page.locator(`button:has-text("${i}/66")`).isVisible();
@@ -301,6 +322,6 @@ test.describe('Full UI Flow E2E Test', () => {
     console.log('[E2E] ✓ Progress tracking working correctly');
 
     // Wait for completion
-    await expect(downloadButton).toBeEnabled({ timeout: 90_000 });
+    await expect(downloadButton).toBeEnabled({ timeout: 300_000 }); // 5 minutes for 66 glyphs
   });
 });

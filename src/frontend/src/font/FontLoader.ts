@@ -54,6 +54,12 @@ export class FontLoader {
         result[offset + px] = 1 - brightness * 2; // invert: white bg → -1
       }
     }
+    
+    // DEBUG: Verify style extraction produced meaningful data
+    const sampleValues = Array.from(result.slice(0, 20));
+    const minVal = Math.min(...sampleValues);
+    const maxVal = Math.max(...sampleValues);
+    console.debug(`[FontLoader] Extracted style glyphs: ${STYLE_CHARS.join('')}. Sample values (first 20): min=${minVal.toFixed(3)}, max=${maxVal.toFixed(3)}`);
 
     return result;
   }

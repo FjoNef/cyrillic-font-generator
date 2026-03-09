@@ -11,12 +11,18 @@ export default function FontUpload() {
 
   const processFile = useCallback(
     async (file: File) => {
+      console.debug(`[FontUpload] Processing file: ${file.name} (${file.size} bytes)`);
+      
       const buffer = await file.arrayBuffer();
       // Validate by parsing — throws if invalid
       const font = await loader.current.loadFont(buffer);
       
+      console.debug(`[FontUpload] Font parsed successfully. Family: ${font.names.fontFamily?.en || 'unknown'}`);
+      
       // Extract style glyphs for inference
       const styleGlyphs = loader.current.extractStyleGlyphs(font);
+      
+      console.debug(`[FontUpload] Style glyphs extracted: ${styleGlyphs.length} values (expected: 163840 = 10*128*128)`);
       
       setUploadedFont(buffer, file.name);
       setStyleGlyphs(styleGlyphs);

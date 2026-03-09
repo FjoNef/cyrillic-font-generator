@@ -14,7 +14,11 @@ export default defineConfig({
         // module graph, and hard-errors when it finds the file is in /public.
         // Marking these paths as external bypasses bundling and allows the
         // browser to load them directly at runtime.
-        if (/\/ort-wasm\/.*\.m?js/.test(source)) {
+        //
+        // CRITICAL: Must mark BOTH .mjs loaders AND .wasm binaries as external.
+        // Otherwise Vite bundles the .wasm files, gives them hashed names, and
+        // ORT's loader fails to find them at the expected /ort-wasm/ paths.
+        if (/\/ort-wasm\/.*\.(m?js|wasm)/.test(source)) {
           return { id: source, external: true };
         }
       },
