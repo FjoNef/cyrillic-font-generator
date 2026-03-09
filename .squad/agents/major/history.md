@@ -525,3 +525,18 @@ Build successful, ready for browser E2E test to confirm glyph output is non-blan
 
 **Branch:** `squad/57-fix-ort-wasm-vite-error`
 
+
+### 2026-03-09: Team Investigation — Blank Glyph Root Cause (Commit c4b3e00)
+
+**Discovery:** ORT 1.20 auto-probes WebGPU capability at module load time, selecting JSEP variant regardless of `executionProviders` config. JSEP variant has INT8 QLinear incompatibility → blank glyphs.
+
+**Cross-Agent Context:**
+- **Togusa (38):** Completed full frontend pipeline audit → NO UI BUGS, all logic correct ✅
+- **Saito (39):** E2E test hardening → Now uses real production model with strict ink validation ✅
+
+**Fix Applied:** `ort.env.wasm.proxy = false` in inferenceWorker.ts disables JSEP probing, forces standard WASM backend.
+
+**Verification:**
+- ✅ 111 unit tests pass
+- ✅ Python model non-blank (7.4% ink)
+- ✅ E2E production model validates real ink

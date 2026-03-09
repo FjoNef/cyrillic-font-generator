@@ -4199,3 +4199,102 @@ APPROVE and merge to dev. This PR fully resolves issue #48 (blank Cyrillic glyph
 
 ---
 
+
+# Blank Glyph Investigation & ORT JSEP Proxy Fix — RESOLVED
+
+**Date:** 2026-03-09  
+**Status:** FIXED (Commit c4b3e00)  
+**Issue:** #57 — Cyrillic glyphs blank after Vite build despite previous fixes
+
+## Root Cause
+
+ORT 1.20 **automatically probes for WebGPU JSEP support at module load time**, regardless of `executionProviders: ['wasm']` config. When WebGPU is detected, ORT dynamically imports `/ort-wasm/ort-wasm-simd-threaded.jsep.mjs` (JSEP variant). The JSEP variant has **INT8 QLinear incompatibility**, producing all-negative outputs → blank glyphs.
+
+**Key Insight:** Previous Vite plugin fix (commit c7a8ce8) only affected **build-time bundling**. Runtime dynamic `import()` from the browser bypasses plugin system entirely. **ORT JSEP probing happens at module load (runtime), not bundling.**
+
+## Solution
+
+**File:** `src/frontend/src/inference/worker/inferenceWorker.ts`
+
+Add setting before InferenceSession.create():
+`
+ort.env.wasm.proxy = false;  // Disable JSEP probing, force standard WASM backend
+`
+
+## Why This Works
+
+- `proxy: false` disables ORT's proxy/JSEP code path entirely
+- Forces ORT to use standard WASM backend: `ort-wasm-simd-threaded.{mjs,wasm}` (not .jsep.*)
+- Standard variant correctly handles INT8 QLinear operations
+- Produces correct numerical output → non-blank glyphs
+
+## Verification
+
+- ✅ 111 unit tests pass
+- ✅ Python model validation confirms non-blank output (7.4% ink pixels)
+- ✅ E2E WASM loading test confirms no 404s
+- ✅ Production model E2E test validates real ink presence
+
+## Pattern — Mandatory for ORT 1.20 + Vite 5
+
+When running ORT 1.20+ in a Web Worker with WASM-only execution + INT8 models, set `ort.env.wasm.proxy = false` **before any InferenceSession.create()** call.
+
+---
+
+# Frontend Pipeline Audit — Blank Glyph Investigation (2026-03-09)
+
+**Author:** Togusa (Frontend Dev)  
+**Status:** COMPLETE — No UI bugs found  
+**Test Status:** ✅ All 111 tests pass
+
+## Finding: NO BUGS IN UI CODE
+
+After exhaustive audit of 8 files across complete data flow, **zero bugs found** that would cause blank Cyrillic output.
+
+**Verified:**
+- ✅ Index mapping (0-65 model indices) used consistently throughout
+- ✅ Postprocessing formula correct: `((1 - output) / 2) * 255` maps [-1,1] → [0,255]
+- ✅ Vectorization threshold `data > 0` correct for raw [-1,1] space
+- ✅ SAB aliasing guards in place
+- ✅ Font assembly receives all 66 glyphs sequentially
+- ✅ No race conditions (await in loop)
+- ✅ Zustand state immutable
+
+**Added:** Comprehensive debug logging across all components (App.tsx, FontAssembler.ts, GlyphVectorizer.ts, FontUpload.tsx, FontLoader.ts).
+
+## Conclusion
+
+**The blank glyph issue is NOT a frontend bug.** If glyphs remain blank, check:
+1. Backend/Model: Is correct model being served?
+2. ORT WASM Loading: Are WASM files loading?
+3. Execution Provider: Is WASM (not WebGL) backend being used?
+
+---
+
+# E2E Tests Now Use Real Production Model (2026-03-09)
+
+**Author:** Saito (Tester/QA)  
+**Status:** IMPLEMENTED — Commit c0250b2
+
+## Decision: Use Real Model + Strict Validation
+
+E2E tests now use **production model (50.6 MB)** with strict glyph ink validation instead of smoke model.
+
+### Implementation
+
+**Model Change:** Smoke (0.1 MB) → Production (50.6 MB, INT8 quantized)  
+**Timeouts:** Suite 2min → 10min, Load 30s → 2min, Generation 90s → 5min  
+**Validation:** Count dark pixels, require ≥3 of 5 glyphs with >50 dark pixels
+
+### Rationale
+
+- Catches real bugs (user requested real model)
+- Test FAILS if glyphs are blank or constant output
+- Validates actual model behavior, not stub
+- 10min CI timeout acceptable for quality gate
+
+### Trade-off
+
++8min per CI run justified by higher bug detection rate. Quality gate more important than speed.
+
+---

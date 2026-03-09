@@ -1314,3 +1314,30 @@ PR fully addresses Issue #51 with clean, self-contained solution. Assertion remo
 
 **Key Pattern:** E2E tests should validate production behavior, not just "something happened". Smoke models are useful for fast CI checks, but at least one test should use the real model with strict quality validation to catch regressions that affect output quality.
 
+
+### 2026-03-09: E2E Test Hardening — Real Production Model + Strict Validation (Commit c0250b2)
+
+**Decision:** E2E tests now use real production model (50.6 MB, INT8) instead of smoke model (0.1 MB, constant) with strict glyph ink validation.
+
+**Implementation:**
+- Model: Smoke → Production (50.6 MB)
+- Timeouts: Suite 2min → 10min, Load 30s → 2min, Gen 90s → 5min
+- Validation: Count dark pixels, require ≥3 of 5 glyphs with >50 dark pixels
+
+**Model Verification:**
+- ✅ Output range: [-1.000, 1.000]
+- ✅ Dark pixels detected: 1303
+- ✅ Produces real ink: TRUE
+- ⚠️ FP16 quantization attempted but failed (ONNX Runtime DynamicQuantizeLinear incompatibility)
+
+**Rationale:**
+- Catches real bugs (user explicitly requested real model)
+- Smoke model cannot detect blank glyphs
+- 10min CI timeout acceptable for quality gate
+- +8min overhead justified by higher detection rate
+
+**Cross-Agent Context:**
+- **Major (37):** Root cause fix applied (proxy=false) ✅
+- **Togusa (38):** Frontend audit complete (no UI bugs) ✅
+
+**Pattern Established:** E2E tests = production behavior validation + strict quality checks
