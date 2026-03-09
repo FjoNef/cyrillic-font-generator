@@ -1240,3 +1240,77 @@ PR fully addresses Issue #51 with clean, self-contained solution. Assertion remo
 **Orchestration Log:** .squad/orchestration-log/20260308-234906Z-agent-35-saito.md
 
 **Key Pattern:** Dynamic imports of /public assets in Vite-bundled code require both (1) Vite plugin to mark as external AND (2) E2E test to catch regression. Tests should validate that the fix prevents the specific error (Vite interception) rather than just checking that code runs.
+
+
+### 2026-03-08: Real Model E2E Test Implementation — COMPLETED ✅
+
+**Task:** Rewrite full-ui-flow.spec.ts to use the real production model instead of smoke model, with stricter validation that would catch blank glyph bugs.
+
+**Context:** User reported that Cyrillic glyphs are still blank and explicitly requested that E2E tests use the ACTUAL production model, not the smoke model. The smoke model produces constant output and cannot detect blank glyph bugs.
+
+**Investigation:**
+
+**Model Assessment:**
+- Production model: 50.6 MB (models/v1/generator.onnx)
+- Smoke model: 0.1 MB (models/v1/smoke_generator.onnx)
+- Python test confirmed: production model produces real output with actual glyph ink
+  - Output range: [-1.000, 1.000] (expected)
+  - Non-white pixels: 1508
+  - Dark pixels (< 50): 1303
+  - Model produces ink: TRUE ✅
+
+**Attempted FP16 Quantization:**
+- Created FP16 version to reduce size (50.6 MB → 30.7 MB, 39% reduction)
+- Result: FAILED — ONNX Runtime incompatibility with DynamicQuantizeLinear operator
+- Decision: Use full 50.6 MB model with extended timeouts instead
+
+**Implementation (Commit c0250b2):**
+
+**Changes to src/frontend/e2e/full-ui-flow.spec.ts:**
+1. **Model Switch:**
+   - Replaced SMOKE_MODEL_PATH with PROD_MODEL_PATH
+   - Updated route from /smoke-model/ to /prod-model/
+   - Updated manifest mock to use production model stats
+
+2. **Timeout Adjustments:**
+   - Test suite timeout: 120s → 600s (10 minutes)
+   - Model load timeout: 30s → 120s (2 minutes for 50.6 MB)
+   - Generation timeout: 90s → 300s (5 minutes for 66 glyphs)
+   - Added test.slow() annotations for CI awareness
+
+3. **Stricter Validation:**
+   - Old: Check if ANY pixel is not pure white (< 250)
+   - New: 
+     - Count dark pixels (< 100 brightness) per glyph
+     - Require at least 3 out of 5 sampled glyphs to have >50 dark pixels
+     - Check variance in dark pixel counts (catches constant-output models)
+     - Log detailed stats (dark pixels, avg brightness per glyph)
+
+4. **Documentation:**
+   - Updated comments to reflect real model usage
+   - Added note: "This test would catch the blank glyph bug if it exists"
+   - Removed references to smoke model being adequate
+
+**Test Coverage:**
+- ✅ Full UI flow with REAL model
+- ✅ Validates actual glyph ink (not just non-blank canvas)
+- ✅ Detects constant-output models (variance check)
+- ✅ Error handling (model 404) still works
+- ✅ Progress tracking still works
+
+**CI Configuration:**
+- Existing CI workflow: uses Chromium only (Firefox/WebKit skipped)
+- Timeout: Playwright default webServer timeout = 120s is sufficient for model load
+- Test timeout: 600s (10 minutes) set in test suite
+- Model availability: models/v1/generator.onnx committed to repo ✅
+
+**Quality Gate:**
+- Test will CATCH blank glyph bug if it exists (validates dark pixel presence)
+- Test will REJECT constant-output models (validates variance)
+- Test is slower but more accurate (production-quality validation)
+
+**PR Updated:** squad/57-fix-ort-wasm-vite-error
+**Commit:** c0250b2 — test(e2e): use real model in E2E tests, validate actual glyph ink
+
+**Key Pattern:** E2E tests should validate production behavior, not just "something happened". Smoke models are useful for fast CI checks, but at least one test should use the real model with strict quality validation to catch regressions that affect output quality.
+

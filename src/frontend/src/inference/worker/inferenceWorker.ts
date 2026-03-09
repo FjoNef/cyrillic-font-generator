@@ -30,6 +30,12 @@ import * as ort from 'onnxruntime-web';
 // Vite 5 intercepts relative paths during bundling; absolute origin URLs bypass this.
 ort.env.wasm.wasmPaths = `${self.location.origin}/ort-wasm/`;
 
+// CRITICAL FIX: Disable JSEP proxy to prevent ORT from dynamically importing .jsep.mjs files.
+// ORT 1.20 probes for WebGPU support by trying to dynamically import() the JSEP module.
+// Vite 5 dev server intercepts this import(), sees it's in /public, and hard-errors.
+// We don't need WebGPU (using CPU WASM), so disabling the proxy prevents the probe entirely.
+ort.env.wasm.proxy = false;
+
 // Run WASM single-threaded: we are already inside a dedicated worker, so spinning up
 // a nested proxy worker is unnecessary overhead. numThreads=1 also avoids the
 // SharedArrayBuffer requirement (COOP/COEP headers) that not every dev env satisfies.

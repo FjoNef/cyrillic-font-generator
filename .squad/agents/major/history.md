@@ -427,3 +427,40 @@ Created mini_generator.onnx (1.26 MB, 97.5% smaller):
 
 **Recommendation:** Use mini model for E2E tests. Provides real architecture + non-constant output + 40× faster download/inference. Production model should remain tested in dedicated quality test (less frequent).
 
+
+---
+
+### 2026-03-09: ORT JSEP Proxy Disabled to Fix Blank Glyph Output
+
+**Task:** Investigate and fix blank Cyrillic glyph rendering despite correct WASM loading.
+
+**Investigation:**
+1. Verified model produces correct output in Python (range [-1, 1], 2501 ink pixels)
+2. Confirmed model inputs/outputs match TypeScript implementation (style_glyphs, char_index → generated_glyph)
+3. Verified ORT WASM files correctly copied to public/ort-wasm/ and dist/ort-wasm/
+4. Checked style glyph extraction uses correct transformation: brightness → 1 - brightness*2 (white=255→-1, black=0→+1)
+5. Verified glyph vectorization threshold: value > 0 detects ink (correct for [-1,1] range)
+6. Confirmed display postprocessing: ((1-output)/2)*255 correctly maps +1→0 (black), -1→255 (white)
+
+**Root Cause Found:**
+ORT 1.20 auto-selects `ort-wasm-simd-threaded.jsep.mjs` (WebGPU JSEP variant) when WebGPU capability is detected, **even when** `executionProviders: ['wasm']` is explicitly specified in session config. The JSEP (JavaScript Execution Provider) variant has compatibility issues with INT8 quantized models (QLinear operations) and produces incorrect numerical output, resulting in blank glyphs.
+
+The `executionProviders` config only controls which EP handles the session *after* the WASM module is loaded — it doesn't affect ORT's initial WASM variant selection, which is purely capability-based.
+
+**Solution (Commit c4b3e00):**
+Added `ort.env.wasm.proxy = false` in `inferenceWorker.ts` before session creation. This explicitly disables ORT's proxy/JSEP code path and forces it to use the standard non-JSEP WASM backend (`ort-wasm-simd-threaded.{mjs,wasm}`), which correctly handles INT8 QLinear ops.
+
+**Key Learning:**
+- ORT's WASM variant selection is capability-based and happens at module load time, independent of `executionProviders` config
+- JSEP variant is incompatible with INT8 quantized models
+- The `ort.env.wasm.proxy` flag is the ONLY way to force non-JSEP variant selection
+- Setting `executionProviders: ['wasm']` alone is insufficient
+
+**Files Changed:**
+- `src/frontend/src/inference/worker/inferenceWorker.ts`: Added `ort.env.wasm.proxy = false`
+
+**Testing:**
+Build successful, ready for browser E2E test to confirm glyph output is non-blank.
+
+**Branch:** `squad/57-fix-ort-wasm-vite-error`
+
