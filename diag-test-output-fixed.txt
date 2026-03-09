@@ -1,0 +1,261 @@
+
+Running 12 tests using 6 workers
+
+[Browser DEBUG]: [vite] connecting...
+[Browser DEBUG]: [vite] connected.
+[Browser DEBUG]: [vite] connecting...
+[Browser DEBUG]: [vite] connected.
+[Browser DEBUG]: [vite] connecting...
+[Browser DEBUG]: [vite] connected.
+[Worker-Diag] === Starting generator.onnx worker pipeline diagnostic ===
+[Worker-Diag] === Starting generator.onnx worker pipeline diagnostic ===
+[Worker-Diag] Model: C:\Users\fjodo\RiderProjects\cyrillic-font-generator\models\v1\generator.onnx
+[Worker-Diag] Model: C:\Users\fjodo\RiderProjects\cyrillic-font-generator\models\v1\generator.onnx
+[Worker-Diag] Model size: 50.6 MB
+[Worker-Diag] Model size: 50.6 MB
+[Worker-Diag] === Starting generator.onnx worker pipeline diagnostic ===
+[Worker-Diag] Model: C:\Users\fjodo\RiderProjects\cyrillic-font-generator\models\v1\generator.onnx
+[Worker-Diag] Model size: 50.6 MB
+[Browser DEBUG]: [FontUpload] Processing file: ANTQUAB.TTF (151000 bytes)
+[Browser DEBUG]: [FontUpload] Processing file: ANTQUAB.TTF (151000 bytes)
+[Browser DEBUG]: [FontUpload] Processing file: ANTQUAB.TTF (151000 bytes)
+[Browser DEBUG]: [FontUpload] Font parsed successfully. Family: Book Antiqua
+[Browser DEBUG]: [FontUpload] Font parsed successfully. Family: Book Antiqua
+[Browser DEBUG]: [FontUpload] Font parsed successfully. Family: Book Antiqua
+[Browser DEBUG]: [FontLoader] Extracted style glyphs: ABCDEHIORX. Sample values (first 20): min=-1.000, max=-1.000
+[Browser DEBUG]: [FontUpload] Style glyphs extracted: 163840 values (expected: 163840 = 10*128*128)
+[Browser DEBUG]: [FontLoader] Extracted style glyphs: ABCDEHIORX. Sample values (first 20): min=-1.000, max=-1.000
+[Browser DEBUG]: [FontUpload] Style glyphs extracted: 163840 values (expected: 163840 = 10*128*128)
+[Browser DEBUG]: [FontLoader] Extracted style glyphs: ABCDEHIORX. Sample values (first 20): min=-1.000, max=-1.000
+[Browser DEBUG]: [FontUpload] Style glyphs extracted: 163840 values (expected: 163840 = 10*128*128)
+[Browser DEBUG]: [vite] connecting...
+[Browser DEBUG]: [vite] connecting...
+[Browser DEBUG]: [vite] connected.
+[Worker-Diag] Font uploaded: ANTQUAB.TTF
+[Worker-Diag] Font uploaded: ANTQUAB.TTF
+[Worker-Diag] Font uploaded: ANTQUAB.TTF
+[Browser DEBUG]: [vite] connecting...
+[Browser DEBUG]: [vite] connected.
+[Browser DEBUG]: [vite] connected.
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: Model load failed: Error: Worker error: Uncaught [object Event]
+    at worker.onerror (http://localhost:5173/src/inference/ModelLoader.ts:47:16)
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: Model load failed: Error: Worker error: Uncaught [object Event]
+    at worker.onerror (http://localhost:5173/src/inference/ModelLoader.ts:47:16)
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: Model load failed: Error: Worker error: Uncaught [object Event]
+    at worker.onerror (http://localhost:5173/src/inference/ModelLoader.ts:47:16)
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: Model load failed: Error: Worker error: Uncaught [object Event]
+    at worker.onerror (http://localhost:5173/src/inference/ModelLoader.ts:47:16)
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: Model load failed: Error: Worker error: Uncaught [object Event]
+    at worker.onerror (http://localhost:5173/src/inference/ModelLoader.ts:47:16)
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: Model load failed: Error: Worker error: Uncaught [object Event]
+    at worker.onerror (http://localhost:5173/src/inference/ModelLoader.ts:47:16)
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Direct-ORT] ===== generator.onnx diagnostic report =====
+[Direct-ORT] inputNames: style_glyphs, char_index
+[Direct-ORT] output shape: 1├Ч1├Ч128├Ч128, dtype: float32
+[Direct-ORT] output range: [-1.0000, 1.0000]
+[Direct-ORT] output mean=-0.9464, std=0.3015, range=2.0000
+[Direct-ORT] ink pixels (>0): 436/16384 (2.7%)
+[Direct-ORT] first 8 raw values: -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000
+[Direct-ORT] ===== generator.onnx diagnostic report =====
+[Direct-ORT] inputNames: style_glyphs, char_index
+[Direct-ORT] output shape: 1├Ч1├Ч128├Ч128, dtype: float32
+[Direct-ORT] output range: [-1.0000, 1.0000]
+[Direct-ORT] output mean=-0.9464, std=0.3015, range=2.0000
+[Direct-ORT] ink pixels (>0): 436/16384 (2.7%)
+[Direct-ORT] first 8 raw values: -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000
+[Direct-ORT] ===== generator.onnx diagnostic report =====
+[Direct-ORT] inputNames: style_glyphs, char_index
+[Direct-ORT] output shape: 1├Ч1├Ч128├Ч128, dtype: float32
+[Direct-ORT] output range: [-1.0000, 1.0000]
+[Direct-ORT] output mean=-0.9464, std=0.3015, range=2.0000
+[Direct-ORT] ink pixels (>0): 436/16384 (2.7%)
+[Direct-ORT] first 8 raw values: -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000
+  тЬУ   6 [webkit] тА║ e2e\generator-onnx-diagnostic.spec.ts:167:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: output is non-blank (max > -0.5) (5.1s)
+  тЬУ   3 [firefox] тА║ e2e\generator-onnx-diagnostic.spec.ts:167:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: output is non-blank (max > -0.5) (5.1s)
+  тЬУ   4 [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:167:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: output is non-blank (max > -0.5) (5.1s)
+  тЬУ   7 [webkit] тА║ e2e\generator-onnx-diagnostic.spec.ts:260:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: deterministic across two runs (3.6s)
+  тЬУ   8 [firefox] тА║ e2e\generator-onnx-diagnostic.spec.ts:260:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: deterministic across two runs (3.6s)
+  тЬУ   9 [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:260:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: deterministic across two runs (3.9s)
+[Browser LOG]: [vite] server connection lost. Polling for restart...
+[Browser LOG]: [vite] server connection lost. Polling for restart...
+[Browser LOG]: [vite] server connection lost. Polling for restart...
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+[Browser ERROR]: Failed to load resource: net::ERR_CONNECTION_REFUSED
+  тЬШ   5 [firefox] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels (5.0m)
+  тЬШ   2 [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels (5.0m)
+  -  10 [firefox] тА║ e2e\generator-onnx-diagnostic.spec.ts:524:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+  -  11 [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:524:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+  тЬШ   1 [webkit] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels (5.0m)
+  -  12 [webkit] тА║ e2e\generator-onnx-diagnostic.spec.ts:524:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+
+
+  1) [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeEnabled[2m([22m[2m)[22m failed
+
+    Locator:  locator('button:has-text("Generate")')
+    Expected: enabled
+    Received: disabled
+    Timeout:  300000ms
+
+    Call log:
+    [2m  - Expect "toBeEnabled" with timeout 300000ms[22m
+    [2m  - waiting for locator('button:has-text("Generate")')[22m
+    [2m    299 ├Ч locator resolved to <button disabled class="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium
+    тЖ╡                       hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed
+    тЖ╡                       transition-colors">Generate</button>[22m
+    [2m        - unexpected value "disabled"[22m
+
+
+      414 |     // Wait for the model to finish loading тАФ 53 MB over Playwright route interception
+      415 |     const generateButton = page.locator('button:has-text("Generate")');
+    > 416 |     await expect(generateButton).toBeEnabled({ timeout: 300_000 }); // 5 min
+          |                                  ^
+      417 |     console.log('[Worker-Diag] тЬУ Production model loaded (53 MB generator.onnx)');
+      418 |
+      419 |     // Start generation
+        at C:\Users\fjodo\RiderProjects\cyrillic-font-generator\src\frontend\e2e\generator-onnx-diagnostic.spec.ts:416:34
+
+    Error Context: test-results\generator-onnx-diagnostic--17034-tain-non-blank-glyph-pixels-chromium\error-context.md
+
+  2) [firefox] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeEnabled[2m([22m[2m)[22m failed
+
+    Locator:  locator('button:has-text("Generate")')
+    Expected: enabled
+    Received: disabled
+    Timeout:  300000ms
+
+    Call log:
+    [2m  - Expect "toBeEnabled" with timeout 300000ms[22m
+    [2m  - waiting for locator('button:has-text("Generate")')[22m
+    [2m    299 ├Ч locator resolved to <button disabled class="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium
+    тЖ╡                       hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed
+    тЖ╡                       transition-colors">Generate</button>[22m
+    [2m        - unexpected value "disabled"[22m
+
+
+      414 |     // Wait for the model to finish loading тАФ 53 MB over Playwright route interception
+      415 |     const generateButton = page.locator('button:has-text("Generate")');
+    > 416 |     await expect(generateButton).toBeEnabled({ timeout: 300_000 }); // 5 min
+          |                                  ^
+      417 |     console.log('[Worker-Diag] тЬУ Production model loaded (53 MB generator.onnx)');
+      418 |
+      419 |     // Start generation
+        at C:\Users\fjodo\RiderProjects\cyrillic-font-generator\src\frontend\e2e\generator-onnx-diagnostic.spec.ts:416:34
+
+    Error Context: test-results\generator-onnx-diagnostic--17034-tain-non-blank-glyph-pixels-firefox\error-context.md
+
+  3) [webkit] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeEnabled[2m([22m[2m)[22m failed
+
+    Locator:  locator('button:has-text("Generate")')
+    Expected: enabled
+    Received: disabled
+    Timeout:  300000ms
+
+    Call log:
+    [2m  - Expect "toBeEnabled" with timeout 300000ms[22m
+    [2m  - waiting for locator('button:has-text("Generate")')[22m
+    [2m    299 ├Ч locator resolved to <button disabled class="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium
+    тЖ╡                       hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed
+    тЖ╡                       transition-colors">Generate</button>[22m
+    [2m        - unexpected value "disabled"[22m
+
+
+      414 |     // Wait for the model to finish loading тАФ 53 MB over Playwright route interception
+      415 |     const generateButton = page.locator('button:has-text("Generate")');
+    > 416 |     await expect(generateButton).toBeEnabled({ timeout: 300_000 }); // 5 min
+          |                                  ^
+      417 |     console.log('[Worker-Diag] тЬУ Production model loaded (53 MB generator.onnx)');
+      418 |
+      419 |     // Start generation
+        at C:\Users\fjodo\RiderProjects\cyrillic-font-generator\src\frontend\e2e\generator-onnx-diagnostic.spec.ts:416:34
+
+    Error Context: test-results\generator-onnx-diagnostic--17034-tain-non-blank-glyph-pixels-webkit\error-context.md
+
+  3 failed
+    [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels 
+    [firefox] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels 
+    [webkit] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels 
+  3 did not run
+  6 passed (5.1m)

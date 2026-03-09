@@ -719,3 +719,79 @@ When Vite bundles a worker with `type: 'module'`, any attempt by the worker scri
 Single-threaded WASM is slower (~80-600ms/glyph vs ~15-30ms for WebGL or multi-threaded WASM), but acceptable for background processing in a dedicated worker. Future optimization: investigate Vite's `worker.rollupOptions` or serve worker as non-module to allow nested workers.
 
 ---
+
+## 2025-03-09: E2E Verification Attempt — Font Rendering Issue Discovered
+
+**Task:** Run E2E diagnostic test to verify Path2D fix resolved blank Cyrillic glyph issue.
+
+**Status:** ❌ **BLOCKED** — Discovered deeper font rendering bug preventing verification.
+
+### Investigation:
+
+1. **Path2D Fix Verified in Code:**
+   - Changed from `new Path2D(path.toSVG(2))` to extracting `d` attribute from SVG
+   - Also tried `path.toPathData()` directly
+   - Also tried manual canvas path rendering (beginPath/moveTo/lineTo/bezierCurveTo/fill)
+   - **ALL approaches produce blank output (min=-1.0, max=-1.0)**
+
+2. **Canvas Rendering Works:**
+   - Test: Drew simple `fillRect(0, 0, 10, 10)` → produced `max=1.0` ✅
+   - Canvas API is functional
+
+3. **Font Data is Valid:**
+   - Glyphs have 54 commands (verified)
+   - pathData: `M10.86 94.10L10.86...` (valid SVG path syntax)
+   - Font metrics: fontSize=92.9, baseline=93.8
+
+4. **Root Cause Unknown:**
+   - Manual canvas commands (`ctx.beginPath()` + `ctx.moveTo()` + `ctx.fill()`) produce NO ink
+   - Possible causes:
+     - Glyph coordinates outside visible canvas ([0,0] to [128,128])
+     - Font metric calculations incorrect (ascender/descender/baseline)
+     - Browser/Playwright-specific canvas rendering issue
+     - Glyph paths have winding order issue (clockwise vs counterclockwise)
+
+5. **E2E Test Log Capture Issue:**
+   - Logs inside the glyph rendering loop (i===0) are NOT appearing in E2E test output
+   - Makes debugging extremely difficult
+   - Unit tests DO show these logs, suggesting E2E test environment issue
+
+### Tried Approaches:
+
+| Approach | Result |
+|----------|---------|
+| `new Path2D(path.toPathData())` | Blank (all -1.0) |
+| `new Path2D(extracted d attribute)` | Blank (all -1.0) |
+| `path.draw(ctx)` | Blank (all -1.0) |
+| Manual canvas commands | Blank (all -1.0) |
+| Test rectangle `fillRect(0,0,10,10)` | ✅ Works (max=1.0) |
+
+### Current Code State:
+
+`FontLoader.ts` now uses manual canvas path rendering but still produces blank output.
+
+### Next Steps (REQUIRES INVESTIGATION):
+
+1. **Fix unit test mocks** to include proper canvas 2D context (currently missing `beginPath()`)
+2. **Run unit tests** to verify font rendering works in that environment
+3. **Check glyph bounding box** to confirm coordinates are within canvas [0,128]x[0,128]
+4. **Investigate original v1.0.0 code** — Did it ever work? Same approach was used.
+5. **Consider delegating to Major (ML specialist)** if font metric calculations are wrong
+
+### Learnings:
+
+- **Path2D silently fails** when given invalid input (full SVG element vs path data)
+- **Manual canvas path rendering** should ALWAYS work if coordinates are valid
+- **Glyph rendering failing with valid canvas** suggests coordinate/metric calculation bug
+- **E2E test log capture is unreliable** for debugging tight loops
+
+### Artifact:
+
+- Branch: `squad/57-fix-ort-wasm-vite-error`
+- Modified: `src/frontend/src/font/FontLoader.ts` (multiple rendering approaches tried)
+- Test output: All show `min=-1.000, max=-1.000` for style glyphs
+
+**Verdict:** Cannot verify Path2D fix until underlying font rendering issue is resolved. The fix itself is correct (Path2D needs path data, not full SVG element), but exposes a deeper bug in glyph coordinate calculations or canvas rendering.
+
+---
+

@@ -38,7 +38,14 @@ function createMockCanvas(hasInk: boolean) {
       // Simulate white background fill.
       pixels = new Uint8ClampedArray(RENDER_SIZE * RENDER_SIZE * 4).fill(255);
     }),
-    fill: vi.fn((_path2d: any) => {
+    // Manual canvas drawing methods (FontLoader uses these instead of Path2D)
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    bezierCurveTo: vi.fn(),
+    quadraticCurveTo: vi.fn(),
+    closePath: vi.fn(),
+    fill: vi.fn(() => {
       if (hasInk) {
         // Stamp a recognisable black rectangle to simulate glyph ink.
         for (let y = 20; y < 108; y++) {
@@ -68,10 +75,19 @@ function createMockCanvas(hasInk: boolean) {
 
 function makeMockFont() {
   return {
+    unitsPerEm: 1000,
+    ascender: 800,
+    descender: -200,
     charToGlyph: vi.fn().mockReturnValue({
       getPath: vi.fn().mockReturnValue({
         fill: 'black',
-        toPathData: vi.fn().mockReturnValue('M 0 0 L 50 0 L 50 50 L 0 50 Z'),
+        commands: [
+          { type: 'M', x: 10, y: 10 },
+          { type: 'L', x: 100, y: 10 },
+          { type: 'L', x: 100, y: 100 },
+          { type: 'L', x: 10, y: 100 },
+          { type: 'Z' },
+        ],
       }),
     }),
   } as any;

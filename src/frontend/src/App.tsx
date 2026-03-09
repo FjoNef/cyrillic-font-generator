@@ -87,12 +87,11 @@ export default function App() {
         const output = await modelLoader.infer(styleGlyphs, index);
 
         // DEBUG: Log output statistics for first 3 glyphs
+        // Scan full output — glyph ink starts at row ~30 (pixel 3840), NOT at row 0
         if (i < 3) {
-          const sample = Array.from(output.slice(0, 100));
-          const min = Math.min(...sample);
-          const max = Math.max(...sample);
-          const avg = sample.reduce((a, b) => a + b, 0) / sample.length;
-          console.debug(`[App] Glyph ${i} (char '${char}', index ${index}) — output stats (first 100px): min=${min.toFixed(4)}, max=${max.toFixed(4)}, avg=${avg.toFixed(4)}`);
+          const fullMax = Math.max(...Array.from(output));
+          const inkCount = Array.from(output).filter(v => v > 0).length;
+          console.debug(`[App] Glyph ${i} (char '${char}', index ${index}) — output: max=${fullMax.toFixed(4)}, ink pixels (>0): ${inkCount}/${output.length}`);
         }
 
         // Store raw output for font assembly

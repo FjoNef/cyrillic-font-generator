@@ -178,9 +178,13 @@ async function runInference(
 
   // DEBUG: verify inputs vary between font loads and that char_index is correct
   console.debug('[inferenceWorker] char_index:', charIndex);
-  console.debug('[inferenceWorker] style_glyphs first 5 values:', Array.from(safeStyleGlyphs.slice(0, 5)));
+  // Sample glyph center (y≈80 = inside ink area for capital letters at baseline=120)
+  // "first 5 values" are top-left background — not representative of ink presence
+  const centerOffset = 80 * 128; // row 80 of first glyph
+  const firstGlyphMax = Math.max(...Array.from(safeStyleGlyphs.slice(0, 128 * 128)));
+  console.debug('[inferenceWorker] style_glyphs first glyph MAX (full scan):', firstGlyphMax.toFixed(4));
+  console.debug('[inferenceWorker] style_glyphs center row (y=80) sample:', Array.from(safeStyleGlyphs.slice(centerOffset, centerOffset + 5)));
   console.debug('[inferenceWorker] style_glyphs tensor shape:', styleTensor.dims);
-  console.debug('[inferenceWorker] char_index tensor shape:', indexTensor.dims, 'dtype:', indexTensor.type);
 
   const feeds: Record<string, ort.Tensor> = {
     style_glyphs: styleTensor,
@@ -197,20 +201,20 @@ async function runInference(
   console.debug('[inferenceWorker] outputTensor.name/key resolved:', Object.keys(results)[0]);
   console.debug('[inferenceWorker] outputTensor first 5 raw values:', Array.from(outputData.slice(0, 5)));
 
-  // Blank-output detection: if all sampled pixels are at or near -1.0 (background),
-  // the model ran but produced no ink. Common causes: wrong WASM backend (WebGL + INT8
-  // silently returns all-background), or stale pre-fix model weights.
-  const sampleSize = Math.min(outputData.length, 512);
+  // Blank-output detection: scan the FULL output (16384 pixels for 128×128).
+  // Glyph ink typically starts around row 30-40 (pixel 3840+) — sampling only the
+  // first 512 px would miss all ink and falsely diagnose blank output.
   let maxVal = -Infinity;
-  for (let i = 0; i < sampleSize; i++) maxVal = Math.max(maxVal, outputData[i]);
+  for (let i = 0; i < outputData.length; i++) maxVal = Math.max(maxVal, outputData[i]);
+  const inkCount = Array.from(outputData).filter(v => v > 0.0).length;
   if (maxVal <= 0.0) {
     console.warn(
       `[inferenceWorker] ⚠️ Blank output for char_index=${charIndex}: ` +
-      `max(first ${sampleSize} px) = ${maxVal.toFixed(4)}. ` +
+      `max(full ${outputData.length} px) = ${maxVal.toFixed(4)}. ` +
       'Possible cause: wrong WASM files, WebGL+INT8 fallback, or pre-fix model.',
     );
   }
-  console.debug('[inferenceWorker] output max (first 512 px):', maxVal.toFixed(4));
+  console.debug(`[inferenceWorker] output max (full scan): ${maxVal.toFixed(4)}, ink pixels (>0): ${inkCount}/${outputData.length}`);
 
   // ⚠️ Critical: copy output before returning.
   //

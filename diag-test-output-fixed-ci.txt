@@ -1,0 +1,98 @@
+[WebServer] The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+[WebServer] (node:27928) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/fjodo/RiderProjects/cyrillic-font-generator/src/frontend/postcss.config.js is not specified and it doesn't parse as CommonJS.
+[WebServer] Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+[WebServer] To eliminate this warning, add "type": "module" to C:\Users\fjodo\RiderProjects\cyrillic-font-generator\src\frontend\package.json.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+[Direct-ORT] ===== generator.onnx diagnostic report =====
+[Direct-ORT] inputNames: style_glyphs, char_index
+[Direct-ORT] output shape: 1├Ч1├Ч128├Ч128, dtype: float32
+[Direct-ORT] output range: [-1.0000, 1.0000]
+[Direct-ORT] output mean=-0.9464, std=0.3015, range=2.0000
+[Direct-ORT] ink pixels (>0): 436/16384 (2.7%)
+[Direct-ORT] first 8 raw values: -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000
+  тЬУ  1 [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:167:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: output is non-blank (max > -0.5) (3.4s)
+  тЬУ  2 [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:260:7 тА║ Diagnostic тАФ Direct ORT injection (control, bypasses worker) тА║ generator.onnx direct injection: deterministic across two runs (2.5s)
+[Browser DEBUG]: [vite] connecting...
+[Browser DEBUG]: [vite] connected.
+[Browser DEBUG]: [vite] connecting...
+[Browser DEBUG]: [vite] connected.
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: worker sent an error! undefined:undefined: undefined
+[Browser ERROR]: Model load failed: Error: Worker error: Uncaught [object Event]
+    at worker.onerror (http://localhost:5173/src/inference/ModelLoader.ts:47:16)
+[Browser ERROR]: Model load failed: Error: Worker error: Uncaught [object Event]
+    at worker.onerror (http://localhost:5173/src/inference/ModelLoader.ts:47:16)
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Browser PAGE ERROR]: Event
+[Worker-Diag] === Starting generator.onnx worker pipeline diagnostic ===
+[Worker-Diag] Model: C:\Users\fjodo\RiderProjects\cyrillic-font-generator\models\v1\generator.onnx
+[Worker-Diag] Model size: 50.6 MB
+[Browser DEBUG]: [FontUpload] Processing file: ANTQUAB.TTF (151000 bytes)
+[Browser DEBUG]: [FontUpload] Font parsed successfully. Family: Book Antiqua
+[Browser DEBUG]: [FontLoader] Extracted style glyphs: ABCDEHIORX. Sample values (first 20): min=-1.000, max=-1.000
+[Browser DEBUG]: [FontUpload] Style glyphs extracted: 163840 values (expected: 163840 = 10*128*128)
+[Worker-Diag] Font uploaded: ANTQUAB.TTF
+  тЬШ  3 [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels (5.0m)
+  -  4 [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:524:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels
+  тЬШ  5 [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels (retry #1) (0ms)
+  тЬШ  6 [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:524:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels (retry #1) (0ms)
+
+
+  1) [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeEnabled[2m([22m[2m)[22m failed
+
+    Locator:  locator('button:has-text("Generate")')
+    Expected: enabled
+    Received: disabled
+    Timeout:  300000ms
+
+    Call log:
+    [2m  - Expect "toBeEnabled" with timeout 300000ms[22m
+    [2m  - waiting for locator('button:has-text("Generate")')[22m
+    [2m    301 ├Ч locator resolved to <button disabled class="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium
+    тЖ╡                       hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed
+    тЖ╡                       transition-colors">Generate</button>[22m
+    [2m        - unexpected value "disabled"[22m
+
+
+      414 |     // ASSERTION 1: We must have received at least 1 inference output log
+      415 |     expect(
+    > 416 |       workerOutputMaxMessages.length,
+          |                                  ^
+      417 |       [
+      418 |         `No inference output logs received from inferenceWorker.ts.`,
+      419 |         `Expected at least 1 "[inferenceWorker] output max (first 512 px): X.XXXX" message.`,
+        at C:\Users\fjodo\RiderProjects\cyrillic-font-generator\src\frontend\e2e\generator-onnx-diagnostic.spec.ts:416:34
+
+    Error Context: test-results\generator-onnx-diagnostic--17034-tain-non-blank-glyph-pixels-chromium\error-context.md
+
+    Retry #1 тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
+
+    Test not found in the worker process. Make sure test title does not change.
+
+  2) [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:524:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels 
+
+    Retry #1 тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
+
+    Test not found in the worker process. Make sure test title does not change.
+
+  2 failed
+    [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:403:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: output should contain non-blank glyph pixels 
+    [chromium] тА║ e2e\generator-onnx-diagnostic.spec.ts:524:7 тА║ Diagnostic тАФ Full worker pipeline (generator.onnx via inferenceWorker.ts) тА║ generator.onnx via worker: different char_index produces different ink levels 
+  2 passed (5.2m)
