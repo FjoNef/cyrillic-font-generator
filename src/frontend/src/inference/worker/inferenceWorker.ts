@@ -1,4 +1,27 @@
-// ⚠️ CRITICAL: Import from 'onnxruntime-web/wasm', NOT 'onnxruntime-web'.
+// Capture top-level errors during worker initialization
+self.addEventListener('error', (event) => {
+  console.error('[inferenceWorker] Top-level error during initialization:', {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    error: event.error,
+  });
+  self.postMessage({
+    type: 'error',
+    message: `Worker initialization failed: ${event.message ?? event.error ?? 'unknown'}`,
+  });
+});
+
+self.addEventListener('unhandledrejection', (event) => {
+  console.error('[inferenceWorker] Unhandled promise rejection:', event.reason);
+  self.postMessage({
+    type: 'error',
+    message: `Unhandled rejection: ${event.reason}`,
+  });
+});
+
+// ⚠️ CRITICAL: Import env first, configure it, THEN import the rest of ORT.
 //
 // ORT 1.24.x default bundle (ort.bundle.min.mjs) hardcodes loading
 // 'ort-wasm-simd-threaded.jsep.mjs' (the JSEP/WebGPU variant) regardless of
@@ -12,6 +35,26 @@
 //
 // The FP32 mini model works with either bundle because it has no QLinear ops.
 // The INT8 production model REQUIRES the non-JSEP variant to produce non-blank output.
+import { env } from 'onnxruntime-web/wasm';
+
+// ⚠️ Must be set BEFORE any InferenceSession is created or WASM modules are loaded.
+// ORT 1.24.x (ort.wasm.bundle.min.mjs) dynamically imports ort-wasm-simd-threaded.mjs
+// at runtime using the wasmPaths prefix. Without this, ORT infers the path from its own
+// bundled script URL (blob: inside a Vite worker), which is wrong and causes silent failure.
+//
+// Use absolute URL to prevent Vite 5 from intercepting as a static-analysis import.
+env.wasm.wasmPaths = `${self.location.origin}/ort-wasm/`;
+
+// ⚠️ TEMPORARILY disable threading (numThreads = 1) to avoid nested worker issues in Vite.
+// The ort-wasm-simd-threaded.mjs module tries to spawn sub-workers for threading, which
+// fails when Vite bundles the worker. Single-threaded mode uses ort-wasm-simd.mjs instead.
+env.wasm.numThreads = 1;
+
+// Disable proxy worker: we are already in a dedicated worker and don't need a nested proxy.
+// In ORT 1.24.x, proxy = true would create a second nested worker — wasteful and unnecessary.
+env.wasm.proxy = false;
+
+// Now import the rest after configuration
 import * as ort from 'onnxruntime-web/wasm';
 
 /**
@@ -38,22 +81,6 @@ import * as ort from 'onnxruntime-web/wasm';
  *   { type: 'result', output: Float32Array, requestId: string }
  *   { type: 'error', message: string, requestId?: string }
  */
-
-// ⚠️ Must be set BEFORE any InferenceSession is created.
-// ORT 1.24.x (ort.wasm.bundle.min.mjs) dynamically imports ort-wasm-simd-threaded.mjs
-// at runtime using the wasmPaths prefix. Without this, ORT infers the path from its own
-// bundled script URL (blob: inside a Vite worker), which is wrong and causes silent failure.
-//
-// Use absolute URL to prevent Vite 5 from intercepting as a static-analysis import.
-ort.env.wasm.wasmPaths = `${self.location.origin}/ort-wasm/`;
-
-// Use hardware concurrency for multi-threaded inference (COOP/COEP headers enable SharedArrayBuffer).
-// Fall back to 4 if hardwareConcurrency is unavailable in worker context.
-ort.env.wasm.numThreads = (self as any).navigator?.hardwareConcurrency ?? 4;
-
-// Disable proxy worker: we are already in a dedicated worker and don't need a nested proxy.
-// In ORT 1.24.x, proxy = true would create a second nested worker — wasteful and unnecessary.
-ort.env.wasm.proxy = false;
 
 let session: ort.InferenceSession | null = null;
 

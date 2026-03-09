@@ -31,10 +31,17 @@ export default defineConfig({
     // 'onnxruntime-web/wasm' is the sub-path used by inferenceWorker and OnnxInference.
     exclude: ['onnxruntime-web', 'onnxruntime-web/wasm'],
   },
+  worker: {
+    format: 'es',
+    rollupOptions: {
+      external: [/\/ort-wasm\/.*\.(m?js|wasm)/],
+    },
+  },
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Resource-Policy': 'same-origin',
     },
     proxy: {
       '/api': {
@@ -47,6 +54,7 @@ export default defineConfig({
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Resource-Policy': 'same-origin',
     },
   },
 });
