@@ -34,20 +34,20 @@ from train.model import _conv_block, _deconv_block
 # ---------------------------------------------------------------------------
 
 class MiniStyleEncoder(nn.Module):
-    """Miniaturized StyleEncoder: nf=8 instead of 64."""
+    """Miniaturized StyleEncoder: ultra-small version."""
 
-    def __init__(self, in_channels: int = 1, style_dim: int = 64) -> None:
+    def __init__(self, in_channels: int = 1, style_dim: int = 32) -> None:
         super().__init__()
         # Shared CNN backbone
         self.encoder = nn.Sequential(
-            _conv_block(in_channels, 16,  norm=False),   # [B, 16,  64, 64]
-            _conv_block(16,  32),                         # [B, 32,  32, 32]
-            _conv_block(32,  64),                         # [B, 64,  16, 16]
-            _conv_block(64,  128),                        # [B, 128,  8,  8]
-            _conv_block(128, 128),                        # [B, 128,  4,  4]
+            _conv_block(in_channels, 8,  norm=False),    # [B, 8,   64, 64]
+            _conv_block(8,   16),                         # [B, 16,  32, 32]
+            _conv_block(16,  32),                         # [B, 32,  16, 16]
+            _conv_block(32,  64),                         # [B, 64,   8,  8]
+            _conv_block(64,  64),                         # [B, 64,   4,  4]
         )
-        self.pool = nn.AdaptiveAvgPool2d(1)               # [B, 128, 1, 1]
-        self.fc = nn.Linear(128, style_dim)               # [B, 64]
+        self.pool = nn.AdaptiveAvgPool2d(1)               # [B, 64, 1, 1]
+        self.fc = nn.Linear(64, style_dim)                # [B, 32]
 
     def forward(self, style_glyphs: torch.Tensor) -> torch.Tensor:
         B, N, C, H, W = style_glyphs.shape
@@ -60,23 +60,23 @@ class MiniStyleEncoder(nn.Module):
 
 
 class MiniUNetGenerator(nn.Module):
-    """Miniaturized UNetGenerator: nf=8 instead of nf=32 (64)."""
+    """Miniaturized UNetGenerator: ultra-small version."""
 
     NUM_CHARS = 66
 
     def __init__(
         self,
-        style_dim: int = 64,
-        char_emb_dim: int = 16,
-        base_filters: int = 8,
+        style_dim: int = 32,
+        char_emb_dim: int = 8,
+        base_filters: int = 6,
     ) -> None:
         super().__init__()
         nf = base_filters
         self.char_embedding = nn.Embedding(self.NUM_CHARS, char_emb_dim)
 
-        # Project (style_dim + char_emb_dim) → 128 spatial bottleneck (was 512)
+        # Project (style_dim + char_emb_dim) → 64 spatial bottleneck (was 512)
         self.cond_proj = nn.Sequential(
-            nn.Linear(style_dim + char_emb_dim, 128),
+            nn.Linear(style_dim + char_emb_dim, 64),
             nn.ReLU(inplace=True),
         )
 
@@ -90,8 +90,8 @@ class MiniUNetGenerator(nn.Module):
         self.enc7 = _conv_block(nf * 8, nf * 8, norm=False)   # [nf*8,  1,  1]
 
         # --- Decoder ---
-        # Bottleneck receives enc7 (nf*8=64) + projected conditioning (128) = 192
-        self.dec1 = _deconv_block(nf * 8 + 128, nf * 8, dropout=True)   # [nf*8, 2, 2]
+        # Bottleneck receives enc7 (nf*8=48) + projected conditioning (64) = 112
+        self.dec1 = _deconv_block(nf * 8 + 64, nf * 8, dropout=True)   # [nf*8, 2, 2]
         self.dec2 = _deconv_block(nf * 8 * 2,   nf * 8, dropout=True)   # [nf*8, 4, 4]
         self.dec3 = _deconv_block(nf * 8 * 2,   nf * 8, dropout=True)   # [nf*8, 8, 8]
         self.dec4 = _deconv_block(nf * 8 * 2,   nf * 8)                  # [nf*8,16,16]
@@ -115,7 +115,7 @@ class MiniUNetGenerator(nn.Module):
         char_emb = self.char_embedding(char_index)
         cond = torch.cat([style_emb, char_emb], dim=1)
         cond_feat = self.cond_proj(cond)
-        cond_spatial = cond_feat.view(B, 128, 1, 1)
+        cond_spatial = cond_feat.view(B, 64, 1, 1)
 
         x = style_glyph_0
         e1 = self.enc1(x)
@@ -179,8 +179,8 @@ def create_mini_model(output_path: str = "models/v1/mini_generator.onnx") -> Non
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Create models with random weights
-    style_encoder = MiniStyleEncoder(in_channels=1, style_dim=64)
-    generator = MiniUNetGenerator(style_dim=64, char_emb_dim=16, base_filters=8)
+    style_encoder = MiniStyleEncoder(in_channels=1, style_dim=32)
+    generator = MiniUNetGenerator(style_dim=32, char_emb_dim=8, base_filters=6)
     
     style_encoder.eval()
     generator.eval()
