@@ -1,4 +1,4 @@
-# Togusa — History
+﻿# Togusa — History
 
 ## Project Context
 - **Project:** Cyrillic Font Generator
@@ -599,3 +599,62 @@ The debug logging added will definitively identify the root cause when the issue
 - **Saito (39):** E2E test now uses production model, validates real glyph ink ✅
 
 **Test Status:** ✅ All 111 tests pass
+
+---
+
+## Session 2024-12-XX — COOP/COEP Headers Fix
+
+**Task #41:** Enable SharedArrayBuffer for threaded WASM inference (fix session.run() hang)
+
+**Problem:** Production INT8 model (generator.onnx) causes session.run() to hang indefinitely in browser. Model loads successfully (inputNames/outputNames log fine), but inference never returns.
+
+**Root Cause (confirmed by diagnostics):**
+- ort-wasm-simd-threaded.wasm uses Emscripten pthread emulation requiring SharedArrayBuffer + Atomics
+- This is true **even with numThreads=1** — internal thread sync mechanism
+- Without COOP/COEP headers, browsers disable SharedArrayBuffer (Spectre mitigation)
+- Atomics.wait() called by threaded WASM never resolves → infinite hang
+
+**Solution:**
+1. ✅ Added COOP/COEP headers to vite.config.ts (both server and preview sections)
+   - Cross-Origin-Opener-Policy: same-origin
+   - Cross-Origin-Embedder-Policy: require-corp
+2. ✅ Updated inferenceWorker.ts to use hardware concurrency for numThreads (now that SAB is enabled)
+   - Changed from 
+umThreads = 1 to 
+avigator.hardwareConcurrency ?? 4
+3. ❌ Non-threaded WASM fallback files not available in onnxruntime-web 1.24.x
+   - ort-wasm-simd.{mjs,wasm} do not exist in node_modules/onnxruntime-web/dist/
+   - Documented this limitation in copy-ort-wasm.cjs
+
+**Commit:** 8134e50 on branch squad/57-fix-ort-wasm-vite-error
+
+## Learnings
+
+**ORT Threading + SharedArrayBuffer:**
+- Emscripten's pthread emulation requires SharedArrayBuffer even with numThreads=1
+- COOP/COEP headers are MANDATORY for threaded WASM, not optional
+- Browsers enforce this as Spectre mitigation (since 2020)
+- Without headers: SAB disabled → Atomics.wait() hangs → session.run() never returns
+
+**ORT 1.24.x WASM Variants:**
+- No non-threaded fallback files (ort-wasm-simd.{mjs,wasm}) in distribution
+- All variants are threaded: base, JSEP, asyncify, JSPI
+- Deployment environments MUST support COOP/COEP or inference will fail
+
+**Vite Dev vs Preview:**
+- preview mode (used by Playwright E2E tests) needs same headers as server
+- Without preview headers, E2E tests run in non-cross-origin-isolated context → hang
+
+
+---
+
+### 2026-03-09: Blank Glyph Bug — Root Cause Found Fixed (squad/57)
+
+**Task:** Deep investigation of why generator.onnx (INT8, 50.6 MB) produces blank glyphs while mini_generator.onnx (FP32) works.
+**Status:** ROOT CAUSE FOUND AND FIXED. 111/111 tests pass.
+
+**Root Cause:** importfrom 'onnxruntime-web' (default bundle ort.bundle.min.mjs) in ORT 1.24.x hardcodes loading ort-wasm-simd-threaded.jsep.mjs (JSEP/WebGPU variant). This is baked in at compile time — not controllable via executionProviders, proxy, or any runtime flag. JSEP variant doesn't support INT8 QLinear ops → blank output.
+
+**Fix:** Changed import to 'onnxruntime-web/wasm' in inferenceWorker.ts and OnnxInference.ts. ort.wasm.bundle.min.mjs hardcodes ort-wasm-simd-threaded.mjs (standard, no JSEP), which correctly handles INT8.
+
+**Key Lesson:** ort.env.wasm.proxy does NOT control WASM variant selection. Use onnxruntime-web/wasm for INT8 WASM-only inference.

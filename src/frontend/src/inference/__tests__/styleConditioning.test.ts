@@ -16,7 +16,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // ── ONNX runtime mock ─────────────────────────────────────────────────────────
 
-vi.mock('onnxruntime-web', () => {
+vi.mock('onnxruntime-web/wasm', () => {
   class Tensor {
     type: string;
     data: any;
@@ -69,7 +69,7 @@ function makeMockSession() {
 
 /** Loads the mocked OnnxInference with an injected session via fake fetch. */
 async function buildLoadedInference(sessionMock: ReturnType<typeof makeMockSession>['session']) {
-  const ort = await import('onnxruntime-web');
+  const ort = await import('onnxruntime-web/wasm');
 
   // Stub out fetch so loadModel can stream a buffer.
   const fakeChunk = new Uint8Array(16).fill(1);

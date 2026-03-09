@@ -1,4 +1,8 @@
-import * as ort from 'onnxruntime-web';
+// ⚠️ Import from 'onnxruntime-web/wasm' — NOT 'onnxruntime-web'.
+// The default bundle loads the JSEP (WebGPU) WASM variant which silently produces
+// blank output for INT8 QLinear ops. The /wasm sub-path uses the standard non-JSEP
+// variant that correctly handles INT8 quantized models.
+import * as ort from 'onnxruntime-web/wasm';
 
 /**
  * Thin wrapper around an ONNX Runtime Web InferenceSession.
