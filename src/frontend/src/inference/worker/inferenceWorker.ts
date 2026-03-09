@@ -35,6 +35,13 @@ ort.env.wasm.wasmPaths = `${self.location.origin}/ort-wasm/`;
 // SharedArrayBuffer requirement (COOP/COEP headers) that not every dev env satisfies.
 ort.env.wasm.numThreads = 1;
 
+// Disable JSEP (WebGPU) variant selection. ORT 1.20 auto-selects ort-wasm-simd-threaded.jsep.mjs
+// if it detects WebGPU capability, even when executionProviders: ['wasm'] is specified.
+// The JSEP variant has compatibility issues with INT8 quantized models and can produce
+// incorrect output. Explicitly disable proxy mode to force ORT to use the standard
+// ort-wasm-simd-threaded.{mjs,wasm} variant instead.
+ort.env.wasm.proxy = false;
+
 let session: ort.InferenceSession | null = null;
 
 self.onmessage = async (event: MessageEvent) => {
