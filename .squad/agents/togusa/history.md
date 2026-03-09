@@ -658,3 +658,64 @@ avigator.hardwareConcurrency ?? 4
 **Fix:** Changed import to 'onnxruntime-web/wasm' in inferenceWorker.ts and OnnxInference.ts. ort.wasm.bundle.min.mjs hardcodes ort-wasm-simd-threaded.mjs (standard, no JSEP), which correctly handles INT8.
 
 **Key Lesson:** ort.env.wasm.proxy does NOT control WASM variant selection. Use onnxruntime-web/wasm for INT8 WASM-only inference.
+### 2026-03-09: Worker Initialization Fix — WASM Threading Issue (squad/57-fix-ort-wasm-vite-error)
+
+**Task:** Diagnose and fix `Uncaught [object Event]` in `ort-wasm-simd-threaded.mjs:19` preventing worker initialization.  
+**Status:** ✅ ROOT CAUSE FOUND & FIXED. Worker now initializes successfully.
+
+**Root Cause:**
+
+`ort-wasm-simd-threaded.mjs` attempts to spawn sub-workers for multi-threaded WASM execution. Vite's module worker bundling prevents nested worker creation, causing an `ErrorEvent` with no message at line 19 (Worker instantiation code).
+
+**Fix Applied:**
+
+1. **Set `env.wasm.numThreads = 1` BEFORE importing onnxruntime-web/wasm**
+   - Forces ORT to use single-threaded `ort-wasm-simd.mjs` instead of `ort-wasm-simd-threaded.mjs`
+   - Eliminates nested worker requirement
+   - Vite can now bundle the worker without conflict
+
+2. **Import `env` separately, configure it, THEN import rest of ORT**
+   - `import { env } from 'onnxruntime-web/wasm';`
+   - Set `env.wasm.wasmPaths`, `env.wasm.numThreads`, `env.wasm.proxy`
+   - `import * as ort from 'onnxruntime-web/wasm';`
+   - Ensures WASM path configuration happens before any module loading
+
+3. **Add `Cross-Origin-Resource-Policy: same-origin` header in vite.config.ts**
+   - Allows COEP-isolated worker to load same-origin WASM files
+   - Completes COOP/COEP/CORP header triad for SharedArrayBuffer support
+
+**Result:**
+
+- Worker initialization now succeeds ✅
+- No more `Uncaught [object Event]` errors
+- Model loading completes: `[inferenceWorker] session.inputNames/outputNames` logs appear
+- Worker accepts `infer` messages and runs `session.run()` without crashing
+- Inference completes successfully: `[inferenceWorker] output max (first 512 px): X.XXXX` logged
+
+**Known Issue (SEPARATE BUG, not caused by this fix):**
+
+Worker pipeline produces blank output (`max ≈ -1.0`) because style glyphs are all-background (`min=-1.000, max=-1.000`). This is a **font extraction issue**, NOT a worker initialization issue:
+
+- FontLoader logs: `[FontLoader] Extracted style glyphs: ABCDEHIORX. Sample values (first 20): min=-1.000, max=-1.000`
+- All 163,840 style glyph values are `-1.0` (all-background)
+- Model receives all-background input → produces all-background output (correct behavior given bad input)
+- Direct ORT tests pass with 436 ink pixels, confirming model + WASM files are correct
+
+Font extraction was working correctly in previous tests (PR #49, PR #40). This suggests a regression in FontLoader or test environment setup, separate from worker init.
+
+**Artifacts:**
+
+- Commit: `d888f47` on `squad/57-fix-ort-wasm-vite-error`
+- Modified files:
+  - `src/frontend/src/inference/worker/inferenceWorker.ts` (env setup + numThreads=1)
+  - `src/frontend/vite.config.ts` (CORP header)
+  - `src/frontend/src/inference/ModelLoader.ts` (improved error logging)
+- Pushed to origin
+
+**Key Insight:**
+
+When Vite bundles a worker with `type: 'module'`, any attempt by the worker script to instantiate **nested** workers (even via WASM modules) fails silently with generic ErrorEvents. The fix is to configure the library (ORT) to use a non-threaded variant **before** import, preventing the nested worker code path from ever executing.
+
+Single-threaded WASM is slower (~80-600ms/glyph vs ~15-30ms for WebGL or multi-threaded WASM), but acceptable for background processing in a dedicated worker. Future optimization: investigate Vite's `worker.rollupOptions` or serve worker as non-module to allow nested workers.
+
+---
